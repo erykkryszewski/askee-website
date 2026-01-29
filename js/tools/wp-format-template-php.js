@@ -689,7 +689,10 @@ async function formatAsTemplate(prettier, absoluteFilePath, rawText, originalLin
     const fileName = path.basename(absoluteFilePath);
 
     if (fileName === "header.php") {
-        unmaskedText = unmaskedText.replace(/<\/body>\s*<\/html>\s*$/i, "");
+        unmaskedText = unmaskedText.replace(
+            /(<\/(html|body|main|div|section|article|header|aside|nav)>\s*)+$/i,
+            ""
+        );
     }
 
     if (fileName === "footer.php") {

@@ -30,3 +30,4 @@ $custom_classes = []; if (!is_front_page()) { $custom_classes[] = "theme-subpage
                 </nav>
             </div>
         </header>
+        <main id="askee-app-content" class="askee-app-content">

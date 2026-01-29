@@ -3,122 +3,300 @@
  */
 import $ from "jquery";
 import "slick-carousel";
-import "@fancyapps/fancybox";
+// import "@fancyapps/fancybox";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-// import 'parallax-js';
+
+import { registerAskeeBlock } from "./global/boot";
+import { initAskeeSpaHooks } from "./global/spa";
+import { initAskeeSectionOneBlock } from "./blocks/section-one";
+import { initAskeeSectionTwoBlock } from "./blocks/section-two";
+
+registerAskeeBlock(initAskeeSectionOneBlock);
+registerAskeeBlock(initAskeeSectionTwoBlock);
+
+initAskeeSpaHooks();
 
 (function () {
     "use strict";
 
-    // on full load: hide preloader and optionally scroll to products on mobile
-    window.addEventListener("load", function () {
-        // preloader fade-out only if jQuery is present and the API exists
-        if (window.jQuery && typeof window.jQuery.fn.fadeOut === "function") {
-            window.jQuery(".preloader").fadeOut(100);
+    const askeeThemeConfigObject = window.AskeeThemeConfig || {};
+
+    const contentSelectorString =
+        typeof askeeThemeConfigObject.contentSelector === "string"
+            ? askeeThemeConfigObject.contentSelector
+            : "#askee-app-content";
+    const loadingBodyClassName =
+        typeof askeeThemeConfigObject.loadingBodyClass === "string"
+            ? askeeThemeConfigObject.loadingBodyClass
+            : "askee-is-loading";
+    const ajaxHeaderNameString =
+        typeof askeeThemeConfigObject.ajaxHeaderName === "string"
+            ? askeeThemeConfigObject.ajaxHeaderName
+            : "X-ASKEE-PJAX";
+    const ajaxHeaderValueString =
+        typeof askeeThemeConfigObject.ajaxHeaderValue === "string"
+            ? askeeThemeConfigObject.ajaxHeaderValue
+            : "1";
+
+    function isSameOriginUrl(urlString) {
+        try {
+            const urlObject = new URL(urlString, window.location.href);
+            return urlObject.origin === window.location.origin;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function shouldHandleAnchorElement(anchorElement) {
+        if (!anchorElement) {
+            return false;
         }
 
-        // scroll to products__elements on small screens if the element exists
-        if (window.jQuery && window.innerWidth < 768) {
-            const hasProductsElements = window.jQuery(".products__elements").length > 0;
-            if (hasProductsElements) {
-                const targetOffset = window.jQuery(".products__elements").offset();
-                // guard: offset() can theoretically return undefined if detached
-                if (targetOffset && typeof targetOffset.top === "number") {
-                    window
-                        .jQuery("html, body")
-                        .delay(200)
-                        .animate({ scrollTop: targetOffset.top }, 1000);
-                }
-            }
+        const hrefAttributeValue = anchorElement.getAttribute("href");
+        if (!hrefAttributeValue) {
+            return false;
         }
-    });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        if (window.jQuery) {
-            // smooth scroll for anchors if not on product pages
-            window.jQuery(document).on("click", 'a[href^="#"]', function (event) {
-                const currentHref = String(window.location.href);
-                const isProductPage =
-                    currentHref.indexOf("produkt") !== -1 || currentHref.indexOf("product") !== -1;
+        if (anchorElement.getAttribute("target") === "_blank") {
+            return false;
+        }
 
-                // do nothing on product pages
-                if (isProductPage) {
-                    return;
-                }
+        if (anchorElement.getAttribute("download") !== null) {
+            return false;
+        }
 
-                // guard invalid or empty hashes
-                const hrefValue = window.jQuery(this).attr("href");
-                if (!hrefValue || hrefValue === "#" || hrefValue.trim() === "") {
-                    return;
-                }
+        if (!isSameOriginUrl(hrefAttributeValue)) {
+            return false;
+        }
 
-                // guard: target must exist
-                const $target = window.jQuery(hrefValue);
-                if ($target.length === 0) {
-                    return;
-                }
+        const urlObject = new URL(hrefAttributeValue, window.location.href);
 
-                // perform animated scroll
-                event.preventDefault();
-                const targetOffset = $target.offset();
-                if (targetOffset && typeof targetOffset.top === "number") {
-                    window.jQuery("html, body").animate({ scrollTop: targetOffset.top }, 650);
-                }
+        if (urlObject.pathname.indexOf("/wp-admin") === 0) {
+            return false;
+        }
+
+        if (urlObject.pathname.indexOf("/wp-login.php") === 0) {
+            return false;
+        }
+
+        if (hrefAttributeValue.indexOf("mailto:") === 0) {
+            return false;
+        }
+
+        if (hrefAttributeValue.indexOf("tel:") === 0) {
+            return false;
+        }
+
+        const currentUrlObject = new URL(window.location.href);
+
+        const isOnlyHashChange =
+            urlObject.origin === currentUrlObject.origin &&
+            urlObject.pathname === currentUrlObject.pathname &&
+            urlObject.search === currentUrlObject.search &&
+            urlObject.hash !== "" &&
+            urlObject.hash !== currentUrlObject.hash;
+
+        if (isOnlyHashChange) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function extractContentHtmlFromFetchedDocument(fetchedDocumentObject) {
+        const fetchedContentElement = fetchedDocumentObject.querySelector(contentSelectorString);
+        if (!fetchedContentElement) {
+            return null;
+        }
+        return fetchedContentElement.innerHTML;
+    }
+
+    function updateDocumentTitleFromFetchedDocument(fetchedDocumentObject) {
+        const fetchedTitleElement = fetchedDocumentObject.querySelector("title");
+        if (fetchedTitleElement && typeof fetchedTitleElement.textContent === "string") {
+            document.title = fetchedTitleElement.textContent;
+        }
+    }
+
+    function updateBodyClassFromFetchedDocument(fetchedDocumentObject) {
+        if (!fetchedDocumentObject.body) {
+            return;
+        }
+        const fetchedBodyClassString =
+            typeof fetchedDocumentObject.body.className === "string"
+                ? fetchedDocumentObject.body.className
+                : "";
+        document.body.className = fetchedBodyClassString;
+    }
+
+    function updateCanonicalLinkFromFetchedDocument(fetchedDocumentObject) {
+        const fetchedCanonicalElement =
+            fetchedDocumentObject.querySelector('link[rel="canonical"]');
+        if (!fetchedCanonicalElement) {
+            return;
+        }
+        const fetchedCanonicalHref = fetchedCanonicalElement.getAttribute("href");
+        if (!fetchedCanonicalHref) {
+            return;
+        }
+        let existingCanonicalElement = document.querySelector('link[rel="canonical"]');
+        if (!existingCanonicalElement) {
+            existingCanonicalElement = document.createElement("link");
+            existingCanonicalElement.setAttribute("rel", "canonical");
+            document.head.appendChild(existingCanonicalElement);
+        }
+        existingCanonicalElement.setAttribute("href", fetchedCanonicalHref);
+    }
+
+    function dispatchAskeeNavigationEvent(urlString) {
+        const customEventObject = new CustomEvent("askee:navigation:complete", {
+            detail: {
+                url: urlString,
+            },
+        });
+        window.dispatchEvent(customEventObject);
+    }
+
+    let isNavigationInProgress = false;
+
+    async function navigateToUrl(urlString, shouldPushStateValue) {
+        if (isNavigationInProgress) {
+            return;
+        }
+
+        const mainContentElement = document.querySelector(contentSelectorString);
+        if (!mainContentElement) {
+            window.location.href = urlString;
+            return;
+        }
+
+        isNavigationInProgress = true;
+        document.body.classList.add(loadingBodyClassName);
+
+        try {
+            const fetchResponse = await fetch(urlString, {
+                method: "GET",
+                headers: {
+                    [ajaxHeaderNameString]: ajaxHeaderValueString,
+                },
+                credentials: "same-origin",
             });
 
-            // fix auto sizes attr in images
-            window.jQuery('img[sizes^="auto,"]').each(function () {
-                const $imageElement = window.jQuery(this);
-                const sizesValue = $imageElement.attr("sizes");
-                if (typeof sizesValue === "string") {
-                    const cleanedSizesValue = sizesValue.replace(/^auto,\s*/, "");
-                    $imageElement.attr("sizes", cleanedSizesValue);
-                }
-            });
-
-            // cleanup
-            window.jQuery("img[title]").removeAttr("title");
-            window.jQuery("p:empty").remove();
-        }
-
-        // empty pages redirect for not logged in users
-        const bodyElement = document.body;
-        const mainElement = document.querySelector("main#main");
-        const isLoggedIn = bodyElement.classList.contains("logged-in");
-        const isHomePath = window.location.pathname === "/" || window.location.pathname === "";
-
-        // safer emptiness check: avoid redirect on homepage and ensure truly empty
-        if (!isLoggedIn && mainElement) {
-            const hasChildren = mainElement.children.length > 0;
-            const hasText = mainElement.textContent && mainElement.textContent.trim().length > 0;
-            const isTrulyEmpty = !hasChildren && !hasText;
-
-            if (isTrulyEmpty && !isHomePath) {
-                window.location.assign("/");
+            if (!fetchResponse || !fetchResponse.ok) {
+                window.location.href = urlString;
+                return;
             }
+
+            const responseHtmlString = await fetchResponse.text();
+
+            const domParserObject = new DOMParser();
+            const fetchedDocumentObject = domParserObject.parseFromString(
+                responseHtmlString,
+                "text/html"
+            );
+
+            const newInnerHtmlString = extractContentHtmlFromFetchedDocument(fetchedDocumentObject);
+            if (newInnerHtmlString === null) {
+                window.location.href = urlString;
+                return;
+            }
+
+            mainContentElement.innerHTML = newInnerHtmlString;
+
+            updateDocumentTitleFromFetchedDocument(fetchedDocumentObject);
+            updateBodyClassFromFetchedDocument(fetchedDocumentObject);
+            updateCanonicalLinkFromFetchedDocument(fetchedDocumentObject);
+
+            if (shouldPushStateValue) {
+                const normalizedUrlObject = new URL(urlString, window.location.href);
+                window.history.pushState(
+                    { askee: true, url: normalizedUrlObject.href },
+                    "",
+                    normalizedUrlObject.href
+                );
+            }
+
+            dispatchAskeeNavigationEvent(urlString);
+        } catch (error) {
+            window.location.href = urlString;
+            return;
+        } finally {
+            document.body.classList.remove(loadingBodyClassName);
+            isNavigationInProgress = false;
         }
-    });
+    }
+
+    function onDocumentClick(eventObject) {
+        if (!eventObject) {
+            return;
+        }
+
+        const isModifiedClick =
+            eventObject.metaKey ||
+            eventObject.ctrlKey ||
+            eventObject.shiftKey ||
+            eventObject.altKey;
+        if (isModifiedClick) {
+            return;
+        }
+
+        const targetElement = eventObject.target;
+        if (!targetElement) {
+            return;
+        }
+
+        const anchorElement = targetElement.closest("a");
+        if (!shouldHandleAnchorElement(anchorElement)) {
+            return;
+        }
+
+        eventObject.preventDefault();
+
+        const hrefAttributeValue = anchorElement.getAttribute("href");
+        if (!hrefAttributeValue) {
+            return;
+        }
+
+        const destinationUrlObject = new URL(hrefAttributeValue, window.location.href);
+        const destinationUrlString = destinationUrlObject.href;
+
+        navigateToUrl(destinationUrlString, true);
+    }
+
+    function onPopState(eventObject) {
+        const currentUrlString = window.location.href;
+        navigateToUrl(currentUrlString, false);
+    }
+
+    function initAskeeRouting() {
+        document.addEventListener("click", onDocumentClick, true);
+        window.addEventListener("popstate", onPopState);
+        window.history.replaceState(
+            { askee: true, url: window.location.href },
+            "",
+            window.location.href
+        );
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initAskeeRouting);
+    } else {
+        initAskeeRouting();
+    }
 })();
 
 /* imports */
 
-import "./global/recaptcha";
 import "./global/zoom";
 
 /* @blocks:start */
-import './blocks/wyswig-content';
+import "./blocks/wyswig-content";
 /* @blocks:end */
 
 import "./sections/header";
-import "./sections/navigation";
 import "./sections/main";
 
-import "./components/spacer";
-import "./components/popup";
-import "./components/animated-number";
 import "./components/form";
 import "./components/phone-number";
 import "./components/button";
-
-

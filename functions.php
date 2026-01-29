@@ -9,6 +9,7 @@ if (!defined("PAGE_THEME_URL")) {
 }
 
 require_once PAGE_THEME_DIR . "lib/classes/svg-support.php";
+require_once PAGE_THEME_DIR . "lib/functions/routing.php";
 require_once PAGE_THEME_DIR . "lib/functions/search.php";
 require_once PAGE_THEME_DIR . "lib/functions/image-object-fit.php";
 require_once PAGE_THEME_DIR . "lib/functions/image-optimization.php";
