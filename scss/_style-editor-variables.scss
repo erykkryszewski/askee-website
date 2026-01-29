@@ -1,0 +1,33 @@
+$fonts: (
+    primary: $font-primary,
+);
+
+$colors: (
+    black: #000,
+    white: #fff,
+);
+
+$breakpoints: (
+    xs: 480,
+    sm: 576,
+    md: 768,
+    lg: 992,
+    xl: 1366,
+);
+
+$container-width: 1270px;
+$content-width: 730px;
+$alignwide-width: $container-width;
+
+/* fix styles being overwritten by admin default css */
+
+.editor-styles-wrapper {
+    .container {
+        margin: 0 auto !important;
+        padding: 0 15px !important;
+    }
+
+    .cta-hero__image {
+        z-index: 0 !important;
+    }
+}

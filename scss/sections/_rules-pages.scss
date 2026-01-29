@@ -1,0 +1,17 @@
+.main--rules-page {
+    .default-block.container {
+        li {
+            > a {
+                font-weight: 500;
+                text-decoration: underline;
+                display: inline-block;
+                color: $text-color;
+
+                &:hover {
+                    text-decoration: underline;
+                    color: $text-color;
+                }
+            }
+        }
+    }
+}

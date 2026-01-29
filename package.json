@@ -1,0 +1,73 @@
+{
+    "name": "askeetheme",
+    "version": "1.0.0",
+    "resolutions": {
+        "minimatch": "^9.0.3"
+    },
+    "license": "GPL-3.0-or-later",
+    "scripts": {
+        "build:style": "sass --no-source-map --load-path=node_modules --style=compressed --quiet-deps --silence-deprecation=import --silence-deprecation=global-builtin style.scss style.css && postcss -r --no-map style.css",
+        "build:style-editor": "sass --no-source-map --load-path=node_modules --style=compressed --quiet-deps --silence-deprecation=import --silence-deprecation=global-builtin style-editor.scss style-editor.css && postcss -r --no-map style-editor.css",
+        "build:scripts:dev": "cross-env webpack --mode=development",
+        "build:scripts:prod": "cross-env webpack --mode=production",
+        "build-dev": "run-p build:style build:style-editor build:scripts:dev",
+        "build": "run-p build:style build:style-editor build:scripts:prod",
+        "watch": "chokidar \"**/*.scss\" \"js/src/**/*.js\" -i \"node_modules/**/*\" -c \"yarn build-dev\" --initial",
+        "lint:css": "stylelint \"**/*.scss\"",
+        "fix:css": "stylelint \"**/*.scss\" --fix",
+        "lint:js": "eslint .",
+        "fix:js": "eslint . --fix",
+        "lint": "run-p \"lint:*\"",
+        "format": "prettier --write .",
+        "blocks:apply": "node js/tools/blocks-apply.js",
+        "check": "prettier --check .",
+        "update-browserslist": "npx browserslist@latest --update-db",
+        "wpfmt": "node js/tools/wp-format-template-php.js",
+        "prettier": "prettier",
+        "stylelint": "stylelint",
+        "format:scss": "stylelint \"**/*.{scss,css}\" --fix && prettier --write \"**/*.{scss,css}\"",
+        "format:js": "prettier --write \"**/*.{js,mjs,cjs}\"",
+        "format:json": "prettier --write \"**/*.{json,html}\"",
+        "format:php:core": "prettier --plugin=@prettier/plugin-php --parser php --write \"functions.php\" \"lib/**/*.php\"",
+        "format:php:templates": "find ./acf/blocks -type f -name \"*.php\" -exec node ./js/tools/wp-format-template-php.js {} \\; && find . -maxdepth 1 -type f -name \"*.php\" ! -name \"functions.php\" -exec node ./js/tools/wp-format-template-php.js {} \\;",
+        "format:all": "yarn format:scss && yarn format:js && yarn format:json && yarn format:php:core && yarn format:php:templates"
+    },
+    "devDependencies": {
+        "@babel/core": "^7",
+        "@babel/preset-env": "^7",
+        "@prettier/plugin-php": "^0.24.0",
+        "@wordpress/eslint-plugin": "^3.1.0",
+        "autoprefixer": "^10",
+        "babel-loader": "^9",
+        "chokidar-cli": "^2.0.0",
+        "cross-env": "7.0.3",
+        "normalize-scss": "^7.0.1",
+        "npm-run-all": "4.1.5",
+        "postcss": "^8.5.6",
+        "postcss-cli": "^11.0.1",
+        "prettier": "^3.6.2",
+        "sass": "^1.92.1",
+        "stylelint": "15",
+        "stylelint-config-recommended-scss": "13",
+        "stylelint-config-standard": "34",
+        "stylelint-order": "6",
+        "stylelint-scss": "5",
+        "webpack": "^5",
+        "webpack-cli": "^5"
+    },
+    "dependencies": {
+        "@fancyapps/fancybox": "^3.5.7",
+        "bootstrap": "^4.5.2",
+        "core-js": "^3",
+        "gsap": "^3.11.4",
+        "morphext": "^2.4.7",
+        "parallax-js": "^3.1.0",
+        "slick-carousel": "^1.8.1",
+        "smoothscroll-polyfill": "^0.4.4"
+    },
+    "browserslist": [
+        "> 1%",
+        "last 2 versions",
+        "not ie <= 8"
+    ]
+}

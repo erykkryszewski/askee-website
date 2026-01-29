@@ -1,0 +1,27 @@
+.inputs {
+    border: 1px solid $border-color !important;
+    padding: 13px !important;
+    font-size: 15px !important;
+    color: $input-color !important;
+    display: block;
+    border-radius: $theme-border-radius !important;
+    font-weight: 400 !important;
+    width: 100%;
+
+    &::placeholder {
+        font-size: 15px !important;
+        color: $input-color !important;
+        font-weight: 400 !important;
+        font-family: $font-primary !important;
+    }
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+select,
+textarea {
+    @extend .inputs;
+}

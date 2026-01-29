@@ -1,0 +1,21 @@
+image: php:7.4
+
+pipelines:
+ branches:
+   master:
+     - step:
+         name: Deploy to production
+         deployment: production
+         script:
+           - apt-get update
+           - apt-get -qq install git-ftp
+           - git ftp init --user $PRO_USER --passwd $PRO_PASSWORD -v $PRO_HOST
+   develop:
+     - step:
+         name: Deploy to staging
+         deployment: staging
+         script:
+           - apt-get update
+           - apt-get -qq install git-ftp
+           - git ftp push --user $DEV_USER --passwd $DEV_PASSWORD -v $DEV_HOST
+

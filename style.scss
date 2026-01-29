@@ -1,0 +1,45 @@
+/*
+Theme Name: Askee Theme
+Theme URI: https://askee.pl/
+Author: askee.pl
+Author URI: https://askee.pl/
+Version: 1.0
+Requires at least: 5.3
+Tested up to: 5.5
+Requires PHP: 7.3
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: askeetheme
+*/
+
+@import "scss/integrations/bootstrap";
+@import "scss/integrations/fancybox";
+@import "scss/integrations/slick";
+@import "scss/global/variables";
+@import "scss/global/functions";
+@import "scss/global/typography";
+@import "scss/global/global";
+@import "scss/global/classes";
+@import "scss/components/button";
+@import "scss/components/hamburger";
+@import "scss/components/form";
+@import "scss/components/inputs";
+@import "scss/components/social-media";
+@import "scss/components/section-id";
+@import "scss/components/slick-dots";
+@import "scss/components/scrollbar";
+@import "scss/components/cookies";
+@import "scss/components/slick-arrows";
+
+/* @blocks:start */
+@import "scss/blocks/wyswig-content";
+
+/* @blocks:end */
+
+@import "scss/sections/header";
+@import "scss/sections/footer";
+@import "scss/sections/blog";
+@import "scss/sections/single";
+@import "scss/sections/404";
+@import "scss/sections/rules-pages";
+@import "scss/sections/main";

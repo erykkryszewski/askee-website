@@ -1,0 +1,9 @@
+/yarn.lock
+/yarn-error.log
+node_modules
+vendor
+
+config.codekit3
+
+*.lock
+node_modules/

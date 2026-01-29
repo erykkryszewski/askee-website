@@ -1,0 +1,92 @@
+.wyswig-content {
+    width: 100%;
+    position: relative;
+
+    &--background {
+        background: $very-light-gray;
+    }
+
+    &__wrapper {
+        width: 100%;
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            margin-bottom: 25px;
+
+            em {
+                font-size: inherit;
+                line-height: inherit;
+                font-style: normal;
+
+                strong {
+                    font-weight: inherit;
+                }
+            }
+        }
+
+        ul,
+        ol {
+            margin: 20px 0 0;
+
+            li {
+                margin: 0;
+                display: block;
+                padding: 0 0 0 18px;
+                position: relative;
+
+                &::before {
+                    display: block;
+                    margin: 0;
+                    position: absolute;
+                    left: 0;
+                }
+
+                strong {
+                    width: auto;
+                }
+
+                @extend .paragraph;
+            }
+        }
+
+        ul {
+            li {
+                &::before {
+                    content: "•";
+                    font-size: 23px;
+                    top: -4px;
+                }
+            }
+        }
+
+        ol {
+            counter-reset: li-counter;
+
+            li {
+                counter-increment: li-counter;
+
+                &::before {
+                    content: counter(li-counter) ".";
+                }
+            }
+        }
+
+        p {
+            margin-bottom: 0;
+
+            em {
+                font-size: inherit;
+                line-height: inherit;
+            }
+        }
+
+        > * {
+            &:first-child {
+                margin-top: 0;
+            }
+        }
+    }
+}

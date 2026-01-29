@@ -1,0 +1,85 @@
+.footer {
+    background: $very-light-gray;
+    width: 100%;
+    margin: 70px 0 0;
+
+    &--homepage {
+        margin: 0;
+    }
+
+    &__wrapper {
+        padding: 90px 0 80px;
+    }
+
+    &__logo {
+        display: inline-block;
+
+        img,
+        svg {
+            max-width: 200px;
+            height: auto;
+        }
+    }
+
+    &__phone,
+    &__email {
+        display: block;
+        font-weight: 400;
+        font-size: 16px;
+    }
+
+    &__phone {
+        margin: 0 0 5px;
+    }
+
+    &__address {
+        span {
+            display: block;
+            font-size: 16px;
+            color: $black;
+            font-weight: 500;
+            margin: 15px 0 0;
+        }
+
+        p {
+            margin: 0;
+            font-size: 16px;
+        }
+    }
+
+    &__subtitle {
+        @media (width <= 767px) {
+            margin: 25px auto 0;
+        }
+    }
+
+    &__column {
+        width: 100%;
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            margin: 3px 0 0;
+
+            @extend .h3;
+        }
+
+        ul {
+            width: 100%;
+            margin: 20px 0 0;
+
+            li {
+                margin: 8px 0 0;
+                list-style: none;
+
+                a {
+                    color: $black;
+                    font-size: 16px;
+                    line-height: 1.5;
+                    max-width: 200px;
+                }
+            }
+        }
+    }
+}

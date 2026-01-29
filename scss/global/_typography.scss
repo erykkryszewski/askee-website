@@ -1,0 +1,148 @@
+/* 
+ * Import fonts
+ */
+
+/*
+ * Typography
+ */
+
+h1,
+.h1,
+h1 > strong,
+h1 > b,
+h1 > span {
+    color: $text-color;
+    font-family: $font-primary;
+    font-size: 60px;
+    line-height: 1.1;
+    font-weight: 800;
+    text-transform: uppercase;
+
+    @media (width <= 767px) {
+        font-size: 58px;
+    }
+}
+
+h2,
+.h2,
+h2 > strong,
+h2 > b,
+h2 > span {
+    color: $text-color;
+    font-family: $font-primary;
+    font-size: 35px;
+    line-height: 1.1;
+    font-weight: 700;
+
+    @media (width <= 1199px) {
+        font-size: 30px;
+    }
+}
+
+h3,
+.h3,
+h3 > strong,
+h3 > b,
+h3 > span {
+    color: $text-color;
+    font-family: $font-primary;
+    font-size: 26px;
+    line-height: 1.1;
+    font-weight: 700;
+
+    @media (width <= 1199px) {
+        font-size: 22px;
+    }
+}
+
+h4,
+.h4,
+h4 > strong,
+h4 > b,
+h4 > span {
+    color: $text-color;
+    font-family: $font-primary;
+    font-size: 20px;
+    line-height: 1.1;
+    font-weight: 600;
+
+    @media (width <= 1199px) {
+        font-size: 18px;
+    }
+}
+
+h5,
+.h5,
+h5 > strong,
+h5 > b,
+h5 > span {
+    color: $text-color;
+    font-family: $font-primary;
+    font-size: 18px;
+    line-height: 1.1;
+    font-weight: 600;
+
+    @media (width <= 1199px) {
+        font-size: 18px;
+    }
+}
+
+p,
+.paragraph {
+    font-size: 17px;
+    line-height: 1.65;
+    font-weight: 400;
+    margin: 20px 0 0;
+    color: $text-color;
+
+    > a {
+        font-weight: 500;
+        font-size: 17px;
+        line-height: 1.65;
+        text-decoration: underline;
+        display: inline-block;
+        color: $text-color;
+
+        &:hover {
+            text-decoration: underline;
+            color: $text-color;
+        }
+    }
+
+    > strong {
+        font-weight: 600;
+        font-size: 17px;
+        line-height: 1.65;
+        color: $text-color;
+    }
+
+    > span {
+        font-size: 17px;
+        line-height: 1.65;
+        font-weight: 400;
+        color: $text-color;
+    }
+}
+
+ul > li,
+ol > li,
+ul.wp-block-list li,
+ol.wp-block-list li {
+    font-size: 17px;
+    line-height: 1.65;
+    font-weight: 400;
+
+    > strong {
+        font-weight: 600;
+        font-size: 17px;
+        line-height: 1.65;
+        color: $text-color;
+    }
+
+    > span {
+        font-size: 17px;
+        line-height: 1.65;
+        font-weight: 400;
+        color: $text-color;
+    }
+}

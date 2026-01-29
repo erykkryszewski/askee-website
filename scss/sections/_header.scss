@@ -1,0 +1,42 @@
+.header {
+    z-index: 20;
+    position: fixed;
+    width: 100%;
+    left: 0;
+    right: 0;
+    top: 0;
+    transition: all 150ms ease;
+    min-height: 91px;
+
+    /* temporary styles */
+    background: $white;
+
+    &--fixed {
+        box-shadow: 0 0 19px -10px rgba($dark, 0.7);
+        background: $white;
+        min-height: 70px;
+        top: -45px;
+
+        @media (width <= 991px) {
+            top: -75px;
+        }
+    }
+
+    // &--open {
+    //   background: rgba($dark, 0.85);
+
+    //   @media(max-width: 991px) {
+    //     background: $dark;
+    //   }
+    // }
+}
+
+body.admin-bar {
+    .header {
+        top: 32px;
+
+        &--fixed {
+            top: -13px;
+        }
+    }
+}

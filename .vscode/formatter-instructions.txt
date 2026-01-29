@@ -1,0 +1,57 @@
+Add this to your vs code settings.json:
+
+{
+  "editor.wordWrap": "on",
+  "editor.wrappingStrategy": "advanced",
+  "editor.wrappingIndent": "same",
+
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+
+  "[markdown]": { "editor.wordWrap": "on" },
+  "[plaintext]": { "editor.wordWrap": "on" },
+
+  "[json]": { "editor.tabSize": 4 },
+  "[jsonc]": { "editor.tabSize": 4 },
+  "[php]": { "editor.defaultFormatter": null, "editor.tabSize": 4 },
+  "[html]": { "editor.tabSize": 4 },
+  "[scss]": { "editor.tabSize": 4 },
+  "[css]": { "editor.tabSize": 4 },
+  "[javascript]": { "editor.tabSize": 4 },
+
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "php.validate.enable": false,
+  "php.format.enable": false,
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.stylelint": "explicit"
+  },
+
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.(scss|css)$",
+        "cmd": "yarn --silent stylelint \"${file}\" --fix && yarn --silent prettier --write \"${file}\""
+      },
+      {
+        "match": "\\.(js|mjs|cjs)$",
+        "cmd": "yarn --silent prettier --write \"${file}\""
+      },
+      {
+        "match": "\\.(json|html)$",
+        "cmd": "yarn --silent prettier --write \"${file}\""
+      },
+      {
+        "match": "(functions\\.php|[/\\\\]lib[/\\\\].*\\.php$)",
+        "cmd": "yarn --silent prettier --plugin=@prettier/plugin-php --parser php --write \"${file}\""
+      },
+      {
+        "match": "\\.php$",
+        "cmd": "yarn --silent wpfmt \"${file}\""
+      }
+    ]
+  }
+}

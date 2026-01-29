@@ -1,0 +1,51 @@
+/* cookieYes */
+
+.cky-consent-container,
+.cky-modal {
+    p,
+    button,
+    a,
+    span,
+    li,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: $font-primary !important;
+    }
+
+    p {
+        font-size: 14px !important;
+    }
+
+    .cky-btn {
+        border: 1px solid $text-color !important;
+        background: $white !important;
+        color: $text-color !important;
+        border-radius: $theme-border-radius !important;
+        padding: 4px !important;
+
+        &:hover {
+            background: $theme-color !important;
+            color: $white !important;
+            opacity: 1 !important;
+        }
+    }
+
+    .cky-btn-accept {
+        background: $theme-color !important;
+        color: $white !important;
+    }
+}
+
+.cky-btn-revisit-wrapper {
+    background: $theme-color !important;
+    position: absolute !important;
+    bottom: 65px !important;
+
+    @media (width <= 767px) {
+        bottom: 15px !important;
+    }
+}

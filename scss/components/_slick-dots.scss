@@ -1,0 +1,36 @@
+.slick-dots {
+    display: flex;
+    justify-content: center;
+    max-width: initial;
+
+    li {
+        padding: 0 5px;
+        list-style: none;
+
+        &::before {
+            display: none;
+        }
+
+        button {
+            width: 25px;
+            height: 7px;
+            background: rgba($theme-color, 0.5);
+            font-size: 0;
+        }
+
+        &.slick-active {
+            button {
+                background: $theme-color;
+            }
+        }
+
+        @media (width <= 767px) {
+            margin: 5px;
+        }
+    }
+
+    @media (width <= 767px) {
+        flex-direction: row;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,19 @@
+.social-media {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 20px 0;
+
+    a {
+        display: block;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        max-width: 25px;
+        height: 25px;
+
+        img {
+            filter: brightness(0.15);
+        }
+    }
+}

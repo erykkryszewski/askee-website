@@ -1,0 +1,38 @@
+#adminmenu li#menu-comments {
+    display: none;
+}
+
+#adminmenu .dashicons-admin-post::before {
+    content: "\f123";
+}
+
+.acf-fields {
+    .acf-field.editor-small {
+        .acf-editor-wrap {
+            iframe {
+                height: 120px !important;
+                min-height: 120px !important;
+            }
+        }
+    }
+}
+
+.editor-styles-wrapper .wp-block-heading {
+    margin: 25px auto 0;
+}
+
+.block-editor-block-list__block {
+    margin: 25px auto 0 !important;
+
+    li {
+        margin: 5px auto 0 !important;
+    }
+}
+
+.editor-styles-wrapper ul > li {
+    list-style: disc;
+}
+
+.editor-styles-wrapper ol > li {
+    list-style: decimal;
+}

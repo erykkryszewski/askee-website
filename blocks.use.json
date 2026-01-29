@@ -1,0 +1,12 @@
+{
+    "keep": ["wyswig-content"],
+    "aliases": {
+        "scss": {
+            "products": "popular-products"
+        },
+        "js": {}
+    },
+    "features": {
+        "woocommerce": false
+    }
+}
