@@ -1,5 +1,9 @@
 import { registerAskeeBlock } from "./global/boot";
 import { initAskeeSpaHooks } from "./global/spa";
+import { initAskeeZoom } from "./global/zoom";
+
+import { initAskeeButtonComponent } from "./components/button";
+import { initAskeePhoneNumberComponent } from "./components/phone-number";
 
 import { initAskeeHomePage } from "./pages/home";
 import { initAskeeChatPage } from "./pages/chat";
@@ -7,6 +11,11 @@ import { initAskeeAboutUsPage } from "./pages/about-us";
 import { initAskeeOurPhilosophyPage } from "./pages/our-philosophy";
 import { initAskeeContactPage } from "./pages/contact";
 import { initAskeeNewsPage } from "./pages/news";
+
+initAskeeZoom();
+
+registerAskeeBlock(initAskeeButtonComponent);
+registerAskeeBlock(initAskeePhoneNumberComponent);
 
 registerAskeeBlock(initAskeeHomePage);
 registerAskeeBlock(initAskeeChatPage);
@@ -290,9 +299,5 @@ initAskeeSpaHooks();
 
 import "./global/zoom";
 
-import "./sections/header";
-import "./sections/main";
-
-import "./components/form";
 import "./components/phone-number";
 import "./components/button";

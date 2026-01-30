@@ -1,22 +1,36 @@
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".askeetheme-phone-number").forEach(function (askee_el) {
-        let askee_phone_text = askee_el.textContent.replace(/\D+/g, "");
+export function initAskeePhoneNumberComponent(rootElement) {
+    const safeRootElement = rootElement instanceof Element ? rootElement : document;
 
-        if (askee_phone_text.startsWith("48") && askee_phone_text.length === 11) {
-            askee_phone_text = `+${askee_phone_text}`;
-        } else if (!askee_phone_text.startsWith("+48") && askee_phone_text.length === 9) {
-            askee_phone_text = `+48${askee_phone_text}`;
+    const itemsArray = safeRootElement.querySelectorAll(".askeetheme-phone-number");
+
+    for (let index = 0; index < itemsArray.length; index += 1) {
+        const askeeElement = itemsArray[index];
+
+        if (askeeElement.dataset.askeePhoneInitialized === "1") {
+            continue;
         }
 
-        let match = askee_phone_text.match(/^\+48(\d{3})(\d{3})(\d{3})$/);
-        if (match) {
-            let formatted = `+48 ${match[1]} ${match[2]} ${match[3]}`;
-            askee_el.textContent = formatted;
+        askeeElement.dataset.askeePhoneInitialized = "1";
 
-            let parent_link = askee_el.closest("a[href^='tel:']");
-            if (parent_link) {
-                parent_link.setAttribute("href", "tel:" + formatted.replace(/\s+/g, ""));
-            }
+        let askeePhoneText = askeeElement.textContent.replace(/\D+/g, "");
+
+        if (askeePhoneText.startsWith("48") && askeePhoneText.length === 11) {
+            askeePhoneText = `+${askeePhoneText}`;
+        } else if (!askeePhoneText.startsWith("+48") && askeePhoneText.length === 9) {
+            askeePhoneText = `+48${askeePhoneText}`;
         }
-    });
-});
+
+        const match = askeePhoneText.match(/^\+48(\d{3})(\d{3})(\d{3})$/);
+        if (!match) {
+            continue;
+        }
+
+        const formatted = `+48 ${match[1]} ${match[2]} ${match[3]}`;
+        askeeElement.textContent = formatted;
+
+        const parentLink = askeeElement.closest("a[href^='tel:']");
+        if (parentLink) {
+            parentLink.setAttribute("href", "tel:" + formatted.replace(/\s+/g, ""));
+        }
+    }
+}
