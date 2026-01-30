@@ -1,19 +1,19 @@
-/**
- * External dependencies
- */
-import $ from "jquery";
-import "slick-carousel";
-// import "@fancyapps/fancybox";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
 import { registerAskeeBlock } from "./global/boot";
 import { initAskeeSpaHooks } from "./global/spa";
-import { initAskeeSectionOneBlock } from "./blocks/section-one";
-import { initAskeeSectionTwoBlock } from "./blocks/section-two";
 
-registerAskeeBlock(initAskeeSectionOneBlock);
-registerAskeeBlock(initAskeeSectionTwoBlock);
+import { initAskeeHomePage } from "./pages/home";
+import { initAskeeChatPage } from "./pages/chat";
+import { initAskeeAboutUsPage } from "./pages/about-us";
+import { initAskeeOurPhilosophyPage } from "./pages/our-philosophy";
+import { initAskeeContactPage } from "./pages/contact";
+import { initAskeeNewsPage } from "./pages/news";
+
+registerAskeeBlock(initAskeeHomePage);
+registerAskeeBlock(initAskeeChatPage);
+registerAskeeBlock(initAskeeAboutUsPage);
+registerAskeeBlock(initAskeeOurPhilosophyPage);
+registerAskeeBlock(initAskeeContactPage);
+registerAskeeBlock(initAskeeNewsPage);
 
 initAskeeSpaHooks();
 
@@ -289,10 +289,6 @@ initAskeeSpaHooks();
 /* imports */
 
 import "./global/zoom";
-
-/* @blocks:start */
-import "./blocks/wyswig-content";
-/* @blocks:end */
 
 import "./sections/header";
 import "./sections/main";

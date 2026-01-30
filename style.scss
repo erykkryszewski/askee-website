@@ -30,16 +30,15 @@ Text Domain: askeetheme
 @import "scss/components/scrollbar";
 @import "scss/components/cookies";
 @import "scss/components/slick-arrows";
-
-/* @blocks:start */
-@import "scss/blocks/wyswig-content";
-
-/* @blocks:end */
-
+@import "scss/pages/news";
+@import "scss/pages/chat";
+@import "scss/pages/our-philosophy";
+@import "scss/pages/contact";
+@import "scss/pages/about-us";
+@import "scss/pages/privacy";
+@import "scss/pages/404";
 @import "scss/sections/header";
 @import "scss/sections/footer";
 @import "scss/sections/blog";
 @import "scss/sections/single";
-@import "scss/sections/404";
-@import "scss/sections/rules-pages";
 @import "scss/sections/main";

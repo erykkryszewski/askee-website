@@ -10,7 +10,6 @@ function askee_register_theme_config() {
     }
 
     $config_array = [
-        "rootUrl" => home_url("/"),
         "contentSelector" => "#askee-app-content",
         "loadingBodyClass" => "askee-is-loading",
         "ajaxHeaderName" => "X-ASKEE-PJAX",
