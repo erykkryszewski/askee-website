@@ -15,19 +15,11 @@ $custom_classes = []; if (!is_front_page()) { $custom_classes[] = "theme-subpage
 
     <body <?php body_class($custom_classes); ?>>
         <header class="header <?php if (!is_front_page()) { echo 'header--subpage'; } ?>">
-            <div class="container">
-                <nav class="nav <?php if (!is_front_page()) { echo 'nav--subpage';} ?>">
-                    <a href="/" class="nav__logo <?php if (!is_front_page()) { echo 'nav__logo--subpage'; } ?>">Logo</a>
-                    <div class="nav__content <?php if (!is_front_page()) { echo 'nav__content--subpage'; } ?>">
-                        <?php $menu_class = is_front_page() ? 'nav__menu' : 'nav__menu nav__menu--subpage'; echo wp_nav_menu(['theme_location' => 'Navigation', 'container' => 'ul', 'menu_class' => $menu_class]); ?>
-                        <div class="hamburger nav__hamburger <?php if (!is_front_page()) { echo 'nav__hamburger--subpage';} ?>">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                    </div>
-                </nav>
+            <div class="container-fluid container-fluid--padding">
+                <div class="header__wrapper">
+                    <a href="/" class="header__logo"><?php echo wp_get_attachment_image(5066, 'large'); ?></a>
+                    <a href="/chat" class="button button--header">Porozmawiajmy!</a>
+                </div>
             </div>
         </header>
         <main id="askee-app-content" class="askee-app-content">
