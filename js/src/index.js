@@ -294,10 +294,3 @@ initAskeeSpaHooks();
         initAskeeRouting();
     }
 })();
-
-/* imports */
-
-import "./global/zoom";
-
-import "./components/phone-number";
-import "./components/button";
