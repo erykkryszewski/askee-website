@@ -7,141 +7,147 @@
  */
 
 h1,
-.h1,
-h1 > strong,
-h1 > b,
-h1 > span {
+.h1 {
     color: $text-color;
     font-family: $font-primary;
-    font-size: 60px;
-    line-height: 1.1;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-size: 35px;
+    line-height: 35px;
+    font-weight: 400;
+
+    span {
+        font-size: 30px;
+        color: $theme-color;
+
+        @media (width <= 767px) {
+            font-size: 30px;
+        }
+    }
 
     @media (width <= 767px) {
-        font-size: 58px;
+        font-size: 35px;
     }
 }
 
 h2,
-.h2,
-h2 > strong,
-h2 > b,
-h2 > span {
+.h2 {
     color: $text-color;
     font-family: $font-primary;
-    font-size: 35px;
+    font-size: 30px;
     line-height: 1.1;
-    font-weight: 700;
+    font-weight: 600;
 
-    @media (width <= 1199px) {
+    @media (width <= 767px) {
         font-size: 30px;
     }
 }
 
 h3,
-.h3,
-h3 > strong,
-h3 > b,
-h3 > span {
-    color: $text-color;
-    font-family: $font-primary;
-    font-size: 26px;
-    line-height: 1.1;
-    font-weight: 700;
-
-    @media (width <= 1199px) {
-        font-size: 22px;
-    }
-}
-
-h4,
-.h4,
-h4 > strong,
-h4 > b,
-h4 > span {
-    color: $text-color;
-    font-family: $font-primary;
-    font-size: 20px;
-    line-height: 1.1;
-    font-weight: 600;
-
-    @media (width <= 1199px) {
-        font-size: 18px;
-    }
-}
-
-h5,
-.h5,
-h5 > strong,
-h5 > b,
-h5 > span {
+.h3 {
     color: $text-color;
     font-family: $font-primary;
     font-size: 18px;
     line-height: 1.1;
     font-weight: 600;
 
-    @media (width <= 1199px) {
+    @media (width <= 767px) {
+        font-size: 18px;
+    }
+}
+
+h4,
+.h4 {
+    color: $text-color;
+    font-family: $font-primary;
+    font-size: 18px;
+    line-height: 1.1;
+    font-weight: 600;
+
+    @media (width <= 767px) {
+        font-size: 18px;
+    }
+}
+
+h5,
+.h5 {
+    color: $text-color;
+    font-family: $font-primary;
+    font-size: 18px;
+    line-height: 1.1;
+    font-weight: 600;
+
+    @media (width <= 767px) {
         font-size: 18px;
     }
 }
 
 p,
 .paragraph {
-    font-size: 17px;
-    line-height: 1.65;
+    font-size: 18px;
+    line-height: 28px;
     font-weight: 400;
     margin: 20px 0 0;
     color: $text-color;
 
     > a {
-        font-weight: 500;
-        font-size: 17px;
-        line-height: 1.65;
-        text-decoration: underline;
-        display: inline-block;
-        color: $text-color;
+        font-size: 18px;
+        line-height: 28px;
+        font-weight: 400;
+        color: $theme-color;
 
         &:hover {
-            text-decoration: underline;
-            color: $text-color;
+            text-decoration: none;
+            color: $theme-color;
         }
     }
 
     > strong {
-        font-weight: 600;
-        font-size: 17px;
-        line-height: 1.65;
+        font-size: 18px;
+        line-height: 28px;
+        font-weight: 700;
         color: $text-color;
     }
 
     > span {
-        font-size: 17px;
-        line-height: 1.65;
+        font-size: 18px;
+        line-height: 28px;
         font-weight: 400;
         color: $text-color;
     }
+}
+
+.text-medium {
+    font-size: 16px;
+    line-height: 25px;
+}
+
+.text-small {
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.text-gray {
+    color: $gray;
 }
 
 ul > li,
 ol > li,
 ul.wp-block-list li,
 ol.wp-block-list li {
-    font-size: 17px;
-    line-height: 1.65;
+    font-size: 18px;
+    line-height: 28px;
     font-weight: 400;
+    color: $text-color;
 
     > strong {
-        font-weight: 600;
-        font-size: 17px;
-        line-height: 1.65;
+        font-size: 18px;
+        line-height: 28px;
+        font-weight: 700;
         color: $text-color;
     }
 
     > span {
-        font-size: 17px;
-        line-height: 1.65;
+        font-size: 18px;
+        line-height: 28px;
         font-weight: 400;
         color: $text-color;
     }

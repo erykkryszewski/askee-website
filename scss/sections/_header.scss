@@ -3,12 +3,27 @@
     position: relative;
     width: 100%;
 
+    &--homepage {
+        .header__column--right {
+            display: none;
+        }
+    }
+
     &__wrapper {
         width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         padding: 15px 0;
-        gap: 15px;
+    }
+
+    &__row {
+        justify-content: space-between;
+    }
+
+    &__column {
+        width: 100%;
+
+        &--right {
+            display: flex;
+            justify-content: flex-end;
+        }
     }
 }

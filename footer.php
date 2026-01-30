@@ -1,7 +1,7 @@
 
 </main>
 
-<footer class="footer <?php if (is_front_page()) { echo "footer--homepage"; } ?>">
+<footer class="footer <?php if (is_front_page()) { echo "footer--homepage"; } else { echo 'footer--subpage'; } ?>">
     <div class="container">
         <div class="footer__wrapper">
 

@@ -14,11 +14,17 @@ $custom_classes = []; if (!is_front_page()) { $custom_classes[] = "theme-subpage
     </head>
 
     <body <?php body_class($custom_classes); ?>>
-        <header class="header <?php if (!is_front_page()) { echo 'header--subpage'; } ?>">
+        <header class="header <?php if (is_front_page()) { echo "header--homepage"; } else { echo 'header--subpage'; } ?>">
             <div class="container-fluid container-fluid--padding">
                 <div class="header__wrapper">
-                    <a href="/" class="header__logo"><?php echo wp_get_attachment_image(5066, 'large'); ?></a>
-                    <a href="/chat" class="button button--header">Porozmawiajmy!</a>
+                    <div class="row header__row">
+                        <div class="col-6 col-lg-3 col-xl-2 header__column">
+                            <a href="/" class="header__logo"><?php echo wp_get_attachment_image(5066, 'large'); ?></a>
+                        </div>
+                        <div class="col-6 col-lg-3 col-xl-2 header__column header__column--right">
+                            <a href="/chat" class="button button--header">Porozmawiajmy!</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
