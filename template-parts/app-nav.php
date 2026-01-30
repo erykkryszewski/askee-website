@@ -42,7 +42,7 @@ $pages_map = [
                 $label_string = $item_data["label"];
                 $is_active = !empty($item_data["is_active"]);
                 ?>
-                <a class="button <?php echo $is_active ? "is-active" : ""; ?>"
+                <a class="button button--ghost <?php echo $is_active ? "is-active" : ""; ?>"
                    href="<?php echo esc_url($url_string); ?>">
                     <?php echo esc_html($label_string); ?>
                 </a>
