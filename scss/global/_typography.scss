@@ -118,11 +118,25 @@ p,
 .text-medium {
     font-size: 16px;
     line-height: 25px;
+
+    > a,
+    > strong,
+    > span {
+        font-size: 16px;
+        line-height: 25px;
+    }
 }
 
 .text-small {
     font-size: 12px;
     line-height: 18px;
+
+    > a,
+    > strong,
+    > span {
+        font-size: 12px;
+        line-height: 18px;
+    }
 }
 
 .text-gray {
