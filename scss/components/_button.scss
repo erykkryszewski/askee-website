@@ -45,7 +45,8 @@
         }
     }
 
-    &--filled {
+    &--filled,
+    &--active {
         border: 1px solid $theme-color;
         background: $theme-color;
         color: $white;

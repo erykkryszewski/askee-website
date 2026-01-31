@@ -22,7 +22,7 @@ $custom_classes = []; if (!is_front_page()) { $custom_classes[] = "theme-subpage
                             <a href="/" class="header__logo"><?php echo wp_get_attachment_image(5066, 'large'); ?></a>
                         </div>
                         <div class="col-6 col-lg-3 col-xl-2 header__column header__column--right">
-                            <a href="/chat" class="button button--header">Porozmawiajmy!</a>
+                            <a href="/chat" class="button button--header" data-id="askee-chat-content-letstalk">Porozmawiajmy!</a>
                         </div>
                     </div>
                 </div>
