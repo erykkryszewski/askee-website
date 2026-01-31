@@ -1,0 +1,27 @@
+.askee-sidebar {
+    padding: 130px 0 0;
+    width: 100%;
+
+    @media (width <= 767px) {
+        padding: 50px 0 0;
+    }
+
+    &__title,
+    &__link {
+        @extend .paragraph;
+        @extend .text-small;
+        margin: 0;
+        font-weight: 600;
+        display: block;
+    }
+
+    &__list {
+        li {
+            a {
+                @extend .paragraph;
+                @extend .text-small;
+                margin: 15px 0 0;
+            }
+        }
+    }
+}

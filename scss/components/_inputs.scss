@@ -2,8 +2,12 @@
     all: unset;
     font-size: 16px;
     line-height: 25px;
-    color: $gray;
+    color: $gray !important;
     font-family: $font-primary;
+
+    &::placeholder {
+        color: $gray !important;
+    }
 }
 
 input[type="text"],
