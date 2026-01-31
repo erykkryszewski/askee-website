@@ -1,24 +1,40 @@
 export function initAskeeHeader(rootElement) {
-    const safeRootElement = rootElement instanceof Element ? rootElement : document;
-    const headerButton = safeRootElement.querySelector(".header .button[data-id]");
+    const headerButton = document.querySelector(".header .button[data-id]");
 
     if (!headerButton) {
         return;
     }
 
-    function handleHeaderButtonClick(event) {
-        const targetId = headerButton.dataset.id;
-
-        sessionStorage.setItem("askee-chat-target", targetId);
-
-        if (window.location.pathname.includes("/chat")) {
-            event.preventDefault();
-            const customEvent = new CustomEvent("askee:chat:external-switch", {
-                detail: { targetId },
-            });
-            document.dispatchEvent(customEvent);
-        }
+    if (headerButton.dataset.askeeHeaderInitialized === "1") {
+        return;
     }
+    headerButton.dataset.askeeHeaderInitialized = "1";
 
-    headerButton.addEventListener("click", handleHeaderButtonClick);
+    window.addEventListener(
+        "click",
+        (event) => {
+            const target = event.target.closest("a");
+
+            if (!target || target !== headerButton) {
+                return;
+            }
+
+            const targetId = headerButton.dataset.id;
+
+            sessionStorage.setItem("askee-chat-target", targetId);
+
+            const isChatPage = window.location.pathname.includes("/chat");
+
+            if (isChatPage) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+
+                const customEvent = new CustomEvent("askee:chat:external-switch", {
+                    detail: { targetId },
+                });
+                document.dispatchEvent(customEvent);
+            }
+        },
+        true
+    );
 }

@@ -221,6 +221,8 @@ initAskeeSpaHooks();
             updateBodyClassFromFetchedDocument(fetchedDocumentObject);
             updateCanonicalLinkFromFetchedDocument(fetchedDocumentObject);
 
+            window.scrollTo(0, 0);
+
             if (shouldPushStateValue) {
                 const normalizedUrlObject = new URL(urlString, window.location.href);
                 window.history.pushState(
