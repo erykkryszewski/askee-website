@@ -13,12 +13,25 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
-                            <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
+                            <div class="askee-chat__content askee-chat__content--areas askee-chat__content--active" id="askee-chat-content-areas">
                                 <p class="askee-chat__welcome">
-                                    Hej, to ja -
-                                    <span>Twój asystent!</span>
+                                    Mam wiele specjalizacji, dzięki którym wspieram organizacje w codziennej pracy. Możesz poznać je według obszarów działania albo Twojej roli w firmie - chętnie opowiem Ci o tym.
                                 </p>
-                                <div></div>
+                                <div>
+                                    <p><strong>Poznaj mnie bliżej.</strong></p>
+                                    <p>
+                                        Cześć, jestem ASKee – Twój asystent w organizacji. Pomagam w pracy działać szybciej, mądrzej i w zgodzie z zasadami firmy. Potrafię zarządzać danymi, wiedzą i doświadczeniem w 4
+                                        obszarach.
+                                    </p>
+                                    <p>Kliknij w obszar, który mam Ci opisać.</p>
+                                </div>
+                                <div class="askee-chat__inner-buttons askee-chat__inner-buttons--areas">
+                                    <button class="button button--ghost button--hr-payroll">ASKee Kadry</button>
+                                    <button class="button button--ghost button--hr">ASKee HR</button>
+                                    <button class="button button--ghost button--compliance">ASKee Compliance</button>
+                                    <button class="button button--ghost button--know-how">ASKee Know</button>
+                                    <button class="button button--ghost button--admin-structure-reports">ASKee Settings, Structure & Reports</button>
+                                </div>
                             </div>
                         </div>
 

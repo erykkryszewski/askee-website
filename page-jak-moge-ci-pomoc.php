@@ -13,12 +13,16 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
-                            <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
-                                <p class="askee-chat__welcome">
-                                    Hej, to ja -
-                                    <span>Twój asystent!</span>
-                                </p>
-                                <div></div>
+                            <div class="askee-chat__content askee-chat__content--help askee-chat__content--active" id="askee-chat-content-help">
+                                <p class="askee-chat__welcome">ASKEE – jeden asystent, wiele ról, jedno miejsce pracy</p>
+                                <div>
+                                    <p>Mogę wspierać Cię w różnych obszarach - zgodnie z Twoją rolą. Napisz, jaką rolę pełnisz - wtedy opowiem, jak mogę Ci pomóc.</p>
+                                    <div class="askee-chat__inner-buttons">
+                                        <button class="button button--ghost">Pracownik</button>
+                                        <button class="button button--ghost">Manager</button>
+                                        <button class="button button--ghost">Administrator</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

@@ -14,9 +14,9 @@ $custom_classes = []; if (!is_front_page()) { $custom_classes[] = "theme-subpage
     </head>
 
     <body <?php body_class($custom_classes); ?>>
-        <div id="askee-global-loader" class="askee-global-loader">
+        <!-- <div id="askee-global-loader" class="askee-global-loader">
             <div class="askee-global-loader__spinner"></div>
-        </div>
+        </div> -->
 
         <div class="askee-background-blobs">
             <div class="askee-blob askee-blob--bottom-left"></div>
@@ -31,7 +31,7 @@ $custom_classes = []; if (!is_front_page()) { $custom_classes[] = "theme-subpage
                             <a href="/" class="header__logo"><?php echo wp_get_attachment_image(5066, 'large'); ?></a>
                         </div>
                         <div class="col-6 col-lg-3 col-xl-2 header__column header__column--right">
-                            <a href="/chat" class="button button--header" data-id="askee-chat-content-letstalk">Porozmawiajmy!</a>
+                            <a href="/porozmawiajmy" class="button button--header" data-id="askee-chat-content-letstalk">Porozmawiajmy!</a>
                         </div>
                     </div>
                 </div>

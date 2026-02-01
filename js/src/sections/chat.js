@@ -172,6 +172,10 @@ export function initAskeeChatSection(rootElement) {
         killActiveTimeline();
         normalizeToSingleActiveElement();
 
+        if (activeContentElement && activeContentElement.id) {
+            updateActiveButtons(activeContentElement.id);
+        }
+
         const previousElement = activeContentElement;
 
         for (let index = 0; index < contentElementsArray.length; index += 1) {
@@ -245,6 +249,10 @@ export function initAskeeChatSection(rootElement) {
     document.addEventListener("askee:chat:external-switch", onExternalSwitch);
 
     normalizeToSingleActiveElement();
+
+    if (activeContentElement && activeContentElement.id) {
+        updateActiveButtons(activeContentElement.id);
+    }
 
     const currentVisibleContentElement =
         switchSectionsElement.querySelector(".askee-chat__content--active") ||
