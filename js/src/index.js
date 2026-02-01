@@ -4,31 +4,29 @@ import { initAskeeZoom } from "./global/zoom";
 import { initAskeeParallax } from "./global/parallax";
 
 import { initAskeeHeader } from "./sections/header";
+import { initAskeeChatSection } from "./sections/chat";
 
 import { initAskeeHomePage } from "./pages/home";
-import { initAskeeChatPage } from "./pages/chat";
 import { initAskeeAboutUsPage } from "./pages/about-us";
 import { initAskeeOurPhilosophyPage } from "./pages/our-philosophy";
 import { initAskeeContactPage } from "./pages/contact";
 import { initAskeeNewsPage } from "./pages/news";
 
 import { initAskeeButtonComponent } from "./components/button";
-import { initAskeePhoneNumberComponent } from "./components/phone-number";
 
+initAskeeHeader();
 initAskeeZoom();
 initAskeeParallax();
 
-registerAskeeBlock(initAskeeHeader);
-
 registerAskeeBlock(initAskeeHomePage);
-registerAskeeBlock(initAskeeChatPage);
+registerAskeeBlock(initAskeeChatSection);
+
 registerAskeeBlock(initAskeeAboutUsPage);
 registerAskeeBlock(initAskeeOurPhilosophyPage);
 registerAskeeBlock(initAskeeContactPage);
 registerAskeeBlock(initAskeeNewsPage);
 
 registerAskeeBlock(initAskeeButtonComponent);
-registerAskeeBlock(initAskeePhoneNumberComponent);
 
 initAskeeSpaHooks();
 
@@ -188,6 +186,15 @@ initAskeeSpaHooks();
         window.dispatchEvent(customEventObject);
     }
 
+    function dispatchAskeeNavigationBeforeEvent(urlString) {
+        const customEventObject = new CustomEvent("askee:navigation:before", {
+            detail: {
+                url: urlString,
+            },
+        });
+        window.dispatchEvent(customEventObject);
+    }
+
     let isNavigationInProgress = false;
 
     async function navigateToUrl(urlString, shouldPushStateValue) {
@@ -232,6 +239,8 @@ initAskeeSpaHooks();
                 return;
             }
 
+            dispatchAskeeNavigationBeforeEvent(urlString);
+
             mainContentElement.innerHTML = newInnerHtmlString;
 
             updateDocumentTitleFromFetchedDocument(fetchedDocumentObject);
@@ -258,6 +267,10 @@ initAskeeSpaHooks();
             isNavigationInProgress = false;
         }
     }
+
+    window.AskeeSpaNavigateToUrl = function (urlString) {
+        navigateToUrl(urlString, true);
+    };
 
     function onDocumentClick(eventObject) {
         if (!eventObject) {

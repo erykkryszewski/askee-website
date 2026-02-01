@@ -14,6 +14,14 @@ function askee_register_theme_config() {
         "loadingBodyClass" => "askee-is-loading",
         "ajaxHeaderName" => "X-ASKEE-PJAX",
         "ajaxHeaderValue" => "1",
+        "chatRoutes" => [
+            "askee-chat-content-default" => home_url("/chat/"),
+            "askee-chat-content-letstalk" => home_url("/porozmawiajmy/"),
+            "askee-chat-content-meet" => home_url("/poznaj-mnie/"),
+            "askee-chat-content-areas" => home_url("/obszary-wsparcia/"),
+            "askee-chat-content-help" => home_url("/jak-moge-ci-pomoc/"),
+            "askee-chat-content-terms" => home_url("/warunki-wspolpracy/"),
+        ],
     ];
 
     wp_add_inline_script(

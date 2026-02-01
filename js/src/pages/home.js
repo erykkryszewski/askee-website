@@ -6,23 +6,19 @@ export function initAskeeHomePage(rootElement) {
     const homePageContainer = safeRootElement.querySelector('[data-askee-page="home"]');
 
     if (!homePageContainer) {
-        return;
+        return null;
     }
 
-    if (homePageContainer.dataset.askeeInitialized === "1") {
-        return;
-    }
-
-    homePageContainer.dataset.askeeInitialized = "1";
+    const initializedSlidersArray = [];
 
     const homepageSliders = homePageContainer.querySelectorAll(".askee-homepage__slider");
 
     homepageSliders.forEach((singleSlider) => {
-        if (singleSlider.dataset.askeeSlickInitialized === "1") {
+        const jquerySliderInstance = $(singleSlider);
+
+        if (jquerySliderInstance.hasClass("slick-initialized")) {
             return;
         }
-
-        const jquerySliderInstance = $(singleSlider);
 
         const slickConfiguration = {
             infinite: true,
@@ -37,7 +33,18 @@ export function initAskeeHomePage(rootElement) {
         };
 
         jquerySliderInstance.slick(slickConfiguration);
-
-        singleSlider.dataset.askeeSlickInitialized = "1";
+        initializedSlidersArray.push(singleSlider);
     });
+
+    return function cleanupAskeeHomePage() {
+        for (let index = 0; index < initializedSlidersArray.length; index += 1) {
+            const sliderElement = initializedSlidersArray[index];
+            try {
+                const jquerySliderInstance = $(sliderElement);
+                if (jquerySliderInstance.hasClass("slick-initialized")) {
+                    jquerySliderInstance.slick("unslick");
+                }
+            } catch (error) {}
+        }
+    };
 }

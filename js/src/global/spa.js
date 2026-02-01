@@ -1,4 +1,4 @@
-import { bootAskeeBlocks } from "./boot";
+import { bootAskeeBlocks, cleanupAskeeBlocks } from "./boot";
 
 export function initAskeeSpaHooks() {
     function bootFromMain() {
@@ -10,13 +10,16 @@ export function initAskeeSpaHooks() {
         bootAskeeBlocks(mainElement);
     }
 
+    function cleanupBeforeSwap() {
+        cleanupAskeeBlocks();
+    }
+
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", bootFromMain);
     } else {
         bootFromMain();
     }
 
-    window.addEventListener("askee:navigation:complete", function () {
-        bootFromMain();
-    });
+    window.addEventListener("askee:navigation:before", cleanupBeforeSwap);
+    window.addEventListener("askee:navigation:complete", bootFromMain);
 }

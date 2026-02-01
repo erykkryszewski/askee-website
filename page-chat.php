@@ -13,17 +13,6 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
-                            <div class="askee-chat__content askee-chat__content--conversation">
-                                <p class="askee-chat__welcome">Porozmawiajmy!</p>
-                                <div></div>
-                            </div>
-                            <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
-                                <p class="askee-chat__welcome">
-                                    Hej, to ja -
-                                    <span>Twój asystent!</span>
-                                </p>
-                                <div></div>
-                            </div>
                             <div class="askee-chat__content askee-chat__content--letstalk" id="askee-chat-content-letstalk">
                                 <p class="askee-chat__welcome">Opowiem, jak pracuję. Jeśli chcesz porozmawiać z moimi twórcami, zostaw dane kontaktowe lub wybierz termin spotkania, który Ci pasuje.</p>
                                 <div class="askee-chat__inner-buttons">
