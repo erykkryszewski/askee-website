@@ -1,0 +1,33 @@
+.askee-background-blobs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.askee-blob {
+    position: absolute;
+    border-radius: 50%;
+    background-color: #69e7d2;
+    filter: blur(66px);
+    opacity: 1;
+    will-change: transform;
+
+    &--top-right {
+        width: 400px;
+        height: 400px;
+        top: -171px;
+        right: -180px;
+    }
+
+    &--bottom-left {
+        width: 400px;
+        height: 400px;
+        bottom: 200px;
+        left: -270px;
+    }
+}

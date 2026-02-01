@@ -1,6 +1,7 @@
 import { registerAskeeBlock } from "./global/boot";
 import { initAskeeSpaHooks } from "./global/spa";
 import { initAskeeZoom } from "./global/zoom";
+import { initAskeeParallax } from "./global/parallax";
 
 import { initAskeeHeader } from "./sections/header";
 
@@ -15,6 +16,7 @@ import { initAskeeButtonComponent } from "./components/button";
 import { initAskeePhoneNumberComponent } from "./components/phone-number";
 
 initAskeeZoom();
+initAskeeParallax();
 
 registerAskeeBlock(initAskeeHeader);
 

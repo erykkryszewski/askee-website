@@ -17,6 +17,12 @@ $custom_classes = []; if (!is_front_page()) { $custom_classes[] = "theme-subpage
         <div id="askee-global-loader" class="askee-global-loader">
             <div class="askee-global-loader__spinner"></div>
         </div>
+
+        <div class="askee-background-blobs">
+            <div class="askee-blob askee-blob--bottom-left"></div>
+            <div class="askee-blob askee-blob--top-right"></div>
+        </div>
+
         <header class="header <?php if (is_front_page()) { echo "header--homepage"; } else { echo 'header--subpage'; } ?>">
             <div class="container-fluid container-fluid--padding">
                 <div class="header__wrapper">

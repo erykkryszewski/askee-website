@@ -9,7 +9,7 @@
                 <li><a href="/nasza-filozofia">Nasza filozofia</a></li>
                 <li><a href="/kontakt">Kontakt z nami</a></li>
             </ul>
-            <p class="text-small text-light">Rozpoczęcie rozmowy z Askee oznacza zgodę na nasz <a href="/regulamin">Regulamin</a> oraz zapoznanie się z naszymi <a href="/polityka-prywatnosci">Polityką Prywatności</a>. Zobacz <a href="/preferencje-plikow-cookie">Preferencje dotyczące plików cookie</a>. Askee 2025 </p>
+            <p class="text-small text-light">Rozpoczęcie rozmowy z Askee oznacza zgodę na nasz <a href="/regulamin">Regulamin</a> oraz zapoznanie się z naszymi <a href="/polityka-prywatnosci">Polityką Prywatności</a>. Zobacz <a href="/preferencje-plikow-cookie">Preferencje dotyczące plików cookie</a>. Askee 2026 </p>
         </div>
     </div>
 </footer>
