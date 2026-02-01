@@ -1,0 +1,66 @@
+.askee-our-philosophy {
+    width: 100%;
+
+    &__welcome-wrapper {
+        width: 100%;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    &__icons {
+        width: 100%;
+        display: flex;
+        gap: 20px;
+        justify-content: space-around;
+        align-items: center;
+        padding: 20px 40px;
+        background: $very-light-gray;
+        border-radius: 10px;
+        margin: 20px 0;
+
+        @media (width <= 991px) {
+            flex-wrap: wrap;
+        }
+    }
+
+    &__column {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 25px 40px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    &__item {
+        width: auto;
+        min-width: 115px;
+        text-align: center;
+        justify-content: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        img {
+            max-height: 70px;
+        }
+
+        h4 {
+            @extend .paragraph;
+            font-size: 12px;
+            text-transform: initial;
+            text-align: center;
+        }
+
+        &--big {
+            img {
+                max-height: 250px;
+            }
+        }
+    }
+}

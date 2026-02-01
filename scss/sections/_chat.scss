@@ -20,7 +20,7 @@
         border: 1px solid $theme-color;
         border-radius: 18px;
         padding: 25px;
-        min-height: 500px;
+        min-height: 420px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -30,6 +30,7 @@
     &__content {
         display: none;
         opacity: 0;
+        width: calc(100% - 38px);
 
         &--active {
             display: block;
