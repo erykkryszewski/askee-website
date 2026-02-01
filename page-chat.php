@@ -13,7 +13,7 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
-                            <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
+                            <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
                                 <p class="askee-chat__welcome">
                                     Hej, to ja -
                                     <span>Twój asystent!</span>

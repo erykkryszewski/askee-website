@@ -10,9 +10,16 @@
     &__link {
         @extend .paragraph;
         @extend .text-small;
-        margin: 0;
         font-weight: 600;
         display: block;
+    }
+
+    &__title {
+        margin: 0;
+    }
+
+    &__link {
+        margin: 15px 0 0;
     }
 
     &__list {
