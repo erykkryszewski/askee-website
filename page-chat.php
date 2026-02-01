@@ -70,25 +70,34 @@ get_header(); the_post();
                                     Mam wiele specjalizacji, dzięki którym wspieram organizacje w codziennej pracy. Możesz poznać je według obszarów działania albo Twojej roli w firmie - chętnie opowiem Ci o tym.
                                 </p>
                                 <div>
+                                    <p><strong>Poznaj mnie bliżej.</strong></p>
                                     <p>
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci unde minima eveniet. Officiis rem ratione maxime aliquam, blanditiis laborum debitis voluptas aut quisquam eos
-                                        laudantium itaque ducimus libero minus voluptatem aliquid nisi explicabo voluptates nesciunt iste vero, numquam quasi quam fuga?
+                                        Cześć, jestem ASKee – Twój asystent w organizacji. Pomagam w pracy działać szybciej, mądrzej i w zgodzie z zasadami firmy. Potrafię zarządzać danymi, wiedzą i doświadczeniem w 4
+                                        obszarach.
                                     </p>
+                                    <p>Kliknij w obszar, który mam Ci opisać.</p>
+                                </div>
+                                <div class="askee-chat__inner-buttons askee-chat__inner-buttons--areas">
+                                    <button class="button button--ghost button--hr-payroll">ASKee Kadry</button>
+                                    <button class="button button--ghost button--hr">ASKee HR</button>
+                                    <button class="button button--ghost button--compliance">ASKee Compliance</button>
+                                    <button class="button button--ghost button--know-how">ASKee Know</button>
+                                    <button class="button button--ghost button--admin-structure-reports">ASKee Settings, Structure & Reports</button>
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--help" id="askee-chat-content-help">
                                 <p class="askee-chat__welcome">ASKEE – jeden asystent, wiele ról, jedno miejsce pracy</p>
                                 <div>
-                                    <p>
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci unde minima eveniet. Officiis rem ratione maxime aliquam, blanditiis laborum debitis voluptas aut quisquam eos
-                                        laudantium itaque ducimus libero minus voluptatem aliquid nisi explicabo voluptates nesciunt iste vero, numquam quasi quam fuga? Earum, officiis iure. Saepe enim quidem doloremque,
-                                        inventore, magni culpa natus quia quisquam doloribus autem itaque laboriosam adipisci ratione possimus laborum sunt eos nihil eius ducimus nulla esse. Incidunt molestias sequi illo
-                                        eum, accusamus dolor id quibusdam veniam dolorem ab soluta optio eligendi dicta alias vel, dolorum ullam unde voluptate. Error amet dolore odio tenetur aliquid eius minima magnam!
-                                    </p>
+                                    <p>Mogę wspierać Cię w różnych obszarach - zgodnie z Twoją rolą. Napisz, jaką rolę pełnisz - wtedy opowiem, jak mogę Ci pomóc.</p>
+                                    <div class="askee-chat__inner-buttons">
+                                        <button class="button button--ghost">Pracownik</button>
+                                        <button class="button button--ghost">Manager</button>
+                                        <button class="button button--ghost">Administrator</button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--terms" id="askee-chat-content-terms">
-                                <p class="askee-chat__welcome">ASKEE – brakuje tekstu i widoku dla terms</p>
+                                <p class="askee-chat__welcome">ASKEE – brakuje tekstu i widoku dla podstrony warunki współpracy</p>
                                 <div>
                                     <p>
                                         Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci unde minima eveniet. Officiis rem ratione maxime aliquam, blanditiis laborum debitis voluptas aut quisquam eos

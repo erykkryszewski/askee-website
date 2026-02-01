@@ -97,6 +97,57 @@
         flex-wrap: wrap;
         align-items: center;
         margin: 30px auto 0;
+
+        &--areas {
+            .button {
+                display: flex;
+                gap: 10px;
+
+                &::before {
+                    content: "";
+                    display: block;
+                    width: 20px;
+                    height: 20px;
+                }
+
+                &--hr-payroll {
+                    &::before {
+                        background: url("./images/hr-payroll.svg") center/contain no-repeat;
+                    }
+                }
+
+                &--hr {
+                    &::before {
+                        background: url("./images/hr.svg") center/contain no-repeat;
+                    }
+                }
+
+                &--compliance {
+                    &::before {
+                        background: url("./images/compliance.svg") center/contain no-repeat;
+                    }
+                }
+
+                &--know-how {
+                    &::before {
+                        background: url("./images/know-how.svg") center/contain no-repeat;
+                    }
+                }
+
+                &--admin-structure-reports {
+                    &::before {
+                        background: url("./images/admin-structure-reports.svg") center/contain
+                            no-repeat;
+                    }
+                }
+
+                &:hover {
+                    &::before {
+                        filter: brightness(0) invert(1);
+                    }
+                }
+            }
+        }
     }
 
     &__info-buttons {
