@@ -120,8 +120,14 @@ function isTemplatePhpFile(relativeFilePathPosix) {
         return true;
     }
 
-    if (relativeFilePathPosix.indexOf("/") === -1 && templateFileNames.has(relativeFilePathPosix)) {
-        return true;
+    if (relativeFilePathPosix.indexOf("/") === -1) {
+        if (templateFileNames.has(relativeFilePathPosix)) {
+            return true;
+        }
+
+        if (/^page-.+\.php$/i.test(relativeFilePathPosix)) {
+            return true;
+        }
     }
 
     return false;

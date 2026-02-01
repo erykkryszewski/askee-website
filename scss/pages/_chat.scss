@@ -20,7 +20,7 @@
         border: 1px solid $theme-color;
         border-radius: 18px;
         padding: 25px;
-        min-height: 400px;
+        min-height: 500px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -88,6 +88,83 @@
 
         @media (width <= 767px) {
             justify-content: flex-start;
+        }
+    }
+
+    &__inner-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin: 30px auto 0;
+    }
+
+    &__info-buttons {
+        width: 100%;
+    }
+
+    &__info-element {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0 0;
+
+        p {
+            margin: 0;
+        }
+
+        .button {
+            display: flex;
+            gap: 10px;
+
+            &::before {
+                content: "";
+                display: block;
+                width: 20px;
+                height: 20px;
+            }
+
+            &--accessibility {
+                &::before {
+                    background: url("./images/accessibility.svg") center/contain no-repeat;
+                }
+            }
+
+            &--simple-to-use {
+                &::before {
+                    background: url("./images/simple-to-use.svg") center/contain no-repeat;
+                }
+            }
+
+            &--various-areas {
+                &::before {
+                    background: url("./images/various-areas.svg") center/contain no-repeat;
+                }
+            }
+
+            &--data-security {
+                &::before {
+                    background: url("./images/data-security.svg") center/contain no-repeat;
+                }
+            }
+
+            &--integrations {
+                &::before {
+                    background: url("./images/integrations.svg") center/contain no-repeat;
+                }
+            }
+
+            &--reports-and-statements {
+                &::before {
+                    background: url("./images/reports-and-statements.svg") center/contain no-repeat;
+                }
+            }
+
+            &:hover {
+                &::before {
+                    filter: brightness(0) invert(1);
+                }
+            }
         }
     }
 }
