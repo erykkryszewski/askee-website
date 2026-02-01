@@ -105,19 +105,6 @@ initAskeeSpaHooks();
             return false;
         }
 
-        const currentUrlObject = new URL(window.location.href);
-
-        const isOnlyHashChange =
-            urlObject.origin === currentUrlObject.origin &&
-            urlObject.pathname === currentUrlObject.pathname &&
-            urlObject.search === currentUrlObject.search &&
-            urlObject.hash !== "" &&
-            urlObject.hash !== currentUrlObject.hash;
-
-        if (isOnlyHashChange) {
-            return false;
-        }
-
         return true;
     }
 
@@ -296,8 +283,6 @@ initAskeeSpaHooks();
             return;
         }
 
-        eventObject.preventDefault();
-
         const hrefAttributeValue = anchorElement.getAttribute("href");
         if (!hrefAttributeValue) {
             return;
@@ -306,6 +291,12 @@ initAskeeSpaHooks();
         const destinationUrlObject = new URL(hrefAttributeValue, window.location.href);
         const destinationUrlString = destinationUrlObject.href;
 
+        if (destinationUrlString === window.location.href) {
+            eventObject.preventDefault();
+            return;
+        }
+
+        eventObject.preventDefault();
         navigateToUrl(destinationUrlString, true);
     }
 
