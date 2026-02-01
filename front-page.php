@@ -10,11 +10,11 @@ get_header(); the_post();
             <div class="askee-homepage__slider">
                 <div class="askee-homepage__item">
                     <div class="row">
-                        <div class="col-12">
+                        <div class="col-12 askee-homepage__column askee-homepage__column--welcome">
                             <div class="askee-homepage__welcome">
                                 <h1 class="askee-homepage__title">
-                                    Cześć!
-                                    <span>Jestem Twoim Asystentem Askee.</span>
+                                    <span>Cześć!</span>
+                                    Jestem Twoim Asystentem Askee.
                                 </h1>
                             </div>
                         </div>
@@ -43,9 +43,9 @@ get_header(); the_post();
                 </div>
                 <div class="askee-homepage__item">
                     <div class="row">
-                        <div class="col-12">
+                        <div class="col-12 askee-homepage__column askee-homepage__column--welcome">
                             <div class="askee-homepage__welcome">
-                                <h2>Dopasuję się do Twoich potrzeb!</h2>
+                                <h2 class="askee-homepage__title">Dopasuję się do Twoich potrzeb!</h2>
                             </div>
                         </div>
                     </div>
@@ -74,9 +74,9 @@ get_header(); the_post();
                 </div>
                 <div class="askee-homepage__item">
                     <div class="row">
-                        <div class="col-12">
+                        <div class="col-12 askee-homepage__column askee-homepage__column--welcome">
                             <div class="askee-homepage__welcome">
-                                <h2>Zawsze jestem przy Tobie!</h2>
+                                <h2 class="askee-homepage__title">Zawsze jestem przy Tobie!</h2>
                             </div>
                         </div>
                     </div>
@@ -104,9 +104,9 @@ get_header(); the_post();
                 </div>
                 <div class="askee-homepage__item">
                     <div class="row">
-                        <div class="col-12">
+                        <div class="col-12 askee-homepage__column askee-homepage__column--welcome">
                             <div class="askee-homepage__welcome">
-                                <h2>Twoje bezpieczeństwo to mój priorytet!</h2>
+                                <h2 class="askee-homepage__title">Twoje bezpieczeństwo to mój priorytet!</h2>
                             </div>
                         </div>
                     </div>

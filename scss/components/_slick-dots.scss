@@ -2,6 +2,20 @@
     display: flex;
     justify-content: center;
     max-width: initial;
+    position: fixed;
+    bottom: 40px;
+    right: 50%;
+    transform: translateX(50%);
+
+    @media (height <= 900px) {
+        position: static;
+        transform: none;
+        margin: -60px auto 0;
+    }
+
+    @media (width <= 1250px) {
+        margin: 50px auto 0;
+    }
 
     li {
         padding: 0 5px;
@@ -12,10 +26,14 @@
         }
 
         button {
-            width: 25px;
+            width: 140px;
             height: 7px;
-            background: rgba($theme-color, 0.5);
+            background: $light-gray;
             font-size: 0;
+
+            @media (width <= 991px) {
+                width: 50px;
+            }
         }
 
         &.slick-active {
