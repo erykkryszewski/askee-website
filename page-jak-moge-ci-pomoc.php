@@ -5,7 +5,7 @@ get_header(); the_post();
 ?>
 
 <div class="askee-chat">
-    <div class="container-fluid container-fluid--padding" data-askee-page="chat">
+    <div class="container-fluid container-fluid--padding" data-askee-page="help">
         <div class="row">
             <div class="col-12 col-lg-8 offset-lg-2 askee-chat__column askee-chat__column--mid">
                 <div class="askee-chat__wrapper">

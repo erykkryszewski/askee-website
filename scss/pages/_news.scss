@@ -1,0 +1,27 @@
+.askee-blog {
+    width: 100%;
+
+    &__row {
+        align-items: center;
+    }
+
+    &__welcome {
+        padding: 35px 0 0;
+        font-weight: 600;
+
+        &::before {
+            position: relative;
+            top: -27px;
+        }
+    }
+
+    &__date {
+        display: block;
+        margin: 0 0 20px;
+        font-size: 13px;
+        position: absolute;
+        top: 0;
+        left: 35px;
+        font-weight: 400;
+    }
+}
