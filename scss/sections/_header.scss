@@ -3,12 +3,6 @@
     position: relative;
     width: 100%;
 
-    &--homepage {
-        .header__column--right {
-            display: none;
-        }
-    }
-
     &__wrapper {
         width: 100%;
         padding: 15px 0;
@@ -25,5 +19,11 @@
             display: flex;
             justify-content: flex-end;
         }
+    }
+}
+
+.theme-frontpage {
+    .header__column--right {
+        display: none;
     }
 }

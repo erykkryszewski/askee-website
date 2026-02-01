@@ -52,6 +52,10 @@ initAskeeSpaHooks();
             ? askeeThemeConfigObject.ajaxHeaderValue
             : "1";
 
+    window.addEventListener("load", () => {
+        document.body.classList.add("askee-page-loaded");
+    });
+
     function isSameOriginUrl(urlString) {
         try {
             const urlObject = new URL(urlString, window.location.href);
@@ -136,11 +140,22 @@ initAskeeSpaHooks();
         if (!fetchedDocumentObject.body) {
             return;
         }
+
+        const currentClasses = Array.from(document.body.classList);
+        const persistentClasses = ["askee-page-loaded", loadingBodyClassName];
+
         const fetchedBodyClassString =
             typeof fetchedDocumentObject.body.className === "string"
                 ? fetchedDocumentObject.body.className
                 : "";
+
         document.body.className = fetchedBodyClassString;
+
+        persistentClasses.forEach((cls) => {
+            if (currentClasses.includes(cls)) {
+                document.body.classList.add(cls);
+            }
+        });
     }
 
     function updateCanonicalLinkFromFetchedDocument(fetchedDocumentObject) {
