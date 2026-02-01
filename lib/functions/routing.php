@@ -31,3 +31,22 @@ function askee_register_theme_config() {
     );
 }
 add_action("wp_enqueue_scripts", "askee_register_theme_config", 20);
+
+function askee_register_chat_config() {
+    if (!wp_script_is("askeetheme-main", "enqueued")) {
+        return;
+    }
+
+    $config_array = [
+        "restUrl" => esc_url_raw(rest_url("askee/v1/chat")),
+        "nonce" => wp_create_nonce("wp_rest"),
+        "storageKey" => "askee_chat_state_v1",
+    ];
+
+    wp_add_inline_script(
+        "askeetheme-main",
+        "window.AskeeChatConfig = " . wp_json_encode($config_array) . ";",
+        "before",
+    );
+}
+add_action("wp_enqueue_scripts", "askee_register_chat_config", 21);

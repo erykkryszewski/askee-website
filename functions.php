@@ -13,6 +13,8 @@ require_once PAGE_THEME_DIR . "lib/functions/routing.php";
 require_once PAGE_THEME_DIR . "lib/functions/search.php";
 require_once PAGE_THEME_DIR . "lib/functions/image-object-fit.php";
 require_once PAGE_THEME_DIR . "lib/functions/image-optimization.php";
+require_once PAGE_THEME_DIR . "lib/functions/chat-proxy.php";
+
 // require_once(PAGE_THEME_DIR . 'lib/functions/required-plugins.php');
 
 // Enable SVG support in WordPress
