@@ -55,8 +55,9 @@ initAskeeSpaHooks();
         ajaxHeaderValueString = askeeThemeConfigObject.ajaxHeaderValue;
     }
 
-    window.addEventListener("load", () => {
+    window.addEventListener("load", function () {
         document.body.classList.add("askee-page-loaded");
+        applyCurrentPageSlugBodyClassFromDom();
     });
 
     const askeeSpaCacheMap = new Map();
@@ -259,6 +260,8 @@ initAskeeSpaHooks();
                 document.body.classList.add(classNameString);
             }
         }
+
+        applyCurrentPageSlugBodyClassFromDom();
     }
 
     function updateCanonicalLink(canonicalHrefString) {
@@ -276,6 +279,69 @@ initAskeeSpaHooks();
             document.head.appendChild(existingCanonicalElement);
         }
         existingCanonicalElement.setAttribute("href", canonicalHrefString);
+    }
+
+    function getCurrentPageSlugFromDom() {
+        try {
+            const pageElement = document.querySelector("[data-askee-page]");
+            if (!pageElement) {
+                return "askee-page-home";
+            }
+
+            const rawValue = pageElement.getAttribute("data-askee-page") || "";
+            let baseSlugString = rawValue.trim();
+
+            if (!baseSlugString) {
+                baseSlugString = "home";
+            }
+
+            let normalizedSlugString = "";
+            for (let index = 0; index < baseSlugString.length; index += 1) {
+                const charCodeNumber = baseSlugString.charCodeAt(index);
+                const charString = baseSlugString.charAt(index);
+
+                const isDigit = charCodeNumber >= 48 && charCodeNumber <= 57;
+                const isUppercaseLetter = charCodeNumber >= 65 && charCodeNumber <= 90;
+                const isLowercaseLetter = charCodeNumber >= 97 && charCodeNumber <= 122;
+
+                if (isDigit || isUppercaseLetter || isLowercaseLetter || charString === "-") {
+                    normalizedSlugString += charString.toLowerCase();
+                } else if (charString === " " || charString === "_" || charString === "/") {
+                    normalizedSlugString += "-";
+                }
+            }
+
+            if (!normalizedSlugString) {
+                normalizedSlugString = "home";
+            }
+
+            return "askee-page-" + normalizedSlugString;
+        } catch (error) {
+            return "askee-page-home";
+        }
+    }
+
+    function applyCurrentPageSlugBodyClassFromDom() {
+        if (!document.body) {
+            return;
+        }
+
+        const targetClassNameString = getCurrentPageSlugFromDom();
+        const currentClassListArray = Array.from(document.body.classList);
+
+        for (let index = 0; index < currentClassListArray.length; index += 1) {
+            const classNameString = currentClassListArray[index];
+            if (
+                classNameString.indexOf("askee-page-") === 0 &&
+                classNameString !== targetClassNameString
+            ) {
+                document.body.classList.remove(classNameString);
+            }
+        }
+
+        if (!document.body.classList.contains(targetClassNameString)) {
+            document.body.classList.add(targetClassNameString);
+        }
     }
 
     function replaceMainContentHtml(mainContentElement, newInnerHtmlString) {
@@ -453,8 +519,6 @@ initAskeeSpaHooks();
         replaceMainContentHtml(mainContentElement, pageDataObject.contentHtmlString);
 
         updateDocumentTitle(pageDataObject.documentTitleString);
-        updateBodyClass(pageDataObject.bodyClassString);
-        updateCanonicalLink(pageDataObject.canonicalHrefString);
 
         if (shouldPushStateValue) {
             const normalizedUrlObject = new URL(urlString, window.location.href);
@@ -464,6 +528,9 @@ initAskeeSpaHooks();
                 normalizedUrlObject.href
             );
         }
+
+        updateBodyClass(pageDataObject.bodyClassString);
+        updateCanonicalLink(pageDataObject.canonicalHrefString);
 
         scrollToUrlHashIfAny(urlString);
 
@@ -592,6 +659,10 @@ initAskeeSpaHooks();
             return;
         }
 
+        if (!(targetElement instanceof Element)) {
+            return;
+        }
+
         const anchorElement = targetElement.closest("a");
         if (!shouldHandleAnchorElement(anchorElement)) {
             return;
@@ -650,6 +721,10 @@ initAskeeSpaHooks();
             return;
         }
 
+        if (!(targetElement instanceof Element)) {
+            return;
+        }
+
         const anchorElement = targetElement.closest("a");
         if (!shouldHandleAnchorElement(anchorElement)) {
             return;
@@ -691,6 +766,8 @@ initAskeeSpaHooks();
             "",
             window.location.href
         );
+
+        applyCurrentPageSlugBodyClassFromDom();
     }
 
     if (document.readyState === "loading") {

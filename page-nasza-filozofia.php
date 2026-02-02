@@ -22,17 +22,17 @@ get_header(); the_post();
                                     <div class="askee-our-philosophy__icons">
                                         <div class="askee-our-philosophy__column askee-our-philosophy__column--left">
                                             <div class="askee-our-philosophy__item">
-                                                <?php echo wp_get_attachment_image(5088, 'large'); ?>
-                                                <h4>Technologia</h4>
+                                                <?php echo wp_get_attachment_image(5062, 'large'); ?>
+                                                <h4>Transparentność</h4>
                                             </div>
 
                                             <div class="askee-our-philosophy__item">
-                                                <?php echo wp_get_attachment_image(5090, 'large'); ?>
-                                                <h4>Bezpieczeństwo</h4>
+                                                <?php echo wp_get_attachment_image(5061, 'large'); ?>
+                                                <h4>Etyka i bezstronność</h4>
                                             </div>
                                             <div class="askee-our-philosophy__item">
-                                                <?php echo wp_get_attachment_image(5089, 'large'); ?>
-                                                <h4>Analiza</h4>
+                                                <?php echo wp_get_attachment_image(5060, 'large'); ?>
+                                                <h4>Prywatność i bezpieczeństwo</h4>
                                             </div>
                                         </div>
                                         <div class="askee-our-philosophy__column askee-our-philosophy__column--mid">
@@ -40,17 +40,17 @@ get_header(); the_post();
                                         </div>
                                         <div class="askee-our-philosophy__column askee-our-philosophy__column--right">
                                             <div class="askee-our-philosophy__item">
-                                                <?php echo wp_get_attachment_image(5088, 'large'); ?>
-                                                <h4>Technologia</h4>
+                                                <?php echo wp_get_attachment_image(5059, 'large'); ?>
+                                                <h4>Użytkownik w centrum uwagi</h4>
                                             </div>
 
                                             <div class="askee-our-philosophy__item">
-                                                <?php echo wp_get_attachment_image(5090, 'large'); ?>
-                                                <h4>Bezpieczeństwo</h4>
+                                                <?php echo wp_get_attachment_image(5058, 'large'); ?>
+                                                <h4>Ciągły rozwój</h4>
                                             </div>
                                             <div class="askee-our-philosophy__item">
-                                                <?php echo wp_get_attachment_image(5089, 'large'); ?>
-                                                <h4>Analiza</h4>
+                                                <?php echo wp_get_attachment_image(5057, 'large'); ?>
+                                                <h4>Zgodność z przepisami</h4>
                                             </div>
                                         </div>
                                     </div>

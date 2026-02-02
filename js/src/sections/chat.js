@@ -339,6 +339,10 @@ function initSingleChatBox(boxElement) {
             return;
         }
 
+        if (!(clickedElement instanceof Element)) {
+            return;
+        }
+
         const navigationTargetElement = clickedElement.closest(".askee-chat__buttons [data-id]");
         if (!navigationTargetElement) {
             return;
