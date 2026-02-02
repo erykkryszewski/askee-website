@@ -234,16 +234,38 @@ function initSingleChatBox(boxElement) {
         if (hasInitialAnimationRun) {
             return;
         }
+
         if (!activeContentElement) {
             return;
         }
 
         hasInitialAnimationRun = true;
 
+        let animationDelaySeconds = 0;
+
         try {
-            gsap.set(activeContentElement, { opacity: 0, y: 10 });
+            const chatRootElementForDelay = boxElement.closest(".askee-chat");
+            if (chatRootElementForDelay) {
+                const allBoxesArray = Array.from(
+                    chatRootElementForDelay.querySelectorAll(".askee-chat__box")
+                );
+
+                const currentIndex = allBoxesArray.indexOf(boxElement);
+
+                if (currentIndex > 0) {
+                    const baseDelaySeconds = 0.15;
+                    animationDelaySeconds = currentIndex * baseDelaySeconds;
+                }
+            }
+
+            gsap.set(activeContentElement, {
+                opacity: 0,
+                y: 10,
+            });
+
             gsap.to(activeContentElement, {
-                duration: 0.35,
+                duration: 0.55,
+                delay: animationDelaySeconds,
                 opacity: 1,
                 y: 0,
                 onComplete: function () {
