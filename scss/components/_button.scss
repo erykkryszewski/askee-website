@@ -45,6 +45,24 @@
         }
     }
 
+    &--primary {
+        padding: 9.5px 15px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        line-height: 1;
+        border: 1px solid $theme-color;
+        background: $theme-color;
+        color: $white;
+
+        &:hover {
+            border: 1px solid $theme-color;
+            background: $theme-color;
+            color: $white;
+        }
+    }
+
     &--filled,
     &--active {
         border: 1px solid $theme-color;

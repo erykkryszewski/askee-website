@@ -13,6 +13,26 @@
 
     &__slider {
         width: 100%;
+
+        &:not(.slick-initialized) {
+            .askee-homepage__item {
+                display: none;
+            }
+
+            .askee-homepage__item:first-child {
+                display: block;
+            }
+        }
+
+        &.askee-homepage__slider--pending {
+            .askee-homepage__item {
+                display: none;
+            }
+
+            .askee-homepage__item:first-child {
+                display: block;
+            }
+        }
     }
 
     &__item {

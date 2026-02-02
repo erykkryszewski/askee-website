@@ -35,26 +35,37 @@ initAskeeSpaHooks();
 
     const askeeThemeConfigObject = window.AskeeThemeConfig || {};
 
-    const contentSelectorString =
-        typeof askeeThemeConfigObject.contentSelector === "string"
-            ? askeeThemeConfigObject.contentSelector
-            : "#askee-app-content";
-    const loadingBodyClassName =
-        typeof askeeThemeConfigObject.loadingBodyClass === "string"
-            ? askeeThemeConfigObject.loadingBodyClass
-            : "askee-is-loading";
-    const ajaxHeaderNameString =
-        typeof askeeThemeConfigObject.ajaxHeaderName === "string"
-            ? askeeThemeConfigObject.ajaxHeaderName
-            : "X-ASKEE-PJAX";
-    const ajaxHeaderValueString =
-        typeof askeeThemeConfigObject.ajaxHeaderValue === "string"
-            ? askeeThemeConfigObject.ajaxHeaderValue
-            : "1";
+    let contentSelectorString = "#askee-app-content";
+    if (typeof askeeThemeConfigObject.contentSelector === "string") {
+        contentSelectorString = askeeThemeConfigObject.contentSelector;
+    }
+
+    let loadingBodyClassName = "askee-is-loading";
+    if (typeof askeeThemeConfigObject.loadingBodyClass === "string") {
+        loadingBodyClassName = askeeThemeConfigObject.loadingBodyClass;
+    }
+
+    let ajaxHeaderNameString = "X-ASKEE-PJAX";
+    if (typeof askeeThemeConfigObject.ajaxHeaderName === "string") {
+        ajaxHeaderNameString = askeeThemeConfigObject.ajaxHeaderName;
+    }
+
+    let ajaxHeaderValueString = "1";
+    if (typeof askeeThemeConfigObject.ajaxHeaderValue === "string") {
+        ajaxHeaderValueString = askeeThemeConfigObject.ajaxHeaderValue;
+    }
 
     window.addEventListener("load", () => {
         document.body.classList.add("askee-page-loaded");
     });
+
+    const askeeSpaCacheMap = new Map();
+    const askeeSpaCachePendingFetchMap = new Map();
+    const askeeSpaCacheMaxEntriesNumber = 15;
+    const askeeSpaCacheTtlMillisecondsNumber = 5 * 60 * 1000;
+
+    let activeNavigationAbortController = null;
+    let activeNavigationTokenNumber = 0;
 
     function isSameOriginUrl(urlString) {
         try {
@@ -65,6 +76,19 @@ initAskeeSpaHooks();
         }
     }
 
+    function isHashOnlyHref(hrefAttributeValue) {
+        if (!hrefAttributeValue) {
+            return false;
+        }
+        if (hrefAttributeValue === "#") {
+            return true;
+        }
+        if (hrefAttributeValue.indexOf("#") === 0) {
+            return true;
+        }
+        return false;
+    }
+
     function shouldHandleAnchorElement(anchorElement) {
         if (!anchorElement) {
             return false;
@@ -72,6 +96,10 @@ initAskeeSpaHooks();
 
         const hrefAttributeValue = anchorElement.getAttribute("href");
         if (!hrefAttributeValue) {
+            return false;
+        }
+
+        if (isHashOnlyHref(hrefAttributeValue)) {
             return false;
         }
 
@@ -108,60 +136,161 @@ initAskeeSpaHooks();
         return true;
     }
 
-    function extractContentHtmlFromFetchedDocument(fetchedDocumentObject) {
+    function getNormalizedUrlWithoutHashString(urlString) {
+        const urlObject = new URL(urlString, window.location.href);
+        urlObject.hash = "";
+        return urlObject.href;
+    }
+
+    function getCacheKeyFromUrlString(urlString) {
+        const urlObject = new URL(urlString, window.location.href);
+        const pathnameString = typeof urlObject.pathname === "string" ? urlObject.pathname : "/";
+        const searchString = typeof urlObject.search === "string" ? urlObject.search : "";
+        return pathnameString + searchString;
+    }
+
+    function setCacheEntry(cacheKeyString, cacheEntryObject) {
+        if (askeeSpaCacheMap.has(cacheKeyString)) {
+            askeeSpaCacheMap.delete(cacheKeyString);
+        }
+
+        askeeSpaCacheMap.set(cacheKeyString, cacheEntryObject);
+
+        while (askeeSpaCacheMap.size > askeeSpaCacheMaxEntriesNumber) {
+            const firstKeyIterator = askeeSpaCacheMap.keys().next();
+            if (!firstKeyIterator || firstKeyIterator.done) {
+                break;
+            }
+            askeeSpaCacheMap.delete(firstKeyIterator.value);
+        }
+    }
+
+    function getCacheEntry(cacheKeyString) {
+        const cacheEntryObject = askeeSpaCacheMap.get(cacheKeyString);
+        if (!cacheEntryObject) {
+            return null;
+        }
+
+        const createdAtNumber = cacheEntryObject.createdAtNumber;
+        if (typeof createdAtNumber !== "number") {
+            askeeSpaCacheMap.delete(cacheKeyString);
+            return null;
+        }
+
+        if (Date.now() - createdAtNumber > askeeSpaCacheTtlMillisecondsNumber) {
+            askeeSpaCacheMap.delete(cacheKeyString);
+            return null;
+        }
+
+        askeeSpaCacheMap.delete(cacheKeyString);
+        askeeSpaCacheMap.set(cacheKeyString, cacheEntryObject);
+
+        return cacheEntryObject;
+    }
+
+    function extractPageDataFromFetchedDocument(fetchedDocumentObject) {
         const fetchedContentElement = fetchedDocumentObject.querySelector(contentSelectorString);
         if (!fetchedContentElement) {
             return null;
         }
-        return fetchedContentElement.innerHTML;
-    }
 
-    function updateDocumentTitleFromFetchedDocument(fetchedDocumentObject) {
+        const contentHtmlString = fetchedContentElement.innerHTML;
+
+        let documentTitleString = "";
         const fetchedTitleElement = fetchedDocumentObject.querySelector("title");
         if (fetchedTitleElement && typeof fetchedTitleElement.textContent === "string") {
-            document.title = fetchedTitleElement.textContent;
-        }
-    }
-
-    function updateBodyClassFromFetchedDocument(fetchedDocumentObject) {
-        if (!fetchedDocumentObject.body) {
-            return;
+            documentTitleString = fetchedTitleElement.textContent;
         }
 
-        const currentClasses = Array.from(document.body.classList);
-        const persistentClasses = ["askee-page-loaded", loadingBodyClassName];
-
-        const fetchedBodyClassString =
+        let bodyClassString = "";
+        if (
+            fetchedDocumentObject.body &&
             typeof fetchedDocumentObject.body.className === "string"
-                ? fetchedDocumentObject.body.className
-                : "";
+        ) {
+            bodyClassString = fetchedDocumentObject.body.className;
+        }
 
-        document.body.className = fetchedBodyClassString;
-
-        persistentClasses.forEach((cls) => {
-            if (currentClasses.includes(cls)) {
-                document.body.classList.add(cls);
-            }
-        });
-    }
-
-    function updateCanonicalLinkFromFetchedDocument(fetchedDocumentObject) {
+        let canonicalHrefString = "";
         const fetchedCanonicalElement =
             fetchedDocumentObject.querySelector('link[rel="canonical"]');
-        if (!fetchedCanonicalElement) {
+        if (fetchedCanonicalElement) {
+            const candidateCanonicalHrefString = fetchedCanonicalElement.getAttribute("href");
+            if (candidateCanonicalHrefString) {
+                canonicalHrefString = candidateCanonicalHrefString;
+            }
+        }
+
+        return {
+            contentHtmlString,
+            documentTitleString,
+            bodyClassString,
+            canonicalHrefString,
+        };
+    }
+
+    function updateDocumentTitle(documentTitleString) {
+        if (typeof documentTitleString !== "string") {
             return;
         }
-        const fetchedCanonicalHref = fetchedCanonicalElement.getAttribute("href");
-        if (!fetchedCanonicalHref) {
+        if (!documentTitleString) {
             return;
         }
+        document.title = documentTitleString;
+    }
+
+    function updateBodyClass(bodyClassString) {
+        if (!document.body) {
+            return;
+        }
+
+        const currentClassesArray = Array.from(document.body.classList);
+        const persistentClassesArray = ["askee-page-loaded", loadingBodyClassName];
+
+        let safeBodyClassString = "";
+        if (typeof bodyClassString === "string") {
+            safeBodyClassString = bodyClassString;
+        }
+
+        document.body.className = safeBodyClassString;
+
+        for (let index = 0; index < persistentClassesArray.length; index += 1) {
+            const classNameString = persistentClassesArray[index];
+            if (currentClassesArray.includes(classNameString)) {
+                document.body.classList.add(classNameString);
+            }
+        }
+    }
+
+    function updateCanonicalLink(canonicalHrefString) {
+        if (typeof canonicalHrefString !== "string") {
+            return;
+        }
+        if (!canonicalHrefString) {
+            return;
+        }
+
         let existingCanonicalElement = document.querySelector('link[rel="canonical"]');
         if (!existingCanonicalElement) {
             existingCanonicalElement = document.createElement("link");
             existingCanonicalElement.setAttribute("rel", "canonical");
             document.head.appendChild(existingCanonicalElement);
         }
-        existingCanonicalElement.setAttribute("href", fetchedCanonicalHref);
+        existingCanonicalElement.setAttribute("href", canonicalHrefString);
+    }
+
+    function replaceMainContentHtml(mainContentElement, newInnerHtmlString) {
+        if (!mainContentElement) {
+            return;
+        }
+        if (typeof newInnerHtmlString !== "string") {
+            return;
+        }
+
+        const wrapperElement = document.createElement("div");
+        wrapperElement.innerHTML = newInnerHtmlString;
+
+        const newChildNodesArray = Array.from(wrapperElement.childNodes);
+        mainContentElement.replaceChildren(...newChildNodesArray);
     }
 
     function dispatchAskeeNavigationEvent(urlString) {
@@ -182,76 +311,252 @@ initAskeeSpaHooks();
         window.dispatchEvent(customEventObject);
     }
 
-    let isNavigationInProgress = false;
+    function scrollToUrlHashIfAny(urlString) {
+        let urlObject = null;
 
-    async function navigateToUrl(urlString, shouldPushStateValue) {
-        if (isNavigationInProgress) {
+        try {
+            urlObject = new URL(urlString, window.location.href);
+        } catch (error) {
+            window.scrollTo(0, 0);
             return;
         }
 
+        const hashString = typeof urlObject.hash === "string" ? urlObject.hash : "";
+        if (!hashString || hashString === "#") {
+            window.scrollTo(0, 0);
+            return;
+        }
+
+        const rawIdString = hashString.replace(/^#/, "");
+        if (!rawIdString) {
+            window.scrollTo(0, 0);
+            return;
+        }
+
+        const decodedIdString = decodeURIComponent(rawIdString);
+
+        const targetByIdElement = document.getElementById(decodedIdString);
+        if (targetByIdElement) {
+            targetByIdElement.scrollIntoView({ block: "start" });
+            return;
+        }
+
+        const escapedIdString =
+            window.CSS && typeof window.CSS.escape === "function"
+                ? window.CSS.escape(decodedIdString)
+                : decodedIdString;
+        const targetByNameElement = document.querySelector('[name="' + escapedIdString + '"]');
+        if (targetByNameElement) {
+            targetByNameElement.scrollIntoView({ block: "start" });
+            return;
+        }
+
+        window.scrollTo(0, 0);
+    }
+
+    async function fetchPageData(urlWithoutHashString, abortSignalObject) {
+        const fetchResponse = await fetch(urlWithoutHashString, {
+            method: "GET",
+            headers: {
+                [ajaxHeaderNameString]: ajaxHeaderValueString,
+            },
+            credentials: "same-origin",
+            signal: abortSignalObject,
+        });
+
+        if (!fetchResponse || !fetchResponse.ok) {
+            return null;
+        }
+
+        const responseHtmlString = await fetchResponse.text();
+
+        const domParserObject = new DOMParser();
+        const fetchedDocumentObject = domParserObject.parseFromString(
+            responseHtmlString,
+            "text/html"
+        );
+
+        const pageDataObject = extractPageDataFromFetchedDocument(fetchedDocumentObject);
+        return pageDataObject;
+    }
+
+    async function prefetchUrlIfPossible(urlString) {
+        if (!urlString) {
+            return;
+        }
+
+        let normalizedUrlWithoutHashString = "";
+        let cacheKeyString = "";
+
+        try {
+            normalizedUrlWithoutHashString = getNormalizedUrlWithoutHashString(urlString);
+            cacheKeyString = getCacheKeyFromUrlString(urlString);
+        } catch (error) {
+            return;
+        }
+
+        const existingCacheEntryObject = getCacheEntry(cacheKeyString);
+        if (existingCacheEntryObject) {
+            return;
+        }
+
+        if (askeeSpaCachePendingFetchMap.has(cacheKeyString)) {
+            return;
+        }
+
+        const prefetchAbortController = new AbortController();
+        const prefetchPromise = (async () => {
+            try {
+                const pageDataObject = await fetchPageData(
+                    normalizedUrlWithoutHashString,
+                    prefetchAbortController.signal
+                );
+                if (!pageDataObject) {
+                    return;
+                }
+
+                setCacheEntry(cacheKeyString, {
+                    createdAtNumber: Date.now(),
+                    contentHtmlString: pageDataObject.contentHtmlString,
+                    documentTitleString: pageDataObject.documentTitleString,
+                    bodyClassString: pageDataObject.bodyClassString,
+                    canonicalHrefString: pageDataObject.canonicalHrefString,
+                });
+            } catch (error) {}
+        })();
+
+        askeeSpaCachePendingFetchMap.set(cacheKeyString, {
+            abortController: prefetchAbortController,
+            promise: prefetchPromise,
+        });
+
+        try {
+            await prefetchPromise;
+        } catch (error) {
+        } finally {
+            askeeSpaCachePendingFetchMap.delete(cacheKeyString);
+        }
+    }
+
+    function applyPageDataToDom(
+        mainContentElement,
+        pageDataObject,
+        urlString,
+        shouldPushStateValue
+    ) {
+        if (!pageDataObject) {
+            return false;
+        }
+
+        dispatchAskeeNavigationBeforeEvent(urlString);
+
+        replaceMainContentHtml(mainContentElement, pageDataObject.contentHtmlString);
+
+        updateDocumentTitle(pageDataObject.documentTitleString);
+        updateBodyClass(pageDataObject.bodyClassString);
+        updateCanonicalLink(pageDataObject.canonicalHrefString);
+
+        if (shouldPushStateValue) {
+            const normalizedUrlObject = new URL(urlString, window.location.href);
+            window.history.pushState(
+                { askee: true, url: normalizedUrlObject.href },
+                "",
+                normalizedUrlObject.href
+            );
+        }
+
+        scrollToUrlHashIfAny(urlString);
+
+        dispatchAskeeNavigationEvent(urlString);
+        return true;
+    }
+
+    async function navigateToUrl(urlString, shouldPushStateValue) {
         const mainContentElement = document.querySelector(contentSelectorString);
         if (!mainContentElement) {
             window.location.href = urlString;
             return;
         }
 
-        isNavigationInProgress = true;
-        document.body.classList.add(loadingBodyClassName);
+        let normalizedUrlWithoutHashString = "";
+        let cacheKeyString = "";
 
         try {
-            const fetchResponse = await fetch(urlString, {
-                method: "GET",
-                headers: {
-                    [ajaxHeaderNameString]: ajaxHeaderValueString,
-                },
-                credentials: "same-origin",
-            });
-
-            if (!fetchResponse || !fetchResponse.ok) {
-                window.location.href = urlString;
-                return;
-            }
-
-            const responseHtmlString = await fetchResponse.text();
-
-            const domParserObject = new DOMParser();
-            const fetchedDocumentObject = domParserObject.parseFromString(
-                responseHtmlString,
-                "text/html"
-            );
-
-            const newInnerHtmlString = extractContentHtmlFromFetchedDocument(fetchedDocumentObject);
-            if (newInnerHtmlString === null) {
-                window.location.href = urlString;
-                return;
-            }
-
-            dispatchAskeeNavigationBeforeEvent(urlString);
-
-            mainContentElement.innerHTML = newInnerHtmlString;
-
-            updateDocumentTitleFromFetchedDocument(fetchedDocumentObject);
-            updateBodyClassFromFetchedDocument(fetchedDocumentObject);
-            updateCanonicalLinkFromFetchedDocument(fetchedDocumentObject);
-
-            window.scrollTo(0, 0);
-
-            if (shouldPushStateValue) {
-                const normalizedUrlObject = new URL(urlString, window.location.href);
-                window.history.pushState(
-                    { askee: true, url: normalizedUrlObject.href },
-                    "",
-                    normalizedUrlObject.href
-                );
-            }
-
-            dispatchAskeeNavigationEvent(urlString);
+            normalizedUrlWithoutHashString = getNormalizedUrlWithoutHashString(urlString);
+            cacheKeyString = getCacheKeyFromUrlString(urlString);
         } catch (error) {
             window.location.href = urlString;
             return;
+        }
+
+        const cachedPageDataObject = getCacheEntry(cacheKeyString);
+        if (cachedPageDataObject) {
+            const appliedFromCache = applyPageDataToDom(
+                mainContentElement,
+                cachedPageDataObject,
+                urlString,
+                shouldPushStateValue
+            );
+            if (appliedFromCache) {
+                return;
+            }
+        }
+
+        activeNavigationTokenNumber += 1;
+        const localNavigationTokenNumber = activeNavigationTokenNumber;
+
+        if (activeNavigationAbortController) {
+            try {
+                activeNavigationAbortController.abort();
+            } catch (error) {}
+        }
+
+        activeNavigationAbortController = new AbortController();
+
+        document.body.classList.add(loadingBodyClassName);
+
+        try {
+            const pageDataObject = await fetchPageData(
+                normalizedUrlWithoutHashString,
+                activeNavigationAbortController.signal
+            );
+            if (localNavigationTokenNumber !== activeNavigationTokenNumber) {
+                return;
+            }
+
+            if (!pageDataObject) {
+                window.location.href = urlString;
+                return;
+            }
+
+            setCacheEntry(cacheKeyString, {
+                createdAtNumber: Date.now(),
+                contentHtmlString: pageDataObject.contentHtmlString,
+                documentTitleString: pageDataObject.documentTitleString,
+                bodyClassString: pageDataObject.bodyClassString,
+                canonicalHrefString: pageDataObject.canonicalHrefString,
+            });
+
+            const appliedFromFetch = applyPageDataToDom(
+                mainContentElement,
+                pageDataObject,
+                urlString,
+                shouldPushStateValue
+            );
+            if (!appliedFromFetch) {
+                window.location.href = urlString;
+                return;
+            }
+        } catch (error) {
+            if (error && error.name === "AbortError") {
+                return;
+            }
+            window.location.href = urlString;
+            return;
         } finally {
-            document.body.classList.remove(loadingBodyClassName);
-            isNavigationInProgress = false;
+            if (localNavigationTokenNumber === activeNavigationTokenNumber) {
+                document.body.classList.remove(loadingBodyClassName);
+            }
         }
     }
 
@@ -264,11 +569,20 @@ initAskeeSpaHooks();
             return;
         }
 
+        if (eventObject.defaultPrevented) {
+            return;
+        }
+
+        if (typeof eventObject.button === "number" && eventObject.button !== 0) {
+            return;
+        }
+
         const isModifiedClick =
             eventObject.metaKey ||
             eventObject.ctrlKey ||
             eventObject.shiftKey ||
             eventObject.altKey;
+
         if (isModifiedClick) {
             return;
         }
@@ -288,13 +602,34 @@ initAskeeSpaHooks();
             return;
         }
 
-        const destinationUrlObject = new URL(hrefAttributeValue, window.location.href);
-        const destinationUrlString = destinationUrlObject.href;
+        let destinationUrlObject = null;
+        try {
+            destinationUrlObject = new URL(hrefAttributeValue, window.location.href);
+        } catch (error) {
+            return;
+        }
 
-        if (destinationUrlString === window.location.href) {
+        const currentUrlObject = new URL(window.location.href);
+
+        const destinationPathAndSearchString =
+            destinationUrlObject.pathname + destinationUrlObject.search;
+        const currentPathAndSearchString = currentUrlObject.pathname + currentUrlObject.search;
+
+        if (destinationPathAndSearchString === currentPathAndSearchString) {
+            const destinationHashString =
+                typeof destinationUrlObject.hash === "string" ? destinationUrlObject.hash : "";
+            const currentHashString =
+                typeof currentUrlObject.hash === "string" ? currentUrlObject.hash : "";
+
+            if (destinationHashString && destinationHashString !== currentHashString) {
+                return;
+            }
+
             eventObject.preventDefault();
             return;
         }
+
+        const destinationUrlString = destinationUrlObject.href;
 
         eventObject.preventDefault();
         navigateToUrl(destinationUrlString, true);
@@ -305,9 +640,52 @@ initAskeeSpaHooks();
         navigateToUrl(currentUrlString, false);
     }
 
+    function onAnchorMouseEnter(eventObject) {
+        if (!eventObject) {
+            return;
+        }
+
+        const targetElement = eventObject.target;
+        if (!targetElement) {
+            return;
+        }
+
+        const anchorElement = targetElement.closest("a");
+        if (!shouldHandleAnchorElement(anchorElement)) {
+            return;
+        }
+
+        const hrefAttributeValue = anchorElement.getAttribute("href");
+        if (!hrefAttributeValue) {
+            return;
+        }
+
+        let destinationUrlObject = null;
+        try {
+            destinationUrlObject = new URL(hrefAttributeValue, window.location.href);
+        } catch (error) {
+            return;
+        }
+
+        const destinationUrlString = destinationUrlObject.href;
+
+        const currentUrlObject = new URL(window.location.href);
+        const destinationPathAndSearchString =
+            destinationUrlObject.pathname + destinationUrlObject.search;
+        const currentPathAndSearchString = currentUrlObject.pathname + currentUrlObject.search;
+
+        if (destinationPathAndSearchString === currentPathAndSearchString) {
+            return;
+        }
+
+        prefetchUrlIfPossible(destinationUrlString);
+    }
+
     function initAskeeRouting() {
         document.addEventListener("click", onDocumentClick, true);
+        document.addEventListener("mouseenter", onAnchorMouseEnter, true);
         window.addEventListener("popstate", onPopState);
+
         window.history.replaceState(
             { askee: true, url: window.location.href },
             "",

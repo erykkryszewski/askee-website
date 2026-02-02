@@ -50,3 +50,10 @@ function askee_register_chat_config() {
     );
 }
 add_action("wp_enqueue_scripts", "askee_register_chat_config", 21);
+
+function askee_is_pjax_request() {
+    if (isset($_SERVER["HTTP_X_ASKEE_PJAX"]) && $_SERVER["HTTP_X_ASKEE_PJAX"] === "1") {
+        return true;
+    }
+    return false;
+}

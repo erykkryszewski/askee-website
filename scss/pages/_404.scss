@@ -7,7 +7,7 @@
         display: inline-block;
         font-family: $font-primary;
         font-weight: 600;
-        color: $theme-color2;
+        color: $theme-color;
         text-transform: uppercase;
         letter-spacing: 2px;
         margin-bottom: 15px;
@@ -28,50 +28,5 @@
         display: flex;
         gap: 15px;
         flex-wrap: wrap;
-    }
-
-    &__svg {
-        max-width: 100%;
-        height: auto;
-        filter: drop-shadow(0 20px 30px rgba($black, 0.05));
-
-        .svg-bg {
-            fill: $white;
-            stroke: $light-gray;
-            stroke-width: 1;
-        }
-
-        .svg-line {
-            fill: $very-light-gray;
-
-            &--theme {
-                fill: rgba($theme-color, 0.2);
-            }
-        }
-
-        .svg-search {
-            &__circle {
-                fill: $white;
-                stroke: $theme-color;
-                stroke-width: 8;
-            }
-
-            &__handle {
-                stroke: $theme-color;
-                stroke-width: 12;
-                stroke-linecap: round;
-            }
-
-            &__cross {
-                stroke: $error-color;
-                stroke-width: 4;
-                stroke-linecap: round;
-                opacity: 0.8;
-            }
-        }
-
-        @media (width <= 991px) {
-            display: none;
-        }
     }
 }

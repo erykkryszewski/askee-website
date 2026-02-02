@@ -1,5 +1,145 @@
 import { gsap } from "gsap";
 
+function normalizePathnameForComparison(pathnameString) {
+    let safePathnameString = pathnameString;
+
+    if (typeof safePathnameString !== "string") {
+        safePathnameString = "/";
+    }
+
+    if (safePathnameString === "") {
+        safePathnameString = "/";
+    }
+
+    if (!safePathnameString.startsWith("/")) {
+        safePathnameString = "/" + safePathnameString;
+    }
+
+    if (safePathnameString.length > 1 && safePathnameString.endsWith("/")) {
+        safePathnameString = safePathnameString.slice(0, -1);
+    }
+
+    return safePathnameString;
+}
+
+function getUrlPathnameForComparison(urlString) {
+    try {
+        const urlObject = new URL(urlString, window.location.origin);
+        return normalizePathnameForComparison(urlObject.pathname);
+    } catch (error) {
+        return "/";
+    }
+}
+
+function clearActiveButtonsInWrapper(navigationButtonsWrapperElement) {
+    if (!navigationButtonsWrapperElement) {
+        return;
+    }
+
+    const buttonsArray = navigationButtonsWrapperElement.querySelectorAll("a[href]");
+    for (let index = 0; index < buttonsArray.length; index += 1) {
+        const buttonElement = buttonsArray[index];
+        buttonElement.classList.remove("button--active");
+    }
+}
+
+function trySetActiveButtonByHref(navigationButtonsWrapperElement) {
+    if (!navigationButtonsWrapperElement) {
+        return false;
+    }
+
+    const currentPathnameString = getUrlPathnameForComparison(window.location.href);
+
+    const buttonsArray = navigationButtonsWrapperElement.querySelectorAll("a[href]");
+    if (!buttonsArray || buttonsArray.length === 0) {
+        return false;
+    }
+
+    let matchedAnyButton = false;
+
+    for (let index = 0; index < buttonsArray.length; index += 1) {
+        const buttonElement = buttonsArray[index];
+        const hrefAttributeValue = buttonElement.getAttribute("href");
+        if (!hrefAttributeValue) {
+            continue;
+        }
+
+        const buttonPathnameString = getUrlPathnameForComparison(hrefAttributeValue);
+
+        if (buttonPathnameString === currentPathnameString) {
+            buttonElement.classList.add("button--active");
+            matchedAnyButton = true;
+        }
+    }
+
+    return matchedAnyButton;
+}
+
+function trySetActiveButtonByPageSlug(navigationButtonsWrapperElement, chatRootElement) {
+    if (!navigationButtonsWrapperElement) {
+        return false;
+    }
+
+    if (!chatRootElement) {
+        return false;
+    }
+
+    const pageContainer = chatRootElement.querySelector("[data-askee-page]");
+    if (!pageContainer) {
+        return false;
+    }
+
+    const pageSlug = pageContainer.dataset.askeePage;
+    if (!pageSlug) {
+        return false;
+    }
+
+    const buttonsArray = navigationButtonsWrapperElement.querySelectorAll("[data-id]");
+    if (!buttonsArray || buttonsArray.length === 0) {
+        return false;
+    }
+
+    let matchedAnyButton = false;
+
+    for (let index = 0; index < buttonsArray.length; index += 1) {
+        const buttonElement = buttonsArray[index];
+        const buttonIdValue = buttonElement.dataset.id;
+        if (!buttonIdValue) {
+            continue;
+        }
+
+        if (buttonIdValue.indexOf(pageSlug) !== -1) {
+            buttonElement.classList.add("button--active");
+            matchedAnyButton = true;
+        }
+    }
+
+    return matchedAnyButton;
+}
+
+function updateChatNavigationButtonsActiveState(chatRootElement) {
+    if (!chatRootElement) {
+        return;
+    }
+
+    const navigationWrappersArray = Array.from(
+        chatRootElement.querySelectorAll(".askee-chat__buttons")
+    );
+
+    for (let index = 0; index < navigationWrappersArray.length; index += 1) {
+        const navigationButtonsWrapperElement = navigationWrappersArray[index];
+
+        clearActiveButtonsInWrapper(navigationButtonsWrapperElement);
+
+        const matchedByHref = trySetActiveButtonByHref(navigationButtonsWrapperElement);
+        if (matchedByHref) {
+            continue;
+        }
+
+        trySetActiveButtonByPageSlug(navigationButtonsWrapperElement, chatRootElement);
+    }
+}
+
 function initSingleChatBox(boxElement) {
     if (boxElement.dataset.askeeBoxInitialized === "1") {
         return null;
@@ -7,7 +147,6 @@ function initSingleChatBox(boxElement) {
     boxElement.dataset.askeeBoxInitialized = "1";
 
     const switchSectionsElement = boxElement.querySelector(".askee-chat__switch-sections");
-    const navigationButtonsWrapperElement = boxElement.querySelector(".askee-chat__buttons");
     const messagesListElement = boxElement.querySelector(".askee-chat__messages-list");
 
     let contentElementsArray = [];
@@ -23,6 +162,7 @@ function initSingleChatBox(boxElement) {
     }
 
     let activeTimeline = null;
+    let hasInitialAnimationRun = false;
 
     function normalizeToSingleActiveElement() {
         if (!switchSectionsElement || contentElementsArray.length === 0) {
@@ -44,56 +184,24 @@ function initSingleChatBox(boxElement) {
             if (element === activeContentElement) {
                 element.classList.add("askee-chat__content--active");
                 element.style.display = "block";
-                gsap.set(element, { opacity: 1, y: 0 });
                 continue;
             }
 
             element.classList.remove("askee-chat__content--active");
             element.style.display = "none";
-            gsap.set(element, { opacity: 0, y: 10 });
         }
-    }
-
-    function updateActiveButtons(targetId) {
-        if (!navigationButtonsWrapperElement) {
-            return;
-        }
-
-        const buttonsArray = navigationButtonsWrapperElement.querySelectorAll("[data-id]");
-        for (let index = 0; index < buttonsArray.length; index += 1) {
-            const buttonElement = buttonsArray[index];
-            buttonElement.classList.remove("button--active");
-
-            if (buttonElement.dataset.id === targetId) {
-                buttonElement.classList.add("button--active");
-            }
-        }
-    }
-
-    function setInitialActiveButton() {
-        if (!navigationButtonsWrapperElement) {
-            return;
-        }
-
-        const pageContainer = document.querySelector("[data-askee-page]");
-        if (!pageContainer) {
-            return;
-        }
-
-        const pageSlug = pageContainer.dataset.askeePage;
-        if (!pageSlug) {
-            return;
-        }
-
-        const targetId = `askee-chat-content-${pageSlug}`;
-        updateActiveButtons(targetId);
     }
 
     function findTargetContentElement(targetId) {
         if (!targetId) {
             return null;
         }
-        const targetElement = boxElement.querySelector(`#${CSS.escape(targetId)}`);
+
+        if (!window.CSS || typeof window.CSS.escape !== "function") {
+            return null;
+        }
+
+        const targetElement = boxElement.querySelector("#" + CSS.escape(targetId));
         if (!targetElement) {
             return null;
         }
@@ -114,23 +222,47 @@ function initSingleChatBox(boxElement) {
     }
 
     function clearGsapProps(element) {
+        if (!element) {
+            return;
+        }
         try {
             gsap.set(element, { clearProps: "opacity,transform" });
+        } catch (error) {}
+    }
+
+    function animateInitialContentOnLoad() {
+        if (hasInitialAnimationRun) {
+            return;
+        }
+        if (!activeContentElement) {
+            return;
+        }
+
+        hasInitialAnimationRun = true;
+
+        try {
+            gsap.set(activeContentElement, { opacity: 0, y: 10 });
+            gsap.to(activeContentElement, {
+                duration: 0.35,
+                opacity: 1,
+                y: 0,
+                onComplete: function () {
+                    clearGsapProps(activeContentElement);
+                },
+            });
         } catch (error) {}
     }
 
     function transitionToTargetId(targetId) {
         const targetElement = findTargetContentElement(targetId);
         if (!targetElement) {
-            return;
+            return false;
         }
 
         if (targetElement === activeContentElement) {
-            updateActiveButtons(targetId);
-            return;
+            return true;
         }
 
-        updateActiveButtons(targetId);
         killActiveTimeline();
         normalizeToSingleActiveElement();
 
@@ -149,83 +281,110 @@ function initSingleChatBox(boxElement) {
         targetElement.style.display = "block";
         targetElement.classList.add("askee-chat__content--active");
 
-        if (previousElement) {
-            clearGsapProps(previousElement);
-        }
+        clearGsapProps(previousElement);
         clearGsapProps(targetElement);
 
-        activeTimeline = gsap.timeline({
-            onComplete: () => {
-                if (previousElement) {
-                    previousElement.classList.remove("askee-chat__content--active");
-                    previousElement.style.display = "none";
-                    clearGsapProps(previousElement);
-                }
-                activeContentElement = targetElement;
-                activeTimeline = null;
-            },
-        });
+        try {
+            activeTimeline = gsap.timeline({
+                onComplete: function () {
+                    if (previousElement) {
+                        previousElement.classList.remove("askee-chat__content--active");
+                        previousElement.style.display = "none";
+                        clearGsapProps(previousElement);
+                    }
+                    activeContentElement = targetElement;
+                    activeTimeline = null;
+                },
+            });
 
-        gsap.set(targetElement, { opacity: 0, y: 10 });
+            if (previousElement) {
+                activeTimeline.to(previousElement, { duration: 0.2, opacity: 0, y: -10 }, 0);
+            }
 
-        if (previousElement) {
-            activeTimeline.to(previousElement, { duration: 0.2, opacity: 0, y: -10 }, 0);
+            gsap.set(targetElement, { opacity: 0, y: 10 });
+            activeTimeline.to(targetElement, { duration: 0.3, opacity: 1, y: 0 }, 0);
+        } catch (error) {
+            activeContentElement = targetElement;
+            activeTimeline = null;
         }
 
-        activeTimeline.to(targetElement, { duration: 0.3, opacity: 1, y: 0 }, 0);
+        return true;
     }
 
-    function onBoxClick(event) {
-        const clickedElement = event.target;
-        const navigationTargetElement = clickedElement.closest(".askee-chat__buttons [data-id]");
-
-        if (navigationTargetElement) {
-            const targetId = navigationTargetElement.dataset.id;
-            if (targetId) {
-                event.preventDefault();
-                transitionToTargetId(targetId);
-            }
+    function onChatRootClick(eventObject) {
+        const clickedElement = eventObject.target;
+        if (!clickedElement) {
+            return;
         }
+
+        const navigationTargetElement = clickedElement.closest(".askee-chat__buttons [data-id]");
+        if (!navigationTargetElement) {
+            return;
+        }
+
+        const targetId = navigationTargetElement.dataset.id;
+        if (!targetId) {
+            return;
+        }
+
+        const targetContentElement = findTargetContentElement(targetId);
+        if (!targetContentElement) {
+            return;
+        }
+
+        eventObject.preventDefault();
+        transitionToTargetId(targetId);
     }
 
     const chatConfig = window.AskeeChatConfig || {};
-    const baseStorageKey =
-        typeof chatConfig.storageKey === "string" ? chatConfig.storageKey : "askee_chat_state_v1";
-    const restUrl = typeof chatConfig.restUrl === "string" ? chatConfig.restUrl : "";
-    const nonce = typeof chatConfig.nonce === "string" ? chatConfig.nonce : "";
+
+    let baseStorageKey = "askee_chat_state_v1";
+    if (typeof chatConfig.storageKey === "string") {
+        baseStorageKey = chatConfig.storageKey;
+    }
+
+    let restUrl = "";
+    if (typeof chatConfig.restUrl === "string") {
+        restUrl = chatConfig.restUrl;
+    }
+
+    let nonce = "";
+    if (typeof chatConfig.nonce === "string") {
+        nonce = chatConfig.nonce;
+    }
 
     let instanceId = "default";
     const parentContainer = boxElement.closest("[data-post-id]");
-    if (parentContainer) {
+    if (parentContainer && parentContainer.dataset.postId) {
         instanceId = parentContainer.dataset.postId;
     } else {
-        const uniqueIndex = Array.from(document.querySelectorAll(".askee-chat__box")).indexOf(
-            boxElement
-        );
-        instanceId = "box_" + uniqueIndex;
+        const allBoxesArray = Array.from(document.querySelectorAll(".askee-chat__box"));
+        const uniqueIndex = allBoxesArray.indexOf(boxElement);
+        instanceId = "box_" + String(uniqueIndex);
     }
 
     const finalStorageKey = baseStorageKey + "_" + instanceId;
 
     function loadChatState() {
         try {
-            const raw = sessionStorage.getItem(finalStorageKey);
-            if (!raw) {
+            const rawValue = sessionStorage.getItem(finalStorageKey);
+            if (!rawValue) {
                 return { messages: [] };
             }
-            const parsed = JSON.parse(raw);
-            if (!parsed || !Array.isArray(parsed.messages)) {
+            const parsedValue = JSON.parse(rawValue);
+            if (!parsedValue || !Array.isArray(parsedValue.messages)) {
                 return { messages: [] };
             }
-            return parsed;
+            return parsedValue;
         } catch (error) {
             return { messages: [] };
         }
     }
 
-    function saveChatState(state) {
+    function saveChatState(stateObject) {
         try {
-            sessionStorage.setItem(finalStorageKey, JSON.stringify(state));
+            const encodedValue = JSON.stringify(stateObject);
+            sessionStorage.setItem(finalStorageKey, encodedValue);
         } catch (error) {}
     }
 
@@ -236,48 +395,54 @@ function initSingleChatBox(boxElement) {
     let isSending = false;
     let abortController = null;
 
-    function pushMessage(role, text) {
-        const state = loadChatState();
-        state.messages.push({
-            role,
-            text,
+    function pushMessage(roleString, textString) {
+        const currentStateObject = loadChatState();
+        currentStateObject.messages.push({
+            role: roleString,
+            text: textString,
             ts: Date.now(),
         });
-        saveChatState(state);
-        console.log(`[Askee Chat - ${instanceId}] History Updated:`, state.messages);
+        saveChatState(currentStateObject);
+        console.log(
+            "[Askee Chat - " + String(instanceId) + "] History Updated:",
+            currentStateObject.messages
+        );
     }
 
-    async function sendToApi(inputText) {
+    async function sendToApi(inputTextString) {
         if (!restUrl) {
             return null;
         }
 
         abortController = new AbortController();
 
-        const response = await fetch(restUrl, {
+        const responseObject = await fetch(restUrl, {
             method: "POST",
             credentials: "same-origin",
             headers: {
                 "Content-Type": "application/json",
                 "X-WP-Nonce": nonce,
             },
-            body: JSON.stringify({ input: inputText }),
+            body: JSON.stringify({ input: inputTextString }),
             signal: abortController.signal,
         });
 
-        const data = await response.json().catch(() => null);
-        return data;
+        const parsedResponseObject = await responseObject.json().catch(function () {
+            return null;
+        });
+        return parsedResponseObject;
     }
 
-    async function onFormSubmit(event) {
-        event.preventDefault();
+    async function onFormSubmit(eventObject) {
+        eventObject.preventDefault();
 
         if (!textareaElement) {
             return;
         }
 
-        const text = (textareaElement.value || "").trim();
-        if (!text) {
+        const rawTextValue = textareaElement.value || "";
+        const textValue = rawTextValue.trim();
+        if (!textValue) {
             return;
         }
 
@@ -290,30 +455,33 @@ function initSingleChatBox(boxElement) {
             submitButton.disabled = true;
         }
 
-        pushMessage("user", text);
+        pushMessage("user", textValue);
 
         textareaElement.value = "";
 
         try {
-            const apiResponse = await sendToApi(text);
+            const apiResponseObject = await sendToApi(textValue);
 
-            console.log(`[Askee Chat - ${instanceId}] Raw Response:`, apiResponse);
+            console.log(
+                "[Askee Chat - " + String(instanceId) + "] Raw Response:",
+                apiResponseObject
+            );
 
-            if (apiResponse && apiResponse.ok) {
-                let assistantText = "Empty response";
+            if (apiResponseObject && apiResponseObject.ok) {
+                let assistantTextString = "Empty response";
 
                 if (
-                    apiResponse.json &&
-                    Array.isArray(apiResponse.json) &&
-                    apiResponse.json[0] &&
-                    apiResponse.json[0].output
+                    apiResponseObject.json &&
+                    Array.isArray(apiResponseObject.json) &&
+                    apiResponseObject.json[0] &&
+                    apiResponseObject.json[0].output
                 ) {
-                    assistantText = apiResponse.json[0].output;
-                } else if (typeof apiResponse.raw === "string") {
-                    assistantText = apiResponse.raw;
+                    assistantTextString = apiResponseObject.json[0].output;
+                } else if (typeof apiResponseObject.raw === "string") {
+                    assistantTextString = apiResponseObject.raw;
                 }
 
-                pushMessage("assistant", assistantText);
+                pushMessage("assistant", assistantTextString);
             } else {
                 pushMessage("assistant", "Upstream Error");
             }
@@ -332,31 +500,30 @@ function initSingleChatBox(boxElement) {
         }
     }
 
-    const existingState = loadChatState();
-    if (existingState.messages.length) {
-        console.log(`[Askee Chat - ${instanceId}] Restored History:`, existingState.messages);
-    }
-
-    boxElement.addEventListener("click", onBoxClick);
+    boxElement.addEventListener("click", onChatRootClick);
 
     if (formElement) {
         formElement.addEventListener("submit", onFormSubmit);
     }
 
-    if (textareaElement) {
-        textareaElement.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
+    if (textareaElement && formElement) {
+        textareaElement.addEventListener("keydown", function (eventObject) {
+            if (!eventObject) {
+                return;
+            }
+
+            if (eventObject.key === "Enter" && !eventObject.shiftKey) {
+                eventObject.preventDefault();
                 formElement.dispatchEvent(new Event("submit"));
             }
         });
     }
 
     normalizeToSingleActiveElement();
-    setInitialActiveButton();
+    animateInitialContentOnLoad();
 
     return function cleanupSingleBox() {
-        boxElement.removeEventListener("click", onBoxClick);
+        boxElement.removeEventListener("click", onChatRootClick);
         if (formElement) {
             formElement.removeEventListener("submit", onFormSubmit);
         }
@@ -379,35 +546,60 @@ export function initAskeeChatSection(rootElement) {
         return null;
     }
 
-    const boxes = chatRootElement.querySelectorAll(".askee-chat__box");
-    const cleanupFunctions = [];
+    const boxesNodeList = chatRootElement.querySelectorAll(".askee-chat__box");
+    const cleanupFunctionsArray = [];
 
-    boxes.forEach((box) => {
-        const cleanup = initSingleChatBox(box);
-        if (typeof cleanup === "function") {
-            cleanupFunctions.push(cleanup);
+    for (let index = 0; index < boxesNodeList.length; index += 1) {
+        const boxElement = boxesNodeList[index];
+        const cleanupFunction = initSingleChatBox(boxElement);
+        if (typeof cleanupFunction === "function") {
+            cleanupFunctionsArray.push(cleanupFunction);
         }
-    });
+    }
 
-    function onExternalSwitch(event) {
-        if (!event.detail || !event.detail.targetId) {
+    updateChatNavigationButtonsActiveState(chatRootElement);
+
+    function onAskeeNavigationCompleteEvent() {
+        updateChatNavigationButtonsActiveState(chatRootElement);
+    }
+
+    window.addEventListener("askee:navigation:complete", onAskeeNavigationCompleteEvent);
+
+    function onExternalSwitch(eventObject) {
+        if (!eventObject.detail || !eventObject.detail.targetId) {
             return;
         }
-        const targetId = event.detail.targetId;
-        const targetElement = chatRootElement.querySelector(`#${CSS.escape(targetId)}`);
+        const targetId = eventObject.detail.targetId;
+        if (!window.CSS || typeof window.CSS.escape !== "function") {
+            return;
+        }
 
-        if (targetElement) {
-            const targetBox = targetElement.closest(".askee-chat__box");
-            if (targetBox && targetBox.dataset.askeeBoxInitialized === "1") {
-            }
+        const targetElement = chatRootElement.querySelector("#" + CSS.escape(targetId));
+        if (!targetElement) {
+            return;
+        }
+
+        const targetBoxElement = targetElement.closest(".askee-chat__box");
+        if (!targetBoxElement) {
+            return;
+        }
+
+        if (targetBoxElement.dataset.askeeBoxInitialized !== "1") {
+            return;
         }
     }
 
     document.addEventListener("askee:chat:external-switch", onExternalSwitch);
 
     return function cleanupAskeeChatSection() {
+        window.removeEventListener("askee:navigation:complete", onAskeeNavigationCompleteEvent);
         document.removeEventListener("askee:chat:external-switch", onExternalSwitch);
 
-        cleanupFunctions.forEach((fn) => fn());
+        for (let index = 0; index < cleanupFunctionsArray.length; index += 1) {
+            const cleanupFunction = cleanupFunctionsArray[index];
+            try {
+                cleanupFunction();
+            } catch (error) {}
+        }
     };
 }
