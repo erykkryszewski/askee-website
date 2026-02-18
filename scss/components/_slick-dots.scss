@@ -7,14 +7,14 @@
     right: 50%;
     transform: translateX(50%);
 
-    @media (height <= 900px) {
-        position: static;
-        transform: none;
-        margin: -60px auto 0;
-    }
-
     @media (width <= 1250px) {
         margin: 50px auto 0;
+    }
+
+    @media (width <= 991px) {
+        position: static;
+        transform: none;
+        margin: 0 auto;
     }
 
     li {

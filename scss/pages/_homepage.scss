@@ -33,6 +33,54 @@
                 display: block;
             }
         }
+
+        &.askee-homepage__slider--sequence-enabled {
+            .askee-homepage__item {
+                .askee-homepage__content {
+                    opacity: 0;
+                    visibility: hidden;
+                    pointer-events: none;
+                }
+
+                .askee-homepage__box {
+                    opacity: 0;
+                    visibility: hidden;
+                    transform: translateY(12px);
+                }
+
+                .askee-homepage__box--left {
+                    width: min(100%, 429px);
+                }
+
+                .askee-homepage__box--right {
+                    width: min(100%, 456px);
+                }
+
+                &.askee-homepage__item--started {
+                    .askee-homepage__content {
+                        opacity: 1;
+                        visibility: visible;
+                        pointer-events: auto;
+                    }
+                }
+
+                &.askee-homepage__item--left-visible {
+                    .askee-homepage__box--left {
+                        opacity: 1;
+                        visibility: visible;
+                        transform: translateY(0);
+                    }
+                }
+
+                &.askee-homepage__item--right-visible {
+                    .askee-homepage__box--right {
+                        opacity: 1;
+                        visibility: visible;
+                        transform: translateY(0);
+                    }
+                }
+            }
+        }
     }
 
     &__item {
@@ -74,6 +122,9 @@
         position: relative;
         min-height: 650px;
         top: -130px;
+        transition:
+            opacity 0.3s ease,
+            visibility 0.3s ease;
 
         @media (width <= 1250px) {
             top: 0;
@@ -108,6 +159,10 @@
         background: rgba($white, 0.2);
         backdrop-filter: blur(4px);
         box-shadow: 2px 4px 15px 0 rgb(0 0 0 / 10%);
+        transition:
+            opacity 0.25s ease,
+            visibility 0.25s ease,
+            transform 0.25s ease;
 
         p {
             margin: 0;
@@ -131,5 +186,20 @@
         left: 0;
         right: 0;
         bottom: 0;
+    }
+
+    &__button {
+        @media (width >= 992px) {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+        }
+    }
+
+    &__button-wrapper {
+        @media (width <= 991px) {
+            margin: 40px auto 0;
+            text-align: center;
+        }
     }
 }

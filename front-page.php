@@ -157,7 +157,7 @@ get_header(); the_post();
                         <p>
                             <strong>Anonimizuję i szyfruję wszystkie informacje,</strong>
                                             które mi powierzysz. Twoje dane są w pełni chronione – zawsze i wszędzie są dostępne
-                            <strong>wyłącznie między nami. </strong>
+                            <strong>wyłącznie między nami.</strong>
                         </p>
                     </div>
                 </div>
@@ -166,6 +166,9 @@ get_header(); the_post();
     </div>
 </div>
 </div>
+</div>
+<div class="askee-homepage__button-wrapper">
+    <a href="/porozmawiajmy" class="button button--header askee-homepage__button">Pomiń</a>
 </div>
 </div>
 </div>
