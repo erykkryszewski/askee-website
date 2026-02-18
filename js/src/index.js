@@ -342,6 +342,15 @@ initAskeeSpaHooks();
         if (!document.body.classList.contains(targetClassNameString)) {
             document.body.classList.add(targetClassNameString);
         }
+
+        const headerButton = document.querySelector(".button--header");
+        if (headerButton) {
+            if (targetClassNameString === "askee-page-home") {
+                headerButton.classList.add("display-none");
+            } else {
+                headerButton.classList.remove("display-none");
+            }
+        }
     }
 
     function replaceMainContentHtml(mainContentElement, newInnerHtmlString) {
