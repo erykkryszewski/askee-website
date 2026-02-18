@@ -168,7 +168,7 @@ get_header(); the_post();
 </div>
 </div>
 <div class="askee-homepage__button-wrapper">
-    <a href="/porozmawiajmy" class="button button--header askee-homepage__button">Pomiń</a>
+    <a href="/poznaj-mnie" class="button button--header askee-homepage__button">Pomiń</a>
 </div>
 </div>
 </div>

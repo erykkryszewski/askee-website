@@ -147,7 +147,6 @@ function initSingleChatBox(boxElement) {
     boxElement.dataset.askeeBoxInitialized = "1";
 
     const switchSectionsElement = boxElement.querySelector(".askee-chat__switch-sections");
-    const messagesListElement = boxElement.querySelector(".askee-chat__messages-list");
 
     let contentElementsArray = [];
     if (switchSectionsElement) {
@@ -163,6 +162,107 @@ function initSingleChatBox(boxElement) {
 
     let activeTimeline = null;
     let hasInitialAnimationRun = false;
+
+    function getWelcomeElementFromActiveContent() {
+        if (!activeContentElement) {
+            return null;
+        }
+
+        const welcomeElement = activeContentElement.querySelector(".askee-chat__welcome");
+        if (!welcomeElement) {
+            return null;
+        }
+
+        return welcomeElement;
+    }
+
+    function resetActiveContentKeepOnlyWelcome() {
+        const welcomeElement = getWelcomeElementFromActiveContent();
+        if (!activeContentElement || !welcomeElement) {
+            return null;
+        }
+
+        const childrenArray = Array.from(activeContentElement.children);
+        for (let index = 0; index < childrenArray.length; index += 1) {
+            const childElement = childrenArray[index];
+            if (childElement !== welcomeElement) {
+                childElement.remove();
+            }
+        }
+
+        return welcomeElement;
+    }
+
+    function renderTypingDotsIntoWelcome(welcomeElement) {
+        if (!welcomeElement) {
+            return;
+        }
+
+        welcomeElement.replaceChildren();
+
+        const bubbleElement = document.createElement("span");
+        bubbleElement.className = "askee-chat__dots";
+        bubbleElement.setAttribute("role", "status");
+        bubbleElement.setAttribute("aria-live", "polite");
+        bubbleElement.setAttribute("aria-label", "Askee pisze");
+
+        const dotOneElement = document.createElement("span");
+        dotOneElement.className = "askee-chat__dots-dot";
+
+        const dotTwoElement = document.createElement("span");
+        dotTwoElement.className = "askee-chat__dots-dot";
+
+        const dotThreeElement = document.createElement("span");
+        dotThreeElement.className = "askee-chat__dots-dot";
+
+        bubbleElement.appendChild(dotOneElement);
+        bubbleElement.appendChild(dotTwoElement);
+        bubbleElement.appendChild(dotThreeElement);
+
+        welcomeElement.appendChild(bubbleElement);
+    }
+
+    function renderTextIntoWelcome(welcomeElement, textString) {
+        if (!welcomeElement) {
+            return;
+        }
+
+        welcomeElement.replaceChildren();
+
+        let safeTextString = "";
+        if (typeof textString === "string") {
+            safeTextString = textString;
+        }
+
+        const normalizedTextString = safeTextString.replace(/\r\n/g, "\n").trim();
+        if (!normalizedTextString) {
+            welcomeElement.textContent = "Empty response";
+            return;
+        }
+
+        const paragraphsArray = normalizedTextString.split(/\n{2,}/g);
+
+        for (let paragraphIndex = 0; paragraphIndex < paragraphsArray.length; paragraphIndex += 1) {
+            const paragraphTextString = paragraphsArray[paragraphIndex].trim();
+            if (!paragraphTextString) {
+                continue;
+            }
+
+            const linesArray = paragraphTextString.split("\n");
+            for (let lineIndex = 0; lineIndex < linesArray.length; lineIndex += 1) {
+                welcomeElement.appendChild(document.createTextNode(linesArray[lineIndex]));
+
+                if (lineIndex !== linesArray.length - 1) {
+                    welcomeElement.appendChild(document.createElement("br"));
+                }
+            }
+
+            if (paragraphIndex !== paragraphsArray.length - 1) {
+                welcomeElement.appendChild(document.createElement("br"));
+                welcomeElement.appendChild(document.createElement("br"));
+            }
+        }
+    }
 
     function normalizeToSingleActiveElement() {
         if (!switchSectionsElement || contentElementsArray.length === 0) {
@@ -364,11 +464,6 @@ function initSingleChatBox(boxElement) {
 
     const chatConfig = window.AskeeChatConfig || {};
 
-    let baseStorageKey = "askee_chat_state_v1";
-    if (typeof chatConfig.storageKey === "string") {
-        baseStorageKey = chatConfig.storageKey;
-    }
-
     let restUrl = "";
     if (typeof chatConfig.restUrl === "string") {
         restUrl = chatConfig.restUrl;
@@ -379,61 +474,12 @@ function initSingleChatBox(boxElement) {
         nonce = chatConfig.nonce;
     }
 
-    let instanceId = "default";
-    const parentContainer = boxElement.closest("[data-post-id]");
-    if (parentContainer && parentContainer.dataset.postId) {
-        instanceId = parentContainer.dataset.postId;
-    } else {
-        const allBoxesArray = Array.from(document.querySelectorAll(".askee-chat__box"));
-        const uniqueIndex = allBoxesArray.indexOf(boxElement);
-        instanceId = "box_" + String(uniqueIndex);
-    }
-
-    const finalStorageKey = baseStorageKey + "_" + instanceId;
-
-    function loadChatState() {
-        try {
-            const rawValue = sessionStorage.getItem(finalStorageKey);
-            if (!rawValue) {
-                return { messages: [] };
-            }
-            const parsedValue = JSON.parse(rawValue);
-            if (!parsedValue || !Array.isArray(parsedValue.messages)) {
-                return { messages: [] };
-            }
-            return parsedValue;
-        } catch (error) {
-            return { messages: [] };
-        }
-    }
-
-    function saveChatState(stateObject) {
-        try {
-            const encodedValue = JSON.stringify(stateObject);
-            sessionStorage.setItem(finalStorageKey, encodedValue);
-        } catch (error) {}
-    }
-
     const formElement = boxElement.querySelector(".askee-chat__form");
     const textareaElement = formElement ? formElement.querySelector(".askee-chat__textarea") : null;
     const submitButton = formElement ? formElement.querySelector('[type="submit"]') : null;
 
     let isSending = false;
     let abortController = null;
-
-    function pushMessage(roleString, textString) {
-        const currentStateObject = loadChatState();
-        currentStateObject.messages.push({
-            role: roleString,
-            text: textString,
-            ts: Date.now(),
-        });
-        saveChatState(currentStateObject);
-        console.log(
-            "[Askee Chat - " + String(instanceId) + "] History Updated:",
-            currentStateObject.messages
-        );
-    }
 
     async function sendToApi(inputTextString) {
         if (!restUrl) {
@@ -481,20 +527,20 @@ function initSingleChatBox(boxElement) {
             submitButton.disabled = true;
         }
 
-        pushMessage("user", textValue);
-
         textareaElement.value = "";
+
+        normalizeToSingleActiveElement();
+        const welcomeElement = resetActiveContentKeepOnlyWelcome();
+        renderTypingDotsIntoWelcome(welcomeElement);
 
         try {
             const apiResponseObject = await sendToApi(textValue);
 
-            console.log(
-                "[Askee Chat - " + String(instanceId) + "] Raw Response:",
-                apiResponseObject
-            );
+            normalizeToSingleActiveElement();
+            const welcomeElementAfterResponse = resetActiveContentKeepOnlyWelcome();
 
             if (apiResponseObject && apiResponseObject.ok) {
-                let assistantTextString = "Empty response";
+                let assistantTextString = "";
 
                 if (
                     apiResponseObject.json &&
@@ -507,15 +553,18 @@ function initSingleChatBox(boxElement) {
                     assistantTextString = apiResponseObject.raw;
                 }
 
-                pushMessage("assistant", assistantTextString);
+                renderTextIntoWelcome(welcomeElementAfterResponse, assistantTextString);
             } else {
-                pushMessage("assistant", "Upstream Error");
+                renderTextIntoWelcome(welcomeElementAfterResponse, "Upstream Error");
             }
         } catch (error) {
             if (error && error.name === "AbortError") {
-            } else {
-                pushMessage("assistant", "Network Error");
+                return;
             }
+
+            normalizeToSingleActiveElement();
+            const welcomeElementAfterError = resetActiveContentKeepOnlyWelcome();
+            renderTextIntoWelcome(welcomeElementAfterError, "Network Error");
         } finally {
             isSending = false;
             if (submitButton) {
