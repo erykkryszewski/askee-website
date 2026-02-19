@@ -6,7 +6,7 @@
         <li><a href="#">Lorem ipsum dolor sit amet consectetur adipisicing elit. Vero, incidunt!</a></li>
     </ul>
     <a href="/blog" class="askee-sidebar__link">Blog</a>
-    <a href="/blog" class="askee-sidebar__link">Aktualności</a>
+    <a href="/kategoria/aktualnosci" class="askee-sidebar__link">Aktualności</a>
 
     <ul class="askee-social-media">
         <li>

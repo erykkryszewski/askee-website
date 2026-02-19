@@ -2,7 +2,153 @@
     width: 100%;
 
     &__row {
+        align-items: flex-start;
+    }
+
+    &__wrapper {
+        width: 100%;
+    }
+
+    &__list {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 20px;
+        align-items: stretch;
+
+        @media (width <= 1199px) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media (width <= 767px) {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 25px;
+        }
+    }
+
+    &__post {
+        width: 100%;
+        min-width: 0;
+
+        &--featured {
+            grid-column: span 2;
+            grid-row: span 2;
+
+            .askee-blog__post-media {
+                min-height: 420px;
+
+                @media (width <= 1199px) {
+                    min-height: 360px;
+                }
+
+                @media (width <= 767px) {
+                    min-height: 300px;
+                }
+            }
+        }
+
+        @media (width <= 1199px) {
+            &--featured {
+                grid-row: span 1;
+            }
+        }
+
+        @media (width <= 767px) {
+            &--featured {
+                grid-column: auto;
+            }
+        }
+    }
+
+    &__post-link {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__post-media {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        border-radius: $theme-border-radius;
+    }
+
+    &__post-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform-origin: center;
+        transition: transform 0.35s ease;
+    }
+
+    &__post-content {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin: 14px 0 0;
+        height: 100%;
+    }
+
+    &__post-category {
+        display: inline-flex;
         align-items: center;
+        gap: 8px;
+        margin: 0;
+        width: fit-content;
+    }
+
+    &__post-category-icon {
+        width: 15px;
+        height: 15px;
+        object-fit: contain;
+        flex-shrink: 0;
+        opacity: 0.72;
+        filter: grayscale(1) brightness(0) contrast(0.65);
+    }
+
+    &__post-title {
+        margin: 0;
+    }
+
+    &__post-excerpt {
+        margin: 0;
+    }
+
+    &__post-meta {
+        margin-top: auto;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    &__post-author {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__post-author-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    &__post-author-image {
+        width: 100%;
+        height: 100%;
+    }
+
+    &__post-date {
+        display: inline-block;
+    }
+
+    &__empty {
+        margin: 0;
     }
 
     &__welcome {
@@ -23,5 +169,18 @@
         top: 0;
         left: 35px;
         font-weight: 400;
+    }
+
+    .askee-blog__post:hover {
+        .askee-blog__post-image {
+            transform: scale(1.06);
+        }
+    }
+
+    @media (width <= 767px) {
+        &__post-meta {
+            align-items: flex-start;
+            flex-direction: column;
+        }
     }
 }
