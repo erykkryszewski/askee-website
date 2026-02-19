@@ -29,5 +29,12 @@
         height: 400px;
         bottom: 200px;
         left: -270px;
+
+        @media (width <= 767px) {
+            bottom: -300px;
+            left: auto;
+            right: 20%;
+            transform: translateX(50%);
+        }
     }
 }
