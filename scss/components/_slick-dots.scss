@@ -14,7 +14,7 @@
     @media (width <= 991px) {
         position: static;
         transform: none;
-        margin: 0 auto;
+        margin: 20px auto 0;
     }
 
     li {
@@ -33,6 +33,7 @@
 
             @media (width <= 991px) {
                 width: 50px;
+                height: 5px;
             }
         }
 

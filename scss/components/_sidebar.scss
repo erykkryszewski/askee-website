@@ -36,5 +36,9 @@
 .askee-page-blog {
     .askee-sidebar {
         padding: 0;
+
+        @media (width <= 767px) {
+            margin: 30px 0 0;
+        }
     }
 }

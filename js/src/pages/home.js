@@ -7,12 +7,137 @@ const HOMEPAGE_BETWEEN_BOXES_DELAY_MS = 360;
 const HOMEPAGE_AFTER_SLIDE_DELAY_MS = 2000;
 const HOMEPAGE_FINAL_REDIRECT_DELAY_MS = 2000;
 
-function normalizeTypingText(textString) {
+function escapeHtml(textString) {
     if (typeof textString !== "string") {
         return "";
     }
 
-    return textString.replace(/\s+/g, " ").trim();
+    return textString
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function buildTypingCharsArrayFromHtml(htmlString) {
+    const safeHtmlString = typeof htmlString === "string" ? htmlString : "";
+    const parserContainerElement = document.createElement("div");
+    parserContainerElement.innerHTML = safeHtmlString;
+
+    const charsArray = [];
+
+    function appendCharacter(characterString, isStrong) {
+        const normalizedCharacterString = /\s/.test(characterString) ? " " : characterString;
+        const previousCharacterObject = charsArray.length > 0 ? charsArray[charsArray.length - 1] : null;
+        if (
+            normalizedCharacterString === " " &&
+            (!previousCharacterObject || previousCharacterObject.characterString === " ")
+        ) {
+            return;
+        }
+
+        charsArray.push({
+            characterString: normalizedCharacterString,
+            isStrong,
+        });
+    }
+
+    function walkNode(node, inheritedStrongState) {
+        if (!node) {
+            return;
+        }
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            const textString = node.textContent || "";
+            for (let index = 0; index < textString.length; index += 1) {
+                appendCharacter(textString.charAt(index), inheritedStrongState);
+            }
+            return;
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return;
+        }
+
+        const elementNode = node;
+        const tagNameString = typeof elementNode.tagName === "string" ? elementNode.tagName : "";
+        const isStrongElement = tagNameString.toLowerCase() === "strong";
+        const nextStrongState = inheritedStrongState || isStrongElement;
+
+        const childNodesArray = Array.from(elementNode.childNodes);
+        for (let index = 0; index < childNodesArray.length; index += 1) {
+            walkNode(childNodesArray[index], nextStrongState);
+        }
+    }
+
+    const rootChildNodesArray = Array.from(parserContainerElement.childNodes);
+    for (let index = 0; index < rootChildNodesArray.length; index += 1) {
+        walkNode(rootChildNodesArray[index], false);
+    }
+
+    while (charsArray.length > 0 && charsArray[0].characterString === " ") {
+        charsArray.shift();
+    }
+    while (charsArray.length > 0 && charsArray[charsArray.length - 1].characterString === " ") {
+        charsArray.pop();
+    }
+
+    return charsArray;
+}
+
+function renderTypingHtml(charsArray, visibleCharsCountNumber) {
+    if (!Array.isArray(charsArray) || charsArray.length === 0) {
+        return "";
+    }
+
+    const safeVisibleCharsCountNumber = Math.max(
+        0,
+        Math.min(charsArray.length, visibleCharsCountNumber)
+    );
+    if (safeVisibleCharsCountNumber === 0) {
+        return "";
+    }
+
+    let htmlString = "";
+    let chunkString = "";
+    let chunkStrongState = null;
+
+    function flushChunk() {
+        if (!chunkString) {
+            return;
+        }
+
+        const escapedChunkString = escapeHtml(chunkString);
+        if (chunkStrongState) {
+            htmlString += "<strong>" + escapedChunkString + "</strong>";
+        } else {
+            htmlString += escapedChunkString;
+        }
+        chunkString = "";
+    }
+
+    for (let index = 0; index < safeVisibleCharsCountNumber; index += 1) {
+        const characterObject = charsArray[index];
+        if (!characterObject) {
+            continue;
+        }
+
+        const nextStrongState = characterObject.isStrong === true;
+        if (chunkStrongState === null) {
+            chunkStrongState = nextStrongState;
+        }
+
+        if (nextStrongState !== chunkStrongState) {
+            flushChunk();
+            chunkStrongState = nextStrongState;
+        }
+
+        chunkString += characterObject.characterString;
+    }
+
+    flushChunk();
+    return htmlString;
 }
 
 function clearRuntimeTimeouts(sliderRuntimeObject) {
@@ -54,7 +179,7 @@ function waitForRuntime(delayNumber, sliderRuntimeObject, runIdNumber) {
 
 function typeText({
     element,
-    textString,
+    charsArray,
     runIdNumber,
     sliderRuntimeObject,
     charDelayNumber,
@@ -65,15 +190,15 @@ function typeText({
             return;
         }
 
-        const safeTextString = typeof textString === "string" ? textString : "";
-        element.textContent = "";
+        const safeCharsArray = Array.isArray(charsArray) ? charsArray : [];
+        element.innerHTML = "";
 
-        if (!safeTextString) {
+        if (safeCharsArray.length === 0) {
             resolve(true);
             return;
         }
 
-        let textIndexNumber = 0;
+        let visibleCharsCountNumber = 0;
 
         function renderNextCharacter() {
             if (
@@ -84,10 +209,10 @@ function typeText({
                 return;
             }
 
-            textIndexNumber += 1;
-            element.textContent = safeTextString.slice(0, textIndexNumber);
+            visibleCharsCountNumber += 1;
+            element.innerHTML = renderTypingHtml(safeCharsArray, visibleCharsCountNumber);
 
-            if (textIndexNumber >= safeTextString.length) {
+            if (visibleCharsCountNumber >= safeCharsArray.length) {
                 resolve(true);
                 return;
             }
@@ -176,6 +301,8 @@ export function initAskeeHomePage(rootElement) {
         const slideStatesArray = Array.from(
             singleSlider.querySelectorAll(".askee-homepage__item")
         ).map((slideElement) => {
+            const leftBoxElement = slideElement.querySelector(".askee-homepage__box--left");
+            const rightBoxElement = slideElement.querySelector(".askee-homepage__box--right");
             const leftParagraphElement = slideElement.querySelector(".askee-homepage__box--left p");
             const rightParagraphElement = slideElement.querySelector(".askee-homepage__box--right p");
 
@@ -184,16 +311,16 @@ export function initAskeeHomePage(rootElement) {
 
             return {
                 slideElement,
+                leftBoxElement,
+                rightBoxElement,
                 leftParagraphElement,
                 rightParagraphElement,
                 leftOriginalHtmlString,
                 rightOriginalHtmlString,
-                leftTextString: normalizeTypingText(
-                    leftParagraphElement ? leftParagraphElement.textContent || "" : ""
-                ),
-                rightTextString: normalizeTypingText(
-                    rightParagraphElement ? rightParagraphElement.textContent || "" : ""
-                ),
+                leftCharsArray: buildTypingCharsArrayFromHtml(leftOriginalHtmlString),
+                rightCharsArray: buildTypingCharsArrayFromHtml(rightOriginalHtmlString),
+                leftBoxMinHeightNumber: 0,
+                rightBoxMinHeightNumber: 0,
                 completed: false,
             };
         });
@@ -245,6 +372,36 @@ export function initAskeeHomePage(rootElement) {
             );
         }
 
+        function lockSlideBoxHeights(slideStateObject) {
+            if (!slideStateObject) {
+                return;
+            }
+
+            if (
+                slideStateObject.leftBoxElement &&
+                slideStateObject.leftBoxMinHeightNumber <= 0
+            ) {
+                const measuredLeftHeightNumber = slideStateObject.leftBoxElement.offsetHeight;
+                if (measuredLeftHeightNumber > 0) {
+                    slideStateObject.leftBoxMinHeightNumber = measuredLeftHeightNumber;
+                    slideStateObject.leftBoxElement.style.minHeight =
+                        String(measuredLeftHeightNumber) + "px";
+                }
+            }
+
+            if (
+                slideStateObject.rightBoxElement &&
+                slideStateObject.rightBoxMinHeightNumber <= 0
+            ) {
+                const measuredRightHeightNumber = slideStateObject.rightBoxElement.offsetHeight;
+                if (measuredRightHeightNumber > 0) {
+                    slideStateObject.rightBoxMinHeightNumber = measuredRightHeightNumber;
+                    slideStateObject.rightBoxElement.style.minHeight =
+                        String(measuredRightHeightNumber) + "px";
+                }
+            }
+        }
+
         slideStatesArray.forEach((slideStateObject) => {
             resetSlideToInitialState(slideStateObject);
         });
@@ -275,11 +432,12 @@ export function initAskeeHomePage(rootElement) {
             }
 
             slideStateObject.slideElement.classList.add("askee-homepage__item--started");
+            lockSlideBoxHeights(slideStateObject);
             slideStateObject.slideElement.classList.add("askee-homepage__item--left-visible");
 
             const leftTypingFinished = await typeText({
                 element: slideStateObject.leftParagraphElement,
-                textString: slideStateObject.leftTextString,
+                charsArray: slideStateObject.leftCharsArray,
                 runIdNumber,
                 sliderRuntimeObject,
                 charDelayNumber: HOMEPAGE_TYPING_CHAR_DELAY_MS,
@@ -306,7 +464,7 @@ export function initAskeeHomePage(rootElement) {
 
             const rightTypingFinished = await typeText({
                 element: slideStateObject.rightParagraphElement,
-                textString: slideStateObject.rightTextString,
+                charsArray: slideStateObject.rightCharsArray,
                 runIdNumber,
                 sliderRuntimeObject,
                 charDelayNumber: HOMEPAGE_TYPING_CHAR_DELAY_MS,
