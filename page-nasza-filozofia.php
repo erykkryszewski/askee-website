@@ -9,7 +9,7 @@ get_header(); the_post();
         <div class="row">
             <div class="col-12 col-lg-8 offset-lg-2 askee-chat__column askee-chat__column--mid">
                 <div class="askee-chat__wrapper">
-                    <h1 class="askee-chat__title">Koniec z „kto ma do tego dostęp?”.</h1>
+                    <?php get_template_part("template-parts/title-rotator"); ?>
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
