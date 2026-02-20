@@ -1,6 +1,3 @@
-.single-blog-post {
-}
-
 .askee-blog {
     &__single {
         width: 100%;
@@ -120,4 +117,8 @@
             margin-top: 25px;
         }
     }
+}
+
+.askee-page-single .askee-sidebar {
+    padding: 330px 0 0;
 }

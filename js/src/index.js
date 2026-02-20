@@ -337,6 +337,39 @@ initAskeeSpaHooks();
         existingCanonicalElement.setAttribute("href", canonicalHrefString);
     }
 
+    function normalizeAskeeSlugValue(rawValueString, fallbackValueString) {
+        let baseSlugString = "";
+        if (typeof rawValueString === "string") {
+            baseSlugString = rawValueString.trim();
+        }
+
+        if (!baseSlugString) {
+            baseSlugString = fallbackValueString;
+        }
+
+        let normalizedSlugString = "";
+        for (let index = 0; index < baseSlugString.length; index += 1) {
+            const charCodeNumber = baseSlugString.charCodeAt(index);
+            const charString = baseSlugString.charAt(index);
+
+            const isDigit = charCodeNumber >= 48 && charCodeNumber <= 57;
+            const isUppercaseLetter = charCodeNumber >= 65 && charCodeNumber <= 90;
+            const isLowercaseLetter = charCodeNumber >= 97 && charCodeNumber <= 122;
+
+            if (isDigit || isUppercaseLetter || isLowercaseLetter || charString === "-") {
+                normalizedSlugString += charString.toLowerCase();
+            } else if (charString === " " || charString === "_" || charString === "/") {
+                normalizedSlugString += "-";
+            }
+        }
+
+        if (!normalizedSlugString) {
+            normalizedSlugString = fallbackValueString;
+        }
+
+        return normalizedSlugString;
+    }
+
     function getCurrentPageSlugFromDom() {
         try {
             const pageElement = document.querySelector("[data-askee-page]");
@@ -344,37 +377,44 @@ initAskeeSpaHooks();
                 return "askee-page-home";
             }
 
-            const rawValue = pageElement.getAttribute("data-askee-page") || "";
-            let baseSlugString = rawValue.trim();
-
-            if (!baseSlugString) {
-                baseSlugString = "home";
-            }
-
-            let normalizedSlugString = "";
-            for (let index = 0; index < baseSlugString.length; index += 1) {
-                const charCodeNumber = baseSlugString.charCodeAt(index);
-                const charString = baseSlugString.charAt(index);
-
-                const isDigit = charCodeNumber >= 48 && charCodeNumber <= 57;
-                const isUppercaseLetter = charCodeNumber >= 65 && charCodeNumber <= 90;
-                const isLowercaseLetter = charCodeNumber >= 97 && charCodeNumber <= 122;
-
-                if (isDigit || isUppercaseLetter || isLowercaseLetter || charString === "-") {
-                    normalizedSlugString += charString.toLowerCase();
-                } else if (charString === " " || charString === "_" || charString === "/") {
-                    normalizedSlugString += "-";
-                }
-            }
-
-            if (!normalizedSlugString) {
-                normalizedSlugString = "home";
-            }
+            const rawValue = pageElement.getAttribute("data-askee-page");
+            const normalizedSlugString = normalizeAskeeSlugValue(rawValue, "home");
 
             return "askee-page-" + normalizedSlugString;
         } catch (error) {
             return "askee-page-home";
         }
+    }
+
+    function getAdditionalAskeePageClassesFromDom() {
+        const additionalClassesArray = [];
+
+        try {
+            const pageElement = document.querySelector("[data-askee-page]");
+            if (!pageElement) {
+                return additionalClassesArray;
+            }
+
+            const pageSlugValue = normalizeAskeeSlugValue(
+                pageElement.getAttribute("data-askee-page"),
+                "home"
+            );
+            if (pageSlugValue !== "category") {
+                return additionalClassesArray;
+            }
+
+            const categorySlugValue = normalizeAskeeSlugValue(
+                pageElement.getAttribute("data-askee-category-slug"),
+                ""
+            );
+            if (!categorySlugValue) {
+                return additionalClassesArray;
+            }
+
+            additionalClassesArray.push("askee-page-category-" + categorySlugValue);
+        } catch (error) {}
+
+        return additionalClassesArray;
     }
 
     function applyCurrentPageSlugBodyClassFromDom() {
@@ -383,20 +423,29 @@ initAskeeSpaHooks();
         }
 
         const targetClassNameString = getCurrentPageSlugFromDom();
+        const additionalTargetClassesArray = getAdditionalAskeePageClassesFromDom();
+        const allowedAskeePageClassesArray = [targetClassNameString, ...additionalTargetClassesArray];
         const currentClassListArray = Array.from(document.body.classList);
 
         for (let index = 0; index < currentClassListArray.length; index += 1) {
             const classNameString = currentClassListArray[index];
             if (
                 classNameString.indexOf("askee-page-") === 0 &&
-                classNameString !== targetClassNameString
+                !allowedAskeePageClassesArray.includes(classNameString)
             ) {
                 document.body.classList.remove(classNameString);
             }
         }
 
-        if (!document.body.classList.contains(targetClassNameString)) {
-            document.body.classList.add(targetClassNameString);
+        for (
+            let targetClassIndex = 0;
+            targetClassIndex < allowedAskeePageClassesArray.length;
+            targetClassIndex += 1
+        ) {
+            const classNameString = allowedAskeePageClassesArray[targetClassIndex];
+            if (!document.body.classList.contains(classNameString)) {
+                document.body.classList.add(classNameString);
+            }
         }
 
         const headerButton = document.querySelector(".button--header");
