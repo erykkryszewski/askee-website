@@ -225,10 +225,18 @@ function initSingleChatBox(boxElement) {
             return null;
         }
 
+        let topLevelElementToKeep = welcomeElement;
+        while (
+            topLevelElementToKeep.parentElement &&
+            topLevelElementToKeep.parentElement !== activeContentElement
+        ) {
+            topLevelElementToKeep = topLevelElementToKeep.parentElement;
+        }
+
         const childrenArray = Array.from(activeContentElement.children);
         for (let index = 0; index < childrenArray.length; index += 1) {
             const childElement = childrenArray[index];
-            if (childElement !== welcomeElement) {
+            if (childElement !== topLevelElementToKeep) {
                 childElement.remove();
             }
         }

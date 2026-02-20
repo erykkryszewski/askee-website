@@ -16,7 +16,7 @@ get_header(); the_post();
                             <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
                                 <span class="askee-about__welcome-wrapper">
                                     <p class="askee-chat__welcome">Chcesz wiedzieć, kto mnie stworzył?</p>
-                                    <button class="button button--ghost">Tak</button>
+                                    <!-- <button class="button button--ghost">Tak</button> -->
                                 </span>
                                 <div>
                                     <p>
