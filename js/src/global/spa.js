@@ -1,6 +1,11 @@
 import { bootAskeeBlocks, cleanupAskeeBlocks } from "./boot";
 
 export function initAskeeSpaHooks() {
+    if (window.__askeeSpaHooksInitialized === true) {
+        return;
+    }
+    window.__askeeSpaHooksInitialized = true;
+
     function bootFromMain() {
         const mainElement = document.querySelector("#askee-app-content");
         if (!mainElement) {

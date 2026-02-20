@@ -5,6 +5,24 @@
         width: 100%;
     }
 
+    &__title-rotator {
+        height: 120px;
+        overflow: hidden;
+        position: relative;
+        margin: 0 auto 60px;
+        max-width: 900px;
+
+        @media (width <= 767px) {
+            height: 140px;
+            margin-bottom: 30px;
+        }
+    }
+
+    &__title-track {
+        display: flex;
+        flex-direction: column;
+    }
+
     &__title {
         @extend .h2;
         margin: 0 auto 100px;
@@ -12,6 +30,21 @@
 
         @media (width <= 767px) {
             margin: 0 auto 50px;
+        }
+
+        &--rotator-item {
+            margin: 0 !important;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+
+            @media (width <= 767px) {
+                height: 140px;
+                font-size: 24px;
+                line-height: 34px;
+            }
         }
     }
 
@@ -49,6 +82,11 @@
         > div {
             width: 100%;
             padding: 0 0 0 36px;
+
+            p {
+                font-size: 15px;
+                line-height: 28px;
+            }
         }
     }
 
@@ -58,6 +96,13 @@
         align-items: flex-start;
         gap: 15px;
         position: relative;
+        font-size: 15px;
+        line-height: 28px;
+
+        * {
+            font-size: 15px;
+            line-height: 28px;
+        }
 
         &::before {
             content: "";

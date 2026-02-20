@@ -140,6 +140,48 @@ function updateChatNavigationButtonsActiveState(chatRootElement) {
     }
 }
 
+function initTitleRotator(boxElement) {
+    const wrapperElement = boxElement.closest(".askee-chat__wrapper");
+    if (!wrapperElement) return null;
+
+    const rotatorElement = wrapperElement.querySelector(".askee-chat__title-rotator");
+    if (!rotatorElement) return null;
+
+    const titlesArray = Array.from(rotatorElement.querySelectorAll(".askee-chat__title"));
+    if (titlesArray.length < 2) return null;
+
+    const trackElement = document.createElement("div");
+    trackElement.className = "askee-chat__title-track";
+
+    titlesArray.forEach(function (title) {
+        title.classList.add("askee-chat__title--rotator-item");
+        trackElement.appendChild(title);
+    });
+
+    rotatorElement.appendChild(trackElement);
+
+    const titleHeight = titlesArray[0].offsetHeight;
+    const timeline = gsap.timeline({ repeat: -1 });
+
+    for (let i = 1; i < titlesArray.length; i++) {
+        timeline.to(trackElement, {
+            y: -1 * i * titleHeight,
+            duration: 0.6,
+            ease: "power2.inOut",
+            delay: 3,
+        });
+    }
+
+    timeline.to(trackElement, {
+        y: 0,
+        duration: 0.4,
+        ease: "power2.out",
+        delay: 3,
+    });
+
+    return timeline;
+}
+
 function initSingleChatBox(boxElement) {
     if (boxElement.dataset.askeeBoxInitialized === "1") {
         return null;
@@ -147,6 +189,7 @@ function initSingleChatBox(boxElement) {
     boxElement.dataset.askeeBoxInitialized = "1";
 
     const switchSectionsElement = boxElement.querySelector(".askee-chat__switch-sections");
+    const rotatorTimeline = initTitleRotator(boxElement);
 
     let contentElementsArray = [];
     if (switchSectionsElement) {
@@ -598,6 +641,10 @@ function initSingleChatBox(boxElement) {
     animateInitialContentOnLoad();
 
     return function cleanupSingleBox() {
+        if (rotatorTimeline) {
+            rotatorTimeline.kill();
+        }
+
         boxElement.removeEventListener("click", onChatRootClick);
         if (formElement) {
             formElement.removeEventListener("submit", onFormSubmit);

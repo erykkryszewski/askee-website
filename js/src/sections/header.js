@@ -26,7 +26,9 @@ export function initAskeeHeader() {
             document.querySelector('[data-askee-page="chat"]') !== null ||
             window.location.pathname.indexOf("/chat") !== -1;
 
-        if (!isChatPage) {
+        const hasTargetOnCurrentPage = document.getElementById(targetId) !== null;
+
+        if (!isChatPage || !hasTargetOnCurrentPage) {
             return;
         }
 

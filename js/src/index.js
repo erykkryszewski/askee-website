@@ -33,6 +33,11 @@ initAskeeSpaHooks();
 (function () {
     "use strict";
 
+    if (window.__askeeRoutingInitialized === true) {
+        return;
+    }
+    window.__askeeRoutingInitialized = true;
+
     const askeeThemeConfigObject = window.AskeeThemeConfig || {};
 
     let contentSelectorString = "#askee-app-content";
@@ -55,15 +60,57 @@ initAskeeSpaHooks();
         ajaxHeaderValueString = askeeThemeConfigObject.ajaxHeaderValue;
     }
 
-    window.addEventListener("load", function () {
+    let navigationTimeoutMsNumber = 9000;
+    const navigationTimeoutCandidateNumber = Number(askeeThemeConfigObject.navigationTimeoutMs);
+    if (Number.isFinite(navigationTimeoutCandidateNumber) && navigationTimeoutCandidateNumber > 0) {
+        navigationTimeoutMsNumber = navigationTimeoutCandidateNumber;
+    }
+
+    let prefetchTimeoutMsNumber = 3500;
+    const prefetchTimeoutCandidateNumber = Number(askeeThemeConfigObject.prefetchTimeoutMs);
+    if (Number.isFinite(prefetchTimeoutCandidateNumber) && prefetchTimeoutCandidateNumber > 0) {
+        prefetchTimeoutMsNumber = prefetchTimeoutCandidateNumber;
+    }
+
+    let maxConcurrentPrefetchRequestsNumber = 2;
+    const maxConcurrentPrefetchCandidateNumber = Number(
+        askeeThemeConfigObject.maxConcurrentPrefetchRequests
+    );
+    if (
+        Number.isFinite(maxConcurrentPrefetchCandidateNumber) &&
+        maxConcurrentPrefetchCandidateNumber > 0
+    ) {
+        maxConcurrentPrefetchRequestsNumber = Math.max(
+            1,
+            Math.floor(maxConcurrentPrefetchCandidateNumber)
+        );
+    }
+
+    let hardReloadFallbackEnabled = false;
+    if (typeof askeeThemeConfigObject.hardReloadFallbackEnabled === "boolean") {
+        hardReloadFallbackEnabled = askeeThemeConfigObject.hardReloadFallbackEnabled;
+    }
+
+    function markInitialPageAsLoaded() {
+        if (!document.body) {
+            return;
+        }
         document.body.classList.add("askee-page-loaded");
         applyCurrentPageSlugBodyClassFromDom();
-    });
+    }
+
+    if (document.readyState === "complete") {
+        markInitialPageAsLoaded();
+    } else {
+        window.addEventListener("load", markInitialPageAsLoaded);
+    }
 
     const askeeSpaCacheMap = new Map();
     const askeeSpaCachePendingFetchMap = new Map();
     const askeeSpaCacheMaxEntriesNumber = 15;
     const askeeSpaCacheTtlMillisecondsNumber = 5 * 60 * 1000;
+    const askeePrefetchQueueArray = [];
+    let askeeActivePrefetchCountNumber = 0;
 
     let activeNavigationAbortController = null;
     let activeNavigationTokenNumber = 0;
@@ -95,6 +142,10 @@ initAskeeSpaHooks();
             return false;
         }
 
+        if (anchorElement.hasAttribute("data-askee-spa-ignore")) {
+            return false;
+        }
+
         const hrefAttributeValue = anchorElement.getAttribute("href");
         if (!hrefAttributeValue) {
             return false;
@@ -104,7 +155,12 @@ initAskeeSpaHooks();
             return false;
         }
 
-        if (anchorElement.getAttribute("target") === "_blank") {
+        const targetAttributeValue = anchorElement.getAttribute("target");
+        if (
+            typeof targetAttributeValue === "string" &&
+            targetAttributeValue !== "" &&
+            targetAttributeValue.toLowerCase() !== "_self"
+        ) {
             return false;
         }
 
@@ -429,30 +485,198 @@ initAskeeSpaHooks();
         window.scrollTo(0, 0);
     }
 
-    async function fetchPageData(urlWithoutHashString, abortSignalObject) {
-        const fetchResponse = await fetch(urlWithoutHashString, {
-            method: "GET",
-            headers: {
-                [ajaxHeaderNameString]: ajaxHeaderValueString,
-            },
-            credentials: "same-origin",
-            signal: abortSignalObject,
-        });
+    function performHardNavigationFallback(urlString) {
+        if (!hardReloadFallbackEnabled) {
+            return;
+        }
+        window.location.href = urlString;
+    }
 
-        if (!fetchResponse || !fetchResponse.ok) {
-            return null;
+    function reportNavigationIssue(urlString, reasonString, errorObject) {
+        const customEventObject = new CustomEvent("askee:navigation:error", {
+            detail: {
+                url: urlString,
+                reason: reasonString,
+            },
+        });
+        window.dispatchEvent(customEventObject);
+
+        if (!window.console || typeof window.console.warn !== "function") {
+            return;
         }
 
-        const responseHtmlString = await fetchResponse.text();
+        if (errorObject) {
+            window.console.warn("[Askee SPA]", reasonString, urlString, errorObject);
+            return;
+        }
 
-        const domParserObject = new DOMParser();
-        const fetchedDocumentObject = domParserObject.parseFromString(
-            responseHtmlString,
-            "text/html"
+        window.console.warn("[Askee SPA]", reasonString, urlString);
+    }
+
+    function createTimeoutLinkedAbortSignal(parentSignalObject, timeoutMillisecondsNumber) {
+        const linkedAbortController = new AbortController();
+        const cleanupFunctionsArray = [];
+        let didTimeoutAbort = false;
+
+        function abortLinkedSignal() {
+            if (linkedAbortController.signal.aborted) {
+                return;
+            }
+
+            try {
+                linkedAbortController.abort();
+            } catch (error) {}
+        }
+
+        if (parentSignalObject) {
+            if (parentSignalObject.aborted) {
+                abortLinkedSignal();
+            } else {
+                const onParentAbort = function () {
+                    abortLinkedSignal();
+                };
+
+                parentSignalObject.addEventListener("abort", onParentAbort, { once: true });
+                cleanupFunctionsArray.push(function () {
+                    parentSignalObject.removeEventListener("abort", onParentAbort);
+                });
+            }
+        }
+
+        const safeTimeoutMillisecondsNumber = Number.isFinite(timeoutMillisecondsNumber)
+            ? Math.max(0, timeoutMillisecondsNumber)
+            : 0;
+
+        if (safeTimeoutMillisecondsNumber > 0) {
+            const timeoutIdNumber = window.setTimeout(function () {
+                didTimeoutAbort = true;
+                abortLinkedSignal();
+            }, safeTimeoutMillisecondsNumber);
+
+            cleanupFunctionsArray.push(function () {
+                window.clearTimeout(timeoutIdNumber);
+            });
+        }
+
+        return {
+            signal: linkedAbortController.signal,
+            cleanup: function () {
+                for (let index = 0; index < cleanupFunctionsArray.length; index += 1) {
+                    try {
+                        cleanupFunctionsArray[index]();
+                    } catch (error) {}
+                }
+            },
+            didTimeoutAbort: function () {
+                return didTimeoutAbort;
+            },
+        };
+    }
+
+    function processPrefetchQueue() {
+        while (
+            askeeActivePrefetchCountNumber < maxConcurrentPrefetchRequestsNumber &&
+            askeePrefetchQueueArray.length > 0
+        ) {
+            const prefetchTaskFunction = askeePrefetchQueueArray.shift();
+            if (typeof prefetchTaskFunction !== "function") {
+                continue;
+            }
+
+            askeeActivePrefetchCountNumber += 1;
+
+            Promise.resolve()
+                .then(prefetchTaskFunction)
+                .catch(function () {})
+                .finally(function () {
+                    askeeActivePrefetchCountNumber = Math.max(
+                        0,
+                        askeeActivePrefetchCountNumber - 1
+                    );
+                    processPrefetchQueue();
+                });
+        }
+    }
+
+    function schedulePrefetchTask(prefetchTaskFunction) {
+        if (typeof prefetchTaskFunction !== "function") {
+            return;
+        }
+        askeePrefetchQueueArray.push(prefetchTaskFunction);
+        processPrefetchQueue();
+    }
+
+    function abortAllPrefetchRequests() {
+        askeePrefetchQueueArray.length = 0;
+
+        askeeSpaCachePendingFetchMap.forEach(function (pendingPrefetchObject) {
+            if (!pendingPrefetchObject || !pendingPrefetchObject.abortController) {
+                return;
+            }
+
+            try {
+                pendingPrefetchObject.abortController.abort();
+            } catch (error) {}
+        });
+
+        askeeSpaCachePendingFetchMap.clear();
+    }
+
+    async function fetchPageData(urlWithoutHashString, abortSignalObject, timeoutMillisecondsNumber) {
+        const linkedAbortObject = createTimeoutLinkedAbortSignal(
+            abortSignalObject,
+            timeoutMillisecondsNumber
         );
 
-        const pageDataObject = extractPageDataFromFetchedDocument(fetchedDocumentObject);
-        return pageDataObject;
+        try {
+            const fetchResponse = await fetch(urlWithoutHashString, {
+                method: "GET",
+                headers: {
+                    [ajaxHeaderNameString]: ajaxHeaderValueString,
+                },
+                credentials: "same-origin",
+                signal: linkedAbortObject.signal,
+            });
+
+            if (!fetchResponse || !fetchResponse.ok) {
+                return null;
+            }
+
+            const responseHtmlString = await fetchResponse.text();
+
+            const domParserObject = new DOMParser();
+            const fetchedDocumentObject = domParserObject.parseFromString(
+                responseHtmlString,
+                "text/html"
+            );
+
+            const pageDataObject = extractPageDataFromFetchedDocument(fetchedDocumentObject);
+            return pageDataObject;
+        } catch (error) {
+            if (error && error.name === "AbortError" && linkedAbortObject.didTimeoutAbort()) {
+                const timeoutErrorObject = new Error("Request timed out");
+                timeoutErrorObject.name = "AskeeTimeoutError";
+                throw timeoutErrorObject;
+            }
+
+            throw error;
+        } finally {
+            linkedAbortObject.cleanup();
+        }
+    }
+
+    function setPageDataInCache(cacheKeyString, pageDataObject) {
+        if (!pageDataObject) {
+            return;
+        }
+
+        setCacheEntry(cacheKeyString, {
+            createdAtNumber: Date.now(),
+            contentHtmlString: pageDataObject.contentHtmlString,
+            documentTitleString: pageDataObject.documentTitleString,
+            bodyClassString: pageDataObject.bodyClassString,
+            canonicalHrefString: pageDataObject.canonicalHrefString,
+        });
     }
 
     async function prefetchUrlIfPossible(urlString) {
@@ -479,38 +703,47 @@ initAskeeSpaHooks();
             return;
         }
 
-        const prefetchAbortController = new AbortController();
-        const prefetchPromise = (async () => {
-            try {
-                const pageDataObject = await fetchPageData(
-                    normalizedUrlWithoutHashString,
-                    prefetchAbortController.signal
-                );
-                if (!pageDataObject) {
+        const pendingPrefetchObject = {
+            queued: true,
+            abortController: null,
+            promise: null,
+        };
+
+        pendingPrefetchObject.promise = new Promise(function (resolvePromiseFunction) {
+            schedulePrefetchTask(async function () {
+                if (!askeeSpaCachePendingFetchMap.has(cacheKeyString)) {
+                    resolvePromiseFunction(null);
                     return;
                 }
 
-                setCacheEntry(cacheKeyString, {
-                    createdAtNumber: Date.now(),
-                    contentHtmlString: pageDataObject.contentHtmlString,
-                    documentTitleString: pageDataObject.documentTitleString,
-                    bodyClassString: pageDataObject.bodyClassString,
-                    canonicalHrefString: pageDataObject.canonicalHrefString,
-                });
-            } catch (error) {}
-        })();
+                const prefetchAbortController = new AbortController();
+                pendingPrefetchObject.queued = false;
+                pendingPrefetchObject.abortController = prefetchAbortController;
+                askeeSpaCachePendingFetchMap.set(cacheKeyString, pendingPrefetchObject);
 
-        askeeSpaCachePendingFetchMap.set(cacheKeyString, {
-            abortController: prefetchAbortController,
-            promise: prefetchPromise,
+                let resolvedPageDataObject = null;
+
+                try {
+                    const pageDataObject = await fetchPageData(
+                        normalizedUrlWithoutHashString,
+                        prefetchAbortController.signal,
+                        prefetchTimeoutMsNumber
+                    );
+                    if (!pageDataObject) {
+                        return;
+                    }
+
+                    setPageDataInCache(cacheKeyString, pageDataObject);
+                    resolvedPageDataObject = pageDataObject;
+                } catch (error) {
+                } finally {
+                    askeeSpaCachePendingFetchMap.delete(cacheKeyString);
+                    resolvePromiseFunction(resolvedPageDataObject);
+                }
+            });
         });
 
-        try {
-            await prefetchPromise;
-        } catch (error) {
-        } finally {
-            askeeSpaCachePendingFetchMap.delete(cacheKeyString);
-        }
+        askeeSpaCachePendingFetchMap.set(cacheKeyString, pendingPrefetchObject);
     }
 
     function applyPageDataToDom(
@@ -550,7 +783,8 @@ initAskeeSpaHooks();
     async function navigateToUrl(urlString, shouldPushStateValue) {
         const mainContentElement = document.querySelector(contentSelectorString);
         if (!mainContentElement) {
-            window.location.href = urlString;
+            reportNavigationIssue(urlString, "missing_content_container");
+            performHardNavigationFallback(urlString);
             return;
         }
 
@@ -561,7 +795,8 @@ initAskeeSpaHooks();
             normalizedUrlWithoutHashString = getNormalizedUrlWithoutHashString(urlString);
             cacheKeyString = getCacheKeyFromUrlString(urlString);
         } catch (error) {
-            window.location.href = urlString;
+            reportNavigationIssue(urlString, "invalid_destination_url", error);
+            performHardNavigationFallback(urlString);
             return;
         }
 
@@ -578,6 +813,26 @@ initAskeeSpaHooks();
             }
         }
 
+        const pendingPrefetchObject = askeeSpaCachePendingFetchMap.get(cacheKeyString);
+        if (pendingPrefetchObject && pendingPrefetchObject.promise) {
+            try {
+                await pendingPrefetchObject.promise;
+            } catch (error) {}
+
+            const cachedPageDataAfterPrefetchObject = getCacheEntry(cacheKeyString);
+            if (cachedPageDataAfterPrefetchObject) {
+                const appliedFromPrefetchCache = applyPageDataToDom(
+                    mainContentElement,
+                    cachedPageDataAfterPrefetchObject,
+                    urlString,
+                    shouldPushStateValue
+                );
+                if (appliedFromPrefetchCache) {
+                    return;
+                }
+            }
+        }
+
         activeNavigationTokenNumber += 1;
         const localNavigationTokenNumber = activeNavigationTokenNumber;
 
@@ -588,30 +843,29 @@ initAskeeSpaHooks();
         }
 
         activeNavigationAbortController = new AbortController();
+        abortAllPrefetchRequests();
 
-        document.body.classList.add(loadingBodyClassName);
+        if (document.body) {
+            document.body.classList.add(loadingBodyClassName);
+        }
 
         try {
             const pageDataObject = await fetchPageData(
                 normalizedUrlWithoutHashString,
-                activeNavigationAbortController.signal
+                activeNavigationAbortController.signal,
+                navigationTimeoutMsNumber
             );
             if (localNavigationTokenNumber !== activeNavigationTokenNumber) {
                 return;
             }
 
             if (!pageDataObject) {
-                window.location.href = urlString;
+                reportNavigationIssue(urlString, "missing_page_data");
+                performHardNavigationFallback(urlString);
                 return;
             }
 
-            setCacheEntry(cacheKeyString, {
-                createdAtNumber: Date.now(),
-                contentHtmlString: pageDataObject.contentHtmlString,
-                documentTitleString: pageDataObject.documentTitleString,
-                bodyClassString: pageDataObject.bodyClassString,
-                canonicalHrefString: pageDataObject.canonicalHrefString,
-            });
+            setPageDataInCache(cacheKeyString, pageDataObject);
 
             const appliedFromFetch = applyPageDataToDom(
                 mainContentElement,
@@ -620,32 +874,69 @@ initAskeeSpaHooks();
                 shouldPushStateValue
             );
             if (!appliedFromFetch) {
-                window.location.href = urlString;
+                reportNavigationIssue(urlString, "dom_apply_failed");
+                performHardNavigationFallback(urlString);
                 return;
             }
         } catch (error) {
             if (error && error.name === "AbortError") {
                 return;
             }
-            window.location.href = urlString;
+
+            if (error && error.name === "AskeeTimeoutError") {
+                reportNavigationIssue(urlString, "request_timeout", error);
+                return;
+            }
+
+            reportNavigationIssue(urlString, "request_failed", error);
+            performHardNavigationFallback(urlString);
             return;
         } finally {
-            if (localNavigationTokenNumber === activeNavigationTokenNumber) {
+            if (localNavigationTokenNumber === activeNavigationTokenNumber && document.body) {
                 document.body.classList.remove(loadingBodyClassName);
             }
         }
     }
 
     window.AskeeSpaNavigateToUrl = function (urlString) {
-        navigateToUrl(urlString, true);
+        return navigateToUrl(urlString, true);
     };
+
+    function getAnchorElementFromEvent(eventObject) {
+        if (!eventObject) {
+            return null;
+        }
+
+        if (typeof eventObject.composedPath === "function") {
+            const eventPathArray = eventObject.composedPath();
+            for (let index = 0; index < eventPathArray.length; index += 1) {
+                const pathItem = eventPathArray[index];
+                if (!(pathItem instanceof Element)) {
+                    continue;
+                }
+
+                const tagNameString = typeof pathItem.tagName === "string" ? pathItem.tagName : "";
+                if (tagNameString.toLowerCase() === "a") {
+                    return pathItem;
+                }
+
+                const closestAnchorElement = pathItem.closest("a[href]");
+                if (closestAnchorElement) {
+                    return closestAnchorElement;
+                }
+            }
+        }
+
+        const targetElement = eventObject.target;
+        if (!(targetElement instanceof Element)) {
+            return null;
+        }
+
+        return targetElement.closest("a[href]");
+    }
 
     function onDocumentClick(eventObject) {
         if (!eventObject) {
-            return;
-        }
-
-        if (eventObject.defaultPrevented) {
             return;
         }
 
@@ -663,16 +954,7 @@ initAskeeSpaHooks();
             return;
         }
 
-        const targetElement = eventObject.target;
-        if (!targetElement) {
-            return;
-        }
-
-        if (!(targetElement instanceof Element)) {
-            return;
-        }
-
-        const anchorElement = targetElement.closest("a");
+        const anchorElement = getAnchorElementFromEvent(eventObject);
         if (!shouldHandleAnchorElement(anchorElement)) {
             return;
         }
@@ -720,22 +1002,18 @@ initAskeeSpaHooks();
         navigateToUrl(currentUrlString, false);
     }
 
-    function onAnchorMouseEnter(eventObject) {
+    function onDocumentMouseOver(eventObject) {
         if (!eventObject) {
             return;
         }
 
-        const targetElement = eventObject.target;
-        if (!targetElement) {
-            return;
-        }
-
-        if (!(targetElement instanceof Element)) {
-            return;
-        }
-
-        const anchorElement = targetElement.closest("a");
+        const anchorElement = getAnchorElementFromEvent(eventObject);
         if (!shouldHandleAnchorElement(anchorElement)) {
+            return;
+        }
+
+        const relatedElement = eventObject.relatedTarget;
+        if (relatedElement instanceof Element && anchorElement.contains(relatedElement)) {
             return;
         }
 
@@ -766,15 +1044,25 @@ initAskeeSpaHooks();
     }
 
     function initAskeeRouting() {
-        document.addEventListener("click", onDocumentClick, true);
-        document.addEventListener("mouseenter", onAnchorMouseEnter, true);
+        if (window.__askeeRoutingListenersBound === true) {
+            return;
+        }
+        window.__askeeRoutingListenersBound = true;
+
+        window.addEventListener("click", onDocumentClick, true);
+        document.addEventListener("mouseover", onDocumentMouseOver, {
+            capture: true,
+            passive: true,
+        });
         window.addEventListener("popstate", onPopState);
 
-        window.history.replaceState(
-            { askee: true, url: window.location.href },
-            "",
-            window.location.href
-        );
+        try {
+            window.history.replaceState(
+                { askee: true, url: window.location.href },
+                "",
+                window.location.href
+            );
+        } catch (error) {}
 
         applyCurrentPageSlugBodyClassFromDom();
     }

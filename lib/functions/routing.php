@@ -14,6 +14,10 @@ function askee_register_theme_config() {
         "loadingBodyClass" => "askee-is-loading",
         "ajaxHeaderName" => "X-ASKEE-PJAX",
         "ajaxHeaderValue" => "1",
+        "navigationTimeoutMs" => 9000,
+        "prefetchTimeoutMs" => 3500,
+        "maxConcurrentPrefetchRequests" => 2,
+        "hardReloadFallbackEnabled" => false,
         "chatRoutes" => [
             "askee-chat-content-default" => home_url("/chat/"),
             "askee-chat-content-letstalk" => home_url("/porozmawiajmy/"),
