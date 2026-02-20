@@ -63,18 +63,11 @@ if (have_posts()):
 
         $askee_post_excerpt = trim((string) get_the_excerpt());
         if ("" === $askee_post_excerpt) {
-            $askee_raw_content = (string) get_the_content(null, false, get_the_ID());
-            $askee_clean_content = trim(wp_strip_all_tags(strip_shortcodes($askee_raw_content)));
-            $askee_clean_content = preg_replace("/\s+/", " ", $askee_clean_content);
-            if (!empty($askee_clean_content)) {
-                if (
-                    preg_match("/^(.+?[.!?])(\s|$)/u", $askee_clean_content, $askee_sentence_match)
-                ) {
-                    $askee_post_excerpt = trim($askee_sentence_match[1]);
-                } else {
-                    $askee_post_excerpt = wp_trim_words($askee_clean_content, 24, "...");
-                }
-            }
+            $askee_post_excerpt = "";
+        }
+
+        if (mb_strlen($askee_post_excerpt) > 400) {
+            $askee_post_excerpt = mb_substr($askee_post_excerpt, 0, 400) . "...";
         }
 
         $askee_permalink = get_permalink();
@@ -155,6 +148,14 @@ if (have_posts()):
                     <?php endif; ?>
                 </div>
 
+                <figure class="askee-blog__single-image">
+                    <?php echo wp_get_attachment_image($askee_post_image_id, "large", false, [
+                        "class" => "askee-blog__single-image-file object-fit-cover",
+                        "loading" => "lazy",
+                    ]); ?>
+                </figure>
+            </header>
+            <div class="askee-blog__info-share">
                 <div class="askee-blog__single-meta">
                     <span class="askee-blog__post-author askee-blog__single-author text-small">
                         <span class="askee-blog__post-author-avatar">
@@ -174,43 +175,36 @@ if (have_posts()):
                         <?php echo esc_html(get_the_date()); ?>
                     </time>
 
-                    <div class="askee-blog__single-share">
-                        <span class="askee-blog__single-share-label text-small"><?php esc_html_e(
-                            "Share",
-                            "askeetheme",
-                        ); ?></span>
-                        <ul class="askee-social-media askee-blog__single-share-list">
-                            <li>
-                                <a href="<?php echo esc_url(
-                                    $askee_share_facebook_url,
-                                ); ?>" target="_blank" rel="noopener noreferrer">
-                                    <?php echo wp_get_attachment_image(5069, "large"); ?>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="<?php echo esc_url(
-                                    $askee_share_x_url,
-                                ); ?>" target="_blank" rel="noopener noreferrer">
-                                    <?php echo wp_get_attachment_image(5068, "large"); ?>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="<?php echo esc_url($askee_share_link_url); ?>">
-                                    <?php echo wp_get_attachment_image(5067, "large"); ?>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+
                 </div>
-            </header>
-
-            <figure class="askee-blog__single-image">
-                <?php echo wp_get_attachment_image($askee_post_image_id, "large", false, [
-                    "class" => "askee-blog__single-image-file object-fit-cover",
-                    "loading" => "lazy",
-                ]); ?>
-            </figure>
-
+                <div class="askee-blog__single-share">
+                    <span class="askee-blog__single-share-label text-small"><?php esc_html_e(
+                        "Share",
+                        "askeetheme",
+                    ); ?></span>
+                    <ul class="askee-social-media askee-blog__single-share-list">
+                        <li>
+                            <a href="<?php echo esc_url(
+                                $askee_share_facebook_url,
+                            ); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php echo wp_get_attachment_image(5069, "large"); ?>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="<?php echo esc_url(
+                                $askee_share_x_url,
+                            ); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php echo wp_get_attachment_image(5068, "large"); ?>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="<?php echo esc_url($askee_share_link_url); ?>">
+                                <?php echo wp_get_attachment_image(5067, "large"); ?>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
             <div class="askee-blog__single-content">
                 <?php the_content(); ?>
             </div>

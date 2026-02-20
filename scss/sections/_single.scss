@@ -49,6 +49,15 @@
         margin: 20px 0 0;
     }
 
+    &__info-share {
+        margin: 40px 0 0;
+        padding: 20px 0 0;
+        border-top: 1px solid $light-gray;
+        display: flex;
+        gap: 30px;
+        justify-content: space-between;
+    }
+
     &__single-meta {
         width: 100%;
         max-width: 220px;
@@ -56,7 +65,6 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 14px;
-        padding: 52px 0 0;
         flex-shrink: 0;
     }
 
@@ -72,11 +80,12 @@
     }
 
     &__single-image {
-        margin: 35px 0 0;
+        margin: 0;
         width: 100%;
         overflow: hidden;
         border-radius: $theme-border-radius;
         aspect-ratio: 16 / 9;
+        height: 320px;
     }
 
     &__single-image-file {
@@ -120,5 +129,9 @@
 }
 
 .askee-page-single .askee-sidebar {
-    padding: 330px 0 0;
+    padding: 537px 0 0;
+
+    @media (width <= 991px) {
+        padding: 30px 0 0;
+    }
 }
