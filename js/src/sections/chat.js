@@ -147,39 +147,81 @@ function initTitleRotator(boxElement) {
     const rotatorElement = wrapperElement.querySelector(".askee-chat__title-rotator");
     if (!rotatorElement) return null;
 
-    const titlesArray = Array.from(rotatorElement.querySelectorAll(".askee-chat__title"));
-    if (titlesArray.length < 2) return null;
+    let trackElement = rotatorElement.querySelector(".askee-chat__title-track");
+    let titlesArray = [];
 
-    const trackElement = document.createElement("div");
-    trackElement.className = "askee-chat__title-track";
+    if (!trackElement) {
+        titlesArray = Array.from(rotatorElement.querySelectorAll(".askee-chat__title"));
+        if (titlesArray.length < 2) return null;
 
-    titlesArray.forEach(function (title) {
-        title.classList.add("askee-chat__title--rotator-item");
-        trackElement.appendChild(title);
-    });
+        trackElement = document.createElement("div");
+        trackElement.className = "askee-chat__title-track";
 
-    rotatorElement.appendChild(trackElement);
+        titlesArray.forEach(function (title) {
+            title.classList.add("askee-chat__title--rotator-item");
+            trackElement.appendChild(title);
+        });
+        rotatorElement.appendChild(trackElement);
+    } else {
+        titlesArray = Array.from(trackElement.querySelectorAll(".askee-chat__title"));
+    }
 
-    const titleHeight = titlesArray[0].offsetHeight;
-    const timeline = gsap.timeline({ repeat: -1 });
+    let timeline = null;
+    let resizeObserver = null;
+    let lastWidth = rotatorElement.offsetWidth;
 
-    for (let i = 1; i < titlesArray.length; i++) {
+    function buildRotator() {
+        if (timeline) timeline.kill();
+        gsap.set(trackElement, { clearProps: "all" });
+        gsap.set(rotatorElement, { clearProps: "height" });
+        titlesArray.forEach((t) => gsap.set(t, { clearProps: "height" }));
+
+        let maxHeight = 0;
+        titlesArray.forEach(function (title) {
+            const h = title.offsetHeight;
+            if (h > maxHeight) maxHeight = h;
+        });
+
+        if (maxHeight === 0) return;
+
+        rotatorElement.style.height = maxHeight + "px";
+        titlesArray.forEach((t) => (t.style.height = maxHeight + "px"));
+
+        timeline = gsap.timeline({ repeat: -1 });
+
+        for (let i = 1; i < titlesArray.length; i++) {
+            timeline.to(trackElement, {
+                y: -1 * i * maxHeight,
+                duration: 0.6,
+                ease: "power2.inOut",
+                delay: 3,
+            });
+        }
+
         timeline.to(trackElement, {
-            y: -1 * i * titleHeight,
-            duration: 0.6,
-            ease: "power2.inOut",
+            y: 0,
+            duration: 0.4,
+            ease: "power2.out",
             delay: 3,
         });
     }
 
-    timeline.to(trackElement, {
-        y: 0,
-        duration: 0.4,
-        ease: "power2.out",
-        delay: 3,
-    });
+    buildRotator();
 
-    return timeline;
+    resizeObserver = new ResizeObserver(function () {
+        if (Math.abs(rotatorElement.offsetWidth - lastWidth) > 0.5) {
+            lastWidth = rotatorElement.offsetWidth;
+            buildRotator();
+        }
+    });
+    resizeObserver.observe(rotatorElement);
+
+    return {
+        kill: function () {
+            if (timeline) timeline.kill();
+            if (resizeObserver) resizeObserver.disconnect();
+        },
+    };
 }
 
 function initSingleChatBox(boxElement) {
@@ -189,7 +231,7 @@ function initSingleChatBox(boxElement) {
     boxElement.dataset.askeeBoxInitialized = "1";
 
     const switchSectionsElement = boxElement.querySelector(".askee-chat__switch-sections");
-    const rotatorTimeline = initTitleRotator(boxElement);
+    const rotatorInstance = initTitleRotator(boxElement);
 
     let contentElementsArray = [];
     if (switchSectionsElement) {
@@ -649,8 +691,8 @@ function initSingleChatBox(boxElement) {
     animateInitialContentOnLoad();
 
     return function cleanupSingleBox() {
-        if (rotatorTimeline) {
-            rotatorTimeline.kill();
+        if (rotatorInstance) {
+            rotatorInstance.kill();
         }
 
         boxElement.removeEventListener("click", onChatRootClick);
