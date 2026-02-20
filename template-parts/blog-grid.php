@@ -1,19 +1,19 @@
 <?php
 
 $askee_category_icon_map = [
-    "biznes" => "https://cdn-icons-png.flaticon.com/512/2608/2608249.png",
-    "sztuczna-inteligencja" => "https://cdn-icons-png.flaticon.com/512/3480/3480066.png",
-    "hr" => "https://cdn-icons-png.flaticon.com/512/4126/4126442.png",
-    "aktualnosci" => "https://cdn-icons-png.flaticon.com/512/12900/12900230.png",
+    "biznes" => "fa-regular fa-briefcase",
+    "sztuczna-inteligencja" => "fa-regular fa-lightbulb",
+    "hr" => "fa-solid fa-user-group",
+    "aktualnosci" => "fa-regular fa-newspaper",
 ];
 $askee_default_category_icon = $askee_category_icon_map["aktualnosci"];
 $askee_default_thumbnail_id = 5091;
 $askee_post_index = 0;
 
-if (have_posts()) :
-    ?>
+if (have_posts()): ?>
     <div class="askee-blog__list">
-        <?php while (have_posts()) : the_post(); ?>
+        <?php while (have_posts()):
+            the_post(); ?>
             <?php
             $askee_post_index++;
             $askee_is_featured_post = 1 === $askee_post_index;
@@ -69,17 +69,42 @@ if (have_posts()) :
                         wp_strip_all_tags(strip_shortcodes($askee_raw_content)),
                     );
                     $askee_clean_content = preg_replace("/\s+/", " ", $askee_clean_content);
+
                     if (!empty($askee_clean_content)) {
+                        $askee_post_excerpt = "";
+
                         if (
-                            preg_match(
-                                "/^(.+?[.!?])(\s|$)/u",
+                            preg_match_all(
+                                "/[^.!?]*[.!?]+/u",
                                 $askee_clean_content,
-                                $askee_sentence_match,
+                                $askee_sentence_matches,
                             )
                         ) {
-                            $askee_post_excerpt = trim($askee_sentence_match[1]);
+                            $askee_sentences = array_slice($askee_sentence_matches[0], 0, 5);
+                            $askee_post_excerpt = trim(implode(" ", $askee_sentences));
+                        }
+
+                        if ("" === $askee_post_excerpt) {
+                            $askee_post_excerpt = $askee_clean_content;
+                        }
+
+                        $askee_needs_ellipsis = false;
+
+                        if (function_exists("mb_strlen") && function_exists("mb_substr")) {
+                            if (mb_strlen($askee_post_excerpt) > 300) {
+                                $askee_post_excerpt = mb_substr($askee_post_excerpt, 0, 300);
+                                $askee_needs_ellipsis = true;
+                            }
                         } else {
-                            $askee_post_excerpt = wp_trim_words($askee_clean_content, 24, "...");
+                            if (strlen($askee_post_excerpt) > 300) {
+                                $askee_post_excerpt = substr($askee_post_excerpt, 0, 300);
+                                $askee_needs_ellipsis = true;
+                            }
+                        }
+
+                        if ($askee_needs_ellipsis) {
+                            $askee_post_excerpt =
+                                rtrim($askee_post_excerpt, " \t\n\r\0\x0B,.!?-") . "...";
                         }
                     }
                 }
@@ -90,37 +115,26 @@ if (have_posts()) :
             } ?>">
                 <a class="askee-blog__post-link" href="<?php the_permalink(); ?>">
                     <div class="askee-blog__post-media">
-                        <?php echo wp_get_attachment_image(
-                            $askee_post_image_id,
-                            "large",
-                            false,
-                            [
-                                "class" => "askee-blog__post-image object-fit-cover",
-                                "loading" => "lazy",
-                            ],
-                        ); ?>
+                        <?php echo wp_get_attachment_image($askee_post_image_id, "large", false, [
+                            "class" => "askee-blog__post-image object-fit-cover",
+                            "loading" => "lazy",
+                        ]); ?>
                     </div>
 
                     <div class="askee-blog__post-content">
                         <span class="askee-blog__post-category text-small">
-                            <img
-                                class="askee-blog__post-category-icon"
-                                src="<?php echo esc_url($askee_post_category_icon); ?>"
-                                alt="<?php echo esc_attr(
-                                    sprintf(
-                                        __("Ikona kategorii %s", "askeetheme"),
-                                        $askee_post_category_name,
-                                    ),
+                            <i
+                                class="askee-blog__post-category-icon <?php echo esc_attr(
+                                    $askee_post_category_icon ?: "fa-regular fa-folder",
                                 ); ?>"
-                                loading="lazy"
-                                decoding="async"
-                            />
+                                aria-hidden="true"
+                            ></i>
                             <span><?php echo esc_html($askee_post_category_name); ?></span>
                         </span>
 
                         <h2 class="askee-blog__post-title h3"><?php the_title(); ?></h2>
 
-                        <?php if ($askee_is_featured_post && "" !== $askee_post_excerpt) : ?>
+                        <?php if ($askee_is_featured_post && "" !== $askee_post_excerpt): ?>
                             <p class="askee-blog__post-excerpt paragraph text-medium"><?php echo esc_html(
                                 $askee_post_excerpt,
                             ); ?></p>
@@ -148,13 +162,13 @@ if (have_posts()) :
                     </div>
                 </a>
             </article>
-        <?php endwhile; ?>
+        <?php
+        endwhile; ?>
     </div>
-<?php else : ?>
+<?php else: ?>
     <p class="askee-blog__empty paragraph"><?php esc_html_e(
         "Brak wpisow do wyswietlenia.",
         "askeetheme",
     ); ?></p>
-<?php
-endif;
+<?php endif;
 ?>

@@ -1,16 +1,17 @@
 <?php
 
 $askee_category_icon_map = [
-    "biznes" => "https://cdn-icons-png.flaticon.com/512/2608/2608249.png",
-    "sztuczna-inteligencja" => "https://cdn-icons-png.flaticon.com/512/3480/3480066.png",
-    "hr" => "https://cdn-icons-png.flaticon.com/512/4126/4126442.png",
-    "aktualnosci" => "https://cdn-icons-png.flaticon.com/512/12900/12900230.png",
+    "biznes" => "fa-regular fa-briefcase",
+    "sztuczna-inteligencja" => "fa-regular fa-lightbulb",
+    "hr" => "fa-solid fa-user-group",
+    "aktualnosci" => "fa-regular fa-newspaper",
 ];
 $askee_default_category_icon = $askee_category_icon_map["aktualnosci"];
 $askee_default_thumbnail_id = 5091;
 
-if (have_posts()) :
-    while (have_posts()) :
+if (have_posts()):
+    while (have_posts()):
+
         the_post();
 
         $askee_post_categories = get_the_category();
@@ -41,10 +42,14 @@ if (have_posts()) :
         $askee_author_id = (int) get_the_author_meta("ID");
         $askee_author_pseudonim = trim((string) get_the_author_meta("pseudonim", $askee_author_id));
         if ("" === $askee_author_pseudonim) {
-            $askee_author_pseudonim = trim((string) get_user_meta($askee_author_id, "pseudonim", true));
+            $askee_author_pseudonim = trim(
+                (string) get_user_meta($askee_author_id, "pseudonim", true),
+            );
         }
         if ("" === $askee_author_pseudonim) {
-            $askee_author_pseudonim = trim((string) get_the_author_meta("nickname", $askee_author_id));
+            $askee_author_pseudonim = trim(
+                (string) get_the_author_meta("nickname", $askee_author_id),
+            );
         }
         if ("" === $askee_author_pseudonim) {
             $askee_author_pseudonim = trim(
@@ -52,7 +57,9 @@ if (have_posts()) :
             );
         }
 
-        $askee_post_image_id = has_post_thumbnail() ? get_post_thumbnail_id() : $askee_default_thumbnail_id;
+        $askee_post_image_id = has_post_thumbnail()
+            ? get_post_thumbnail_id()
+            : $askee_default_thumbnail_id;
 
         $askee_post_excerpt = trim((string) get_the_excerpt());
         if ("" === $askee_post_excerpt) {
@@ -60,7 +67,9 @@ if (have_posts()) :
             $askee_clean_content = trim(wp_strip_all_tags(strip_shortcodes($askee_raw_content)));
             $askee_clean_content = preg_replace("/\s+/", " ", $askee_clean_content);
             if (!empty($askee_clean_content)) {
-                if (preg_match("/^(.+?[.!?])(\s|$)/u", $askee_clean_content, $askee_sentence_match)) {
+                if (
+                    preg_match("/^(.+?[.!?])(\s|$)/u", $askee_clean_content, $askee_sentence_match)
+                ) {
                     $askee_post_excerpt = trim($askee_sentence_match[1]);
                 } else {
                     $askee_post_excerpt = wp_trim_words($askee_clean_content, 24, "...");
@@ -90,11 +99,11 @@ if (have_posts()) :
                 <ul class="askee-blog__single-breadcrumbs-list text-small">
                     <li class="askee-blog__single-breadcrumb-item">
                         <a href="<?php echo esc_url(home_url("/")); ?>"><?php esc_html_e(
-                            "Home",
-                            "askeetheme",
-                        ); ?></a>
+    "Home",
+    "askeetheme",
+); ?></a>
                     </li>
-                    <?php if ($askee_post_category instanceof WP_Term) : ?>
+                    <?php if ($askee_post_category instanceof WP_Term): ?>
                         <li
                             class="askee-blog__single-breadcrumb-item askee-blog__single-breadcrumb-item--separator"
                             aria-hidden="true"
@@ -102,11 +111,11 @@ if (have_posts()) :
                             <span>&gt;</span>
                         </li>
                         <li class="askee-blog__single-breadcrumb-item">
-                            <?php if ("" !== $askee_post_category_link) : ?>
-                                <a href="<?php echo esc_url($askee_post_category_link); ?>"><?php echo esc_html(
-                                    $askee_post_category_name,
-                                ); ?></a>
-                            <?php else : ?>
+                            <?php if ("" !== $askee_post_category_link): ?>
+                                <a href="<?php echo esc_url(
+                                    $askee_post_category_link,
+                                ); ?>"><?php echo esc_html($askee_post_category_name); ?></a>
+                            <?php else: ?>
                                 <span><?php echo esc_html($askee_post_category_name); ?></span>
                             <?php endif; ?>
                         </li>
@@ -126,21 +135,20 @@ if (have_posts()) :
             <header class="askee-blog__single-header">
                 <div class="askee-blog__single-main">
                     <span class="askee-blog__post-category text-small">
-                        <img
-                            class="askee-blog__post-category-icon"
-                            src="<?php echo esc_url($askee_post_category_icon); ?>"
-                            alt="<?php echo esc_attr(
-                                sprintf(__("Ikona kategorii %s", "askeetheme"), $askee_post_category_name),
+                        <i
+                            class="askee-blog__post-category-icon <?php echo esc_attr(
+                                $askee_post_category_icon ?: "fa-regular fa-folder",
                             ); ?>"
-                            loading="lazy"
-                            decoding="async"
-                        />
+                            aria-hidden="true"
+                        ></i>
                         <span><?php echo esc_html($askee_post_category_name); ?></span>
                     </span>
 
-                    <h1 class="askee-blog__single-title h1"><?php echo esc_html($askee_post_title); ?></h1>
+                    <h1 class="askee-blog__single-title h1"><?php echo esc_html(
+                        $askee_post_title,
+                    ); ?></h1>
 
-                    <?php if ("" !== $askee_post_excerpt) : ?>
+                    <?php if ("" !== $askee_post_excerpt): ?>
                         <p class="askee-blog__single-excerpt paragraph"><?php echo esc_html(
                             $askee_post_excerpt,
                         ); ?></p>
@@ -209,8 +217,8 @@ if (have_posts()) :
         </article>
     <?php
     endwhile;
-else :
-    ?>
+else:
+     ?>
     <p class="askee-blog__empty paragraph"><?php esc_html_e(
         "Brak wpisu do wyswietlenia.",
         "askeetheme",

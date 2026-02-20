@@ -19,6 +19,11 @@
 
     &__single-breadcrumb-item {
         min-width: 0;
+
+        * {
+            font-size: 12px;
+            line-height: 18px;
+        }
     }
 
     &__single-breadcrumb-item--current {
@@ -95,10 +100,9 @@
             max-width: 100%;
             width: 100%;
             padding: 0;
-            flex-direction: row;
+            flex-flow: row wrap;
             align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap;
         }
     }
 
