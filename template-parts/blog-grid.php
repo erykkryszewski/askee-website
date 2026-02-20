@@ -1,5 +1,7 @@
 <?php
 
+global $wp_query;
+
 $askee_category_icon_map = [
     "biznes" => "fa-regular fa-briefcase",
     "sztuczna-inteligencja" => "fa-regular fa-lightbulb",
@@ -9,14 +11,18 @@ $askee_category_icon_map = [
 $askee_default_category_icon = $askee_category_icon_map["aktualnosci"];
 $askee_default_thumbnail_id = 5091;
 $askee_post_index = 0;
+$askee_visible_posts_count = isset($wp_query) ? (int) $wp_query->post_count : 0;
+$askee_has_featured_layout = $askee_visible_posts_count > 4;
 
 if (have_posts()): ?>
-    <div class="askee-blog__list">
+    <div class="askee-blog__list<?php if ($askee_has_featured_layout) {
+        echo " askee-blog__list--with-featured";
+    } ?>">
         <?php while (have_posts()):
             the_post(); ?>
             <?php
             $askee_post_index++;
-            $askee_is_featured_post = 1 === $askee_post_index;
+            $askee_is_featured_post = $askee_has_featured_layout && 1 === $askee_post_index;
 
             $askee_post_categories = get_the_category();
             $askee_post_category =
@@ -71,8 +77,6 @@ if (have_posts()): ?>
                     $askee_clean_content = preg_replace("/\s+/", " ", $askee_clean_content);
 
                     if (!empty($askee_clean_content)) {
-                        $askee_post_excerpt = "";
-
                         if (
                             preg_match_all(
                                 "/[^.!?]*[.!?]+/u",
@@ -87,25 +91,27 @@ if (have_posts()): ?>
                         if ("" === $askee_post_excerpt) {
                             $askee_post_excerpt = $askee_clean_content;
                         }
+                    }
+                }
 
-                        $askee_needs_ellipsis = false;
+                if ("" !== $askee_post_excerpt) {
+                    $askee_needs_ellipsis = false;
 
-                        if (function_exists("mb_strlen") && function_exists("mb_substr")) {
-                            if (mb_strlen($askee_post_excerpt) > 300) {
-                                $askee_post_excerpt = mb_substr($askee_post_excerpt, 0, 300);
-                                $askee_needs_ellipsis = true;
-                            }
-                        } else {
-                            if (strlen($askee_post_excerpt) > 300) {
-                                $askee_post_excerpt = substr($askee_post_excerpt, 0, 300);
-                                $askee_needs_ellipsis = true;
-                            }
+                    if (function_exists("mb_strlen") && function_exists("mb_substr")) {
+                        if (mb_strlen($askee_post_excerpt) > 300) {
+                            $askee_post_excerpt = mb_substr($askee_post_excerpt, 0, 300);
+                            $askee_needs_ellipsis = true;
                         }
-
-                        if ($askee_needs_ellipsis) {
-                            $askee_post_excerpt =
-                                rtrim($askee_post_excerpt, " \t\n\r\0\x0B,.!?-") . "...";
+                    } else {
+                        if (strlen($askee_post_excerpt) > 300) {
+                            $askee_post_excerpt = substr($askee_post_excerpt, 0, 300);
+                            $askee_needs_ellipsis = true;
                         }
+                    }
+
+                    if ($askee_needs_ellipsis) {
+                        $askee_post_excerpt =
+                            rtrim($askee_post_excerpt, " \t\n\r\0\x0B,.!?-") . "...";
                     }
                 }
             }
@@ -122,25 +128,27 @@ if (have_posts()): ?>
                     </div>
 
                     <div class="askee-blog__post-content">
-                        <span class="askee-blog__post-category text-small">
-                            <i
-                                class="askee-blog__post-category-icon <?php echo esc_attr(
-                                    $askee_post_category_icon ?: "fa-regular fa-folder",
-                                ); ?>"
-                                aria-hidden="true"
-                            ></i>
-                            <span><?php echo esc_html($askee_post_category_name); ?></span>
-                        </span>
+                        <div>
+                            <span class="askee-blog__post-category text-small">
+                                <i
+                                    class="askee-blog__post-category-icon <?php echo esc_attr(
+                                        $askee_post_category_icon ?: "fa-regular fa-folder",
+                                    ); ?>"
+                                    aria-hidden="true"
+                                ></i>
+                                <span><?php echo esc_html($askee_post_category_name); ?></span>
+                            </span>
+    
+                            <h2 class="askee-blog__post-title h3 mt-15"><?php the_title(); ?></h2>
+    
+                            <?php if ($askee_is_featured_post && "" !== $askee_post_excerpt): ?>
+                                <p class="askee-blog__post-excerpt paragraph text-medium mt-10"><?php echo esc_html(
+                                    $askee_post_excerpt,
+                                ); ?></p>
+                            <?php endif; ?>
+                        </div>
 
-                        <h2 class="askee-blog__post-title h3"><?php the_title(); ?></h2>
-
-                        <?php if ($askee_is_featured_post && "" !== $askee_post_excerpt): ?>
-                            <p class="askee-blog__post-excerpt paragraph text-medium"><?php echo esc_html(
-                                $askee_post_excerpt,
-                            ); ?></p>
-                        <?php endif; ?>
-
-                        <div class="askee-blog__post-meta">
+                        <div class="askee-blog__post-meta mt-10">
                             <span class="askee-blog__post-author text-small">
                                 <span class="askee-blog__post-author-avatar">
                                     <?php echo get_avatar($askee_author_id, 32, "", "", [
