@@ -9,7 +9,7 @@
     <a href="/kategoria/aktualnosci" class="askee-sidebar__link">Aktualności</a>
 
     <ul class="askee-social-media">
-        <li>
+        <!-- <li>
             <a href="#" target="_blank">
                 <?php echo wp_get_attachment_image(5069, "large"); ?>
             </a>
@@ -18,7 +18,7 @@
             <a href="#" target="_blank">
                 <?php echo wp_get_attachment_image(5068, "large"); ?>
             </a>
-        </li>
+        </li> -->
         <li>
             <a href="#" target="_blank">
                 <?php echo wp_get_attachment_image(5067, "large"); ?>
