@@ -165,50 +165,47 @@
         }
 
         &--first {
-            .askee-homepage__box--left {
-                align-self: flex-start;
-                margin-top: 185px;
-            }
-
-            .askee-homepage__box--right {
-                align-self: flex-end;
-                margin-top: 265px;
-            }
+            --askee-left-box-align: flex-start;
+            --askee-right-box-align: center;
+            --askee-left-box-offset: 245px;
+            --askee-right-box-offset: 275px;
         }
 
         &--second {
-            .askee-homepage__box--left {
-                align-self: flex-start;
-                margin-top: 235px;
-            }
-
-            .askee-homepage__box--right {
-                align-self: flex-end;
-                margin-top: 325px;
-            }
+            --askee-left-box-align: flex-start;
+            --askee-right-box-align: flex-end;
+            --askee-left-box-offset: 185px;
+            --askee-right-box-offset: 335px;
         }
 
         &--third {
-            .askee-homepage__box--left {
-                align-self: flex-start;
-                margin-top: 345px;
-            }
-
-            .askee-homepage__box--right {
-                align-self: flex-end;
-                margin-top: 205px;
-            }
+            --askee-left-box-align: flex-start;
+            --askee-right-box-align: flex-end;
+            --askee-left-box-offset: 365px;
+            --askee-right-box-offset: 205px;
         }
 
         &--fourth {
-            .askee-homepage__box--left {
-                align-self: flex-start;
-                margin-top: 275px;
-            }
+            --askee-left-box-align: flex-start;
+            --askee-right-box-align: flex-end;
+            --askee-left-box-offset: 165px;
+            --askee-right-box-offset: 355px;
+        }
 
-            .askee-homepage__box--right {
-                align-self: flex-end;
-                margin-top: 355px;
+        &--first,
+        &--second,
+        &--third,
+        &--fourth {
+            .askee-homepage__box {
+                &--left {
+                    align-self: var(--askee-left-box-align);
+                    margin-top: var(--askee-left-box-offset);
+                }
+
+                &--right {
+                    align-self: var(--askee-right-box-align);
+                    margin-top: var(--askee-right-box-offset);
+                }
             }
         }
 
