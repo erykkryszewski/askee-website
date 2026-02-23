@@ -21,6 +21,7 @@ get_header();
             <div class="col-12 col-lg-2 askee-chat__column askee-chat__column--right"><?php get_template_part("template-parts/sidebar"); ?></div>
         </div>
     </div>
+    <?php get_template_part("template-parts/blog-floating-chat"); ?>
 </div>
 
 <?php get_footer(); ?>

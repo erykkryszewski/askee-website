@@ -31,7 +31,7 @@ get_header(); the_post();
                                         loop
                                         autoplay></dotlottie-player>
                             </div>
-                            <div class="askee-homepage__boxes">
+                            <div class="askee-homepage__boxes askee-homepage__boxes--first">
                                 <div class="askee-homepage__box askee-homepage__box--left">
                                     <p>
                                         <strong>Pomagam w codziennej pracy.</strong>
@@ -69,7 +69,7 @@ get_header(); the_post();
                                         loop
                                         autoplay></dotlottie-player>
                         </div>
-                        <div class="askee-homepage__boxes">
+                        <div class="askee-homepage__boxes askee-homepage__boxes--second">
                             <div class="askee-homepage__box askee-homepage__box--left">
                                 <p>
                                     <strong>Mogę wspierać Cię w różnych obszarach</strong>
@@ -108,7 +108,7 @@ get_header(); the_post();
                                         loop
                                         autoplay></dotlottie-player>
                     </div>
-                    <div class="askee-homepage__boxes">
+                    <div class="askee-homepage__boxes askee-homepage__boxes--third">
                         <div class="askee-homepage__box askee-homepage__box--left">
                             <p>
                                             Jestem dostępny zawsze, gdy mnie potrzebujesz. Odpowiadam na pytania i wspieram Cię w pracy
@@ -146,7 +146,7 @@ get_header(); the_post();
                                         loop
                                         autoplay></dotlottie-player>
                 </div>
-                <div class="askee-homepage__boxes">
+                <div class="askee-homepage__boxes askee-homepage__boxes--fourth">
                     <div class="askee-homepage__box askee-homepage__box--left">
                         <p>
                             <strong>Nie wysyłam żadnych wrażliwych ani biznesowych danych</strong>
