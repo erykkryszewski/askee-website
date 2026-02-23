@@ -3,6 +3,7 @@ import { gsap } from "gsap";
 const ASKEE_CHAT_TRANSFER_KEY = "__askeePendingChatTransfer";
 const ASKEE_CHAT_TRANSFER_MAX_AGE_MS = 30000;
 
+// funkcja ujednolica pathname zeby latwo porownywac adresy
 function normalizePathnameForComparison(pathnameString) {
     let safePathnameString = pathnameString;
 
@@ -25,6 +26,7 @@ function normalizePathnameForComparison(pathnameString) {
     return safePathnameString;
 }
 
+// funkcja bierze pathname z url i normalizuje go do porownan
 function getUrlPathnameForComparison(urlString) {
     try {
         const urlObject = new URL(urlString, window.location.origin);
@@ -34,6 +36,7 @@ function getUrlPathnameForComparison(urlString) {
     }
 }
 
+// funkcja zamienia temat na prosty slug
 function normalizeTopicSlug(topicString) {
     let safeTopicString = "";
     if (typeof topicString === "string") {
@@ -76,6 +79,7 @@ function normalizeTopicSlug(topicString) {
     return normalizedTopicString;
 }
 
+// funkcja wyciaga slug tematu z linku
 function getTopicSlugFromHref(urlString) {
     const pathnameString = getUrlPathnameForComparison(urlString);
     if (pathnameString === "/") {
@@ -85,6 +89,7 @@ function getTopicSlugFromHref(urlString) {
     return normalizeTopicSlug(pathnameString.slice(1));
 }
 
+// funkcja pobiera temat z data-askee-topic albo z aktualnego adresu
 function getTopicSlugFromChatRoot(chatRootElement) {
     if (chatRootElement) {
         const topicContainerElement = chatRootElement.querySelector("[data-askee-topic]");
@@ -101,6 +106,7 @@ function getTopicSlugFromChatRoot(chatRootElement) {
     return getTopicSlugFromHref(window.location.href);
 }
 
+// funkcja szuka tematu w zagniezdzonych danych odpowiedzi
 function extractTopicFromNode(nodeValue, depthNumber) {
     if (depthNumber > 5 || !nodeValue) {
         return "";
@@ -144,6 +150,7 @@ function extractTopicFromNode(nodeValue, depthNumber) {
     return "";
 }
 
+// funkcja probuje odczytac temat z odpowiedzi api
 function extractAssistantTopicFromApiResponse(apiResponseObject) {
     if (!apiResponseObject) {
         return "";
@@ -171,6 +178,7 @@ function extractAssistantTopicFromApiResponse(apiResponseObject) {
     return "";
 }
 
+// funkcja znajduje przycisk nawigacji pasujacy do tematu
 function findNavigationButtonByTopic(chatRootElement, topicSlugString) {
     if (!chatRootElement || !topicSlugString) {
         return null;
@@ -191,6 +199,7 @@ function findNavigationButtonByTopic(chatRootElement, topicSlugString) {
     return null;
 }
 
+// funkcja odczytuje tymczasowy transfer chatu miedzy podstronami
 function readPendingChatTransfer() {
     const pendingTransferValue = window[ASKEE_CHAT_TRANSFER_KEY];
     if (!pendingTransferValue || typeof pendingTransferValue !== "object") {
@@ -200,6 +209,7 @@ function readPendingChatTransfer() {
     return pendingTransferValue;
 }
 
+// funkcja czyści dane tymczasowego transferu chatu
 function clearPendingChatTransfer() {
     try {
         delete window[ASKEE_CHAT_TRANSFER_KEY];
@@ -208,6 +218,7 @@ function clearPendingChatTransfer() {
     }
 }
 
+// funkcja zapisuje html chatu do przeniesienia na inna strone
 function savePendingChatTransfer(topicSlugString, boxElement) {
     if (!topicSlugString || !boxElement) {
         return;
@@ -220,6 +231,7 @@ function savePendingChatTransfer(topicSlugString, boxElement) {
     };
 }
 
+// funkcja przywraca chat po przejsciu na strone z tym samym tematem
 function tryApplyPendingChatTransfer(boxElement, chatRootElement) {
     if (!boxElement) {
         return false;
@@ -260,6 +272,7 @@ function tryApplyPendingChatTransfer(boxElement, chatRootElement) {
     return true;
 }
 
+// funkcja usuwa aktywny stan ze wszystkich przyciskow w wrapperze
 function clearActiveButtonsInWrapper(navigationButtonsWrapperElement) {
     if (!navigationButtonsWrapperElement) {
         return;
@@ -272,6 +285,7 @@ function clearActiveButtonsInWrapper(navigationButtonsWrapperElement) {
     }
 }
 
+// funkcja ustawia aktywny przycisk po porownaniu href
 function trySetActiveButtonByHref(navigationButtonsWrapperElement) {
     if (!navigationButtonsWrapperElement) {
         return false;
@@ -304,6 +318,7 @@ function trySetActiveButtonByHref(navigationButtonsWrapperElement) {
     return matchedAnyButton;
 }
 
+// funkcja ustawia aktywny przycisk po slugu strony z data atrybutu
 function trySetActiveButtonByPageSlug(navigationButtonsWrapperElement, chatRootElement) {
     if (!navigationButtonsWrapperElement) {
         return false;
@@ -346,6 +361,7 @@ function trySetActiveButtonByPageSlug(navigationButtonsWrapperElement, chatRootE
     return matchedAnyButton;
 }
 
+// funkcja odswieza aktywny stan przyciskow nawigacji chatu
 function updateChatNavigationButtonsActiveState(chatRootElement) {
     if (!chatRootElement) {
         return;
@@ -369,6 +385,7 @@ function updateChatNavigationButtonsActiveState(chatRootElement) {
     }
 }
 
+// funkcja uruchamia rotator tytulow w danym boxie
 function initTitleRotator(boxElement) {
     const wrapperElement = boxElement.closest(".askee-chat__wrapper");
     if (!wrapperElement) return null;
@@ -399,6 +416,7 @@ function initTitleRotator(boxElement) {
     let resizeObserver = null;
     let lastWidth = rotatorElement.offsetWidth;
 
+    // funkcja liczy wysokosci i buduje animacje przesuwania tytulow
     function buildRotator() {
         if (timeline) timeline.kill();
         gsap.set(trackElement, { clearProps: "all" });
@@ -453,6 +471,7 @@ function initTitleRotator(boxElement) {
     };
 }
 
+// funkcja inicjalizuje jeden box chatu i podpina jego logike
 function initSingleChatBox(boxElement) {
     if (boxElement.dataset.askeeBoxInitialized === "1") {
         return null;
@@ -480,6 +499,7 @@ function initSingleChatBox(boxElement) {
     let activeTimeline = null;
     let hasInitialAnimationRun = false;
 
+    // funkcja zwraca aktywny element welcome gdzie pokazujemy odpowiedzi
     function getWelcomeElementFromActiveContent() {
         if (!activeContentElement) {
             return null;
@@ -493,6 +513,7 @@ function initSingleChatBox(boxElement) {
         return welcomeElement;
     }
 
+    // funkcja czyści aktywny content i zostawia tylko welcome
     function resetActiveContentKeepOnlyWelcome() {
         const welcomeElement = getWelcomeElementFromActiveContent();
         if (!activeContentElement || !welcomeElement) {
@@ -518,6 +539,7 @@ function initSingleChatBox(boxElement) {
         return welcomeElement;
     }
 
+    // funkcja rysuje kropki pisania zanim przyjdzie odpowiedz
     function renderTypingDotsIntoWelcome(welcomeElement) {
         if (!welcomeElement) {
             return;
@@ -547,6 +569,7 @@ function initSingleChatBox(boxElement) {
         welcomeElement.appendChild(bubbleElement);
     }
 
+    // funkcja renderuje tekst odpowiedzi z podzialem na linie i akapity
     function renderTextIntoWelcome(welcomeElement, textString) {
         if (!welcomeElement) {
             return;
@@ -589,6 +612,7 @@ function initSingleChatBox(boxElement) {
         }
     }
 
+    // funkcja pilnuje zeby tylko jeden content byl aktywny
     function normalizeToSingleActiveElement() {
         if (!switchSectionsElement || contentElementsArray.length === 0) {
             return;
@@ -617,6 +641,7 @@ function initSingleChatBox(boxElement) {
         }
     }
 
+    // funkcja znajduje content po id kliknietego przycisku
     function findTargetContentElement(targetId) {
         if (!targetId) {
             return null;
@@ -636,6 +661,7 @@ function initSingleChatBox(boxElement) {
         return targetElement;
     }
 
+    // funkcja zatrzymuje poprzednia animacje przejscia
     function killActiveTimeline() {
         if (!activeTimeline) {
             return;
@@ -646,6 +672,7 @@ function initSingleChatBox(boxElement) {
         activeTimeline = null;
     }
 
+    // funkcja czyści style ustawione przez gsap
     function clearGsapProps(element) {
         if (!element) {
             return;
@@ -655,6 +682,7 @@ function initSingleChatBox(boxElement) {
         } catch (error) {}
     }
 
+    // funkcja odpala animacje pierwszego widoku po zaladowaniu
     function animateInitialContentOnLoad() {
         if (hasInitialAnimationRun) {
             return;
@@ -700,6 +728,7 @@ function initSingleChatBox(boxElement) {
         } catch (error) {}
     }
 
+    // funkcja przelacza widok chatu na wskazane id sekcji
     function transitionToTargetId(targetId) {
         const targetElement = findTargetContentElement(targetId);
         if (!targetElement) {
@@ -758,6 +787,7 @@ function initSingleChatBox(boxElement) {
         return true;
     }
 
+    // event click na boxie chatu obsluguje przelaczanie sekcji
     function onChatRootClick(eventObject) {
         const clickedElement = eventObject.target;
         if (!clickedElement) {
@@ -787,6 +817,7 @@ function initSingleChatBox(boxElement) {
         transitionToTargetId(targetId);
     }
 
+    // funkcja przelacza podstrone gdy asystent zwroci inny temat
     function trySwitchPageByAssistantTopic(topicSlugString) {
         if (!topicSlugString || !chatRootElement) {
             return;
@@ -859,6 +890,7 @@ function initSingleChatBox(boxElement) {
     let isSending = false;
     let abortController = null;
 
+    // funkcja wysyla wiadomosc do backendu i zwraca odpowiedz json
     async function sendToApi(inputTextString) {
         if (!restUrl) {
             return null;
@@ -894,6 +926,7 @@ function initSingleChatBox(boxElement) {
         return parsedResponseObject;
     }
 
+    // event submit formularza wysyla pytanie i renderuje odpowiedz
     async function onFormSubmit(eventObject) {
         eventObject.preventDefault();
 
@@ -973,13 +1006,16 @@ function initSingleChatBox(boxElement) {
         }
     }
 
+    // event click w boxie obsluguje przyciski nawigacji chatu
     boxElement.addEventListener("click", onChatRootClick);
 
     if (formElement) {
+        // event submit formularza chatu
         formElement.addEventListener("submit", onFormSubmit);
     }
 
     if (textareaElement && formElement) {
+        // event keydown zamienia enter na wysylke formularza
         textareaElement.addEventListener("keydown", function (eventObject) {
             if (!eventObject) {
                 return;
@@ -995,6 +1031,7 @@ function initSingleChatBox(boxElement) {
     normalizeToSingleActiveElement();
     animateInitialContentOnLoad();
 
+    // funkcja sprzata eventy i animacje tego boxa przy cleanupie
     return function cleanupSingleBox() {
         if (rotatorInstance) {
             rotatorInstance.kill();
@@ -1015,6 +1052,7 @@ function initSingleChatBox(boxElement) {
     };
 }
 
+// funkcja inicjalizuje cala sekcje chat i zwraca cleanup
 export function initAskeeChatSection(rootElement) {
     const safeRootElement = rootElement instanceof Element ? rootElement : document;
 
@@ -1036,12 +1074,15 @@ export function initAskeeChatSection(rootElement) {
 
     updateChatNavigationButtonsActiveState(chatRootElement);
 
+    // event po nawigacji odswieza aktywne przyciski w chacie
     function onAskeeNavigationCompleteEvent() {
         updateChatNavigationButtonsActiveState(chatRootElement);
     }
 
+    // event globalny po zmianie strony w spa
     window.addEventListener("askee:navigation:complete", onAskeeNavigationCompleteEvent);
 
+    // event zewnetrzny do przelaczenia chatu z innego miejsca
     function onExternalSwitch(eventObject) {
         if (!eventObject.detail || !eventObject.detail.targetId) {
             return;
@@ -1066,8 +1107,10 @@ export function initAskeeChatSection(rootElement) {
         }
     }
 
+    // event custom z dokumentu dla zewnetrznego switcha
     document.addEventListener("askee:chat:external-switch", onExternalSwitch);
 
+    // funkcja cleanup odpina eventy i cleanupy wszystkich boxow
     return function cleanupAskeeChatSection() {
         window.removeEventListener("askee:navigation:complete", onAskeeNavigationCompleteEvent);
         document.removeEventListener("askee:chat:external-switch", onExternalSwitch);

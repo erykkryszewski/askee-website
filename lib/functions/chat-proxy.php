@@ -4,6 +4,7 @@ if (!defined("ABSPATH")) {
     exit();
 }
 
+// rejestruje endpoint rest dla chatu
 add_action("rest_api_init", function () {
     register_rest_route("askee/v1", "/chat", [
         "methods" => "POST",
@@ -12,6 +13,7 @@ add_action("rest_api_init", function () {
     ]);
 });
 
+// obsluguje request z frontu i przekazuje go do webhooka
 function askee_chat_proxy_callback(WP_REST_Request $request) {
     $nonce = $request->get_header("x-wp-nonce");
 
