@@ -39,8 +39,19 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
         return new WP_REST_Response(["ok" => false, "error" => "empty_input"], 422);
     }
 
+    $topic_raw = $request->get_param("topic");
+    if (!is_string($topic_raw)) {
+        $json = isset($json) && is_array($json) ? $json : $request->get_json_params();
+        if (is_array($json) && isset($json["topic"]) && is_string($json["topic"])) {
+            $topic_raw = $json["topic"];
+        }
+    }
+
+    $topic = is_string($topic_raw) ? sanitize_title($topic_raw) : "";
+
     $payload = [
         "Input" => $input,
+        "topic" => $topic,
     ];
 
     $response = wp_remote_post($webhook_url, [

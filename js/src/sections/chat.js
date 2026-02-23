@@ -1,5 +1,8 @@
 import { gsap } from "gsap";
 
+const ASKEE_CHAT_TRANSFER_KEY = "__askeePendingChatTransfer";
+const ASKEE_CHAT_TRANSFER_MAX_AGE_MS = 30000;
+
 function normalizePathnameForComparison(pathnameString) {
     let safePathnameString = pathnameString;
 
@@ -29,6 +32,232 @@ function getUrlPathnameForComparison(urlString) {
     } catch (error) {
         return "/";
     }
+}
+
+function normalizeTopicSlug(topicString) {
+    let safeTopicString = "";
+    if (typeof topicString === "string") {
+        safeTopicString = topicString.trim();
+    }
+
+    if (!safeTopicString) {
+        return "";
+    }
+
+    let normalizedTopicString = "";
+
+    for (let index = 0; index < safeTopicString.length; index += 1) {
+        const character = safeTopicString.charAt(index);
+        const code = safeTopicString.charCodeAt(index);
+
+        const isDigit = code >= 48 && code <= 57;
+        const isUppercaseLetter = code >= 65 && code <= 90;
+        const isLowercaseLetter = code >= 97 && code <= 122;
+
+        if (isDigit || isUppercaseLetter || isLowercaseLetter) {
+            normalizedTopicString += character.toLowerCase();
+            continue;
+        }
+
+        if (
+            character === "-" ||
+            character === "_" ||
+            character === "/" ||
+            character === " "
+        ) {
+            normalizedTopicString += "-";
+        }
+    }
+
+    normalizedTopicString = normalizedTopicString.replace(/-+/g, "-");
+    normalizedTopicString = normalizedTopicString.replace(/^-+/, "");
+    normalizedTopicString = normalizedTopicString.replace(/-+$/, "");
+
+    return normalizedTopicString;
+}
+
+function getTopicSlugFromHref(urlString) {
+    const pathnameString = getUrlPathnameForComparison(urlString);
+    if (pathnameString === "/") {
+        return "";
+    }
+
+    return normalizeTopicSlug(pathnameString.slice(1));
+}
+
+function getTopicSlugFromChatRoot(chatRootElement) {
+    if (chatRootElement) {
+        const topicContainerElement = chatRootElement.querySelector("[data-askee-topic]");
+        if (topicContainerElement) {
+            const topicFromDataAttribute = normalizeTopicSlug(
+                topicContainerElement.getAttribute("data-askee-topic")
+            );
+            if (topicFromDataAttribute) {
+                return topicFromDataAttribute;
+            }
+        }
+    }
+
+    return getTopicSlugFromHref(window.location.href);
+}
+
+function extractTopicFromNode(nodeValue, depthNumber) {
+    if (depthNumber > 5 || !nodeValue) {
+        return "";
+    }
+
+    if (Array.isArray(nodeValue)) {
+        for (let index = 0; index < nodeValue.length; index += 1) {
+            const topicFromArrayElement = extractTopicFromNode(nodeValue[index], depthNumber + 1);
+            if (topicFromArrayElement) {
+                return topicFromArrayElement;
+            }
+        }
+        return "";
+    }
+
+    if (typeof nodeValue !== "object") {
+        return "";
+    }
+
+    const topicKeysArray = ["topic", "Topic"];
+    for (let index = 0; index < topicKeysArray.length; index += 1) {
+        const keyString = topicKeysArray[index];
+        const candidateValue = nodeValue[keyString];
+        const normalizedTopicValue = normalizeTopicSlug(candidateValue);
+        if (normalizedTopicValue) {
+            return normalizedTopicValue;
+        }
+    }
+
+    const nestedValuesArray = Object.values(nodeValue);
+    for (let index = 0; index < nestedValuesArray.length; index += 1) {
+        const topicFromNestedNode = extractTopicFromNode(
+            nestedValuesArray[index],
+            depthNumber + 1
+        );
+        if (topicFromNestedNode) {
+            return topicFromNestedNode;
+        }
+    }
+
+    return "";
+}
+
+function extractAssistantTopicFromApiResponse(apiResponseObject) {
+    if (!apiResponseObject) {
+        return "";
+    }
+
+    const topicFromJson = extractTopicFromNode(apiResponseObject.json, 0);
+    if (topicFromJson) {
+        return topicFromJson;
+    }
+
+    if (typeof apiResponseObject.raw === "string") {
+        const trimmedRawString = apiResponseObject.raw.trim();
+
+        if (
+            trimmedRawString &&
+            (trimmedRawString.startsWith("{") || trimmedRawString.startsWith("["))
+        ) {
+            try {
+                const parsedRawObject = JSON.parse(trimmedRawString);
+                return extractTopicFromNode(parsedRawObject, 0);
+            } catch (error) {}
+        }
+    }
+
+    return "";
+}
+
+function findNavigationButtonByTopic(chatRootElement, topicSlugString) {
+    if (!chatRootElement || !topicSlugString) {
+        return null;
+    }
+
+    const buttonElementsArray = chatRootElement.querySelectorAll(".askee-chat__buttons a[href]");
+
+    for (let index = 0; index < buttonElementsArray.length; index += 1) {
+        const buttonElement = buttonElementsArray[index];
+        const hrefValueString = buttonElement.getAttribute("href");
+        const buttonTopicSlug = getTopicSlugFromHref(hrefValueString);
+
+        if (buttonTopicSlug === topicSlugString) {
+            return buttonElement;
+        }
+    }
+
+    return null;
+}
+
+function readPendingChatTransfer() {
+    const pendingTransferValue = window[ASKEE_CHAT_TRANSFER_KEY];
+    if (!pendingTransferValue || typeof pendingTransferValue !== "object") {
+        return null;
+    }
+
+    return pendingTransferValue;
+}
+
+function clearPendingChatTransfer() {
+    try {
+        delete window[ASKEE_CHAT_TRANSFER_KEY];
+    } catch (error) {
+        window[ASKEE_CHAT_TRANSFER_KEY] = null;
+    }
+}
+
+function savePendingChatTransfer(topicSlugString, boxElement) {
+    if (!topicSlugString || !boxElement) {
+        return;
+    }
+
+    window[ASKEE_CHAT_TRANSFER_KEY] = {
+        topicSlug: topicSlugString,
+        boxInnerHtmlString: boxElement.innerHTML,
+        createdAtTimestampNumber: Date.now(),
+    };
+}
+
+function tryApplyPendingChatTransfer(boxElement, chatRootElement) {
+    if (!boxElement) {
+        return false;
+    }
+
+    const pendingTransferObject = readPendingChatTransfer();
+    if (!pendingTransferObject) {
+        return false;
+    }
+
+    const createdAtTimestampNumber = Number(pendingTransferObject.createdAtTimestampNumber) || 0;
+    const ageMillisecondsNumber = Date.now() - createdAtTimestampNumber;
+    if (ageMillisecondsNumber > ASKEE_CHAT_TRANSFER_MAX_AGE_MS) {
+        clearPendingChatTransfer();
+        return false;
+    }
+
+    const currentTopicSlug = getTopicSlugFromChatRoot(chatRootElement);
+    if (!currentTopicSlug || currentTopicSlug !== pendingTransferObject.topicSlug) {
+        return false;
+    }
+
+    if (
+        typeof pendingTransferObject.boxInnerHtmlString !== "string" ||
+        pendingTransferObject.boxInnerHtmlString === ""
+    ) {
+        clearPendingChatTransfer();
+        return false;
+    }
+
+    boxElement.innerHTML = pendingTransferObject.boxInnerHtmlString;
+    clearPendingChatTransfer();
+
+    if (window.console && typeof window.console.log === "function") {
+        window.console.log("[Askee Chat]", "Transferred chat UI to topic:", currentTopicSlug);
+    }
+
+    return true;
 }
 
 function clearActiveButtonsInWrapper(navigationButtonsWrapperElement) {
@@ -229,6 +458,9 @@ function initSingleChatBox(boxElement) {
         return null;
     }
     boxElement.dataset.askeeBoxInitialized = "1";
+
+    const chatRootElement = boxElement.closest(".askee-chat");
+    tryApplyPendingChatTransfer(boxElement, chatRootElement);
 
     const switchSectionsElement = boxElement.querySelector(".askee-chat__switch-sections");
     const rotatorInstance = initTitleRotator(boxElement);
@@ -555,6 +787,59 @@ function initSingleChatBox(boxElement) {
         transitionToTargetId(targetId);
     }
 
+    function trySwitchPageByAssistantTopic(topicSlugString) {
+        if (!topicSlugString || !chatRootElement) {
+            return;
+        }
+
+        const currentTopicSlug = getTopicSlugFromChatRoot(chatRootElement);
+        if (!currentTopicSlug) {
+            if (window.console && typeof window.console.log === "function") {
+                window.console.log("[Askee Chat]", "Missing current topic in DOM.");
+            }
+            return;
+        }
+
+        if (currentTopicSlug === topicSlugString) {
+            if (window.console && typeof window.console.log === "function") {
+                window.console.log("[Askee Chat]", "Topic unchanged:", topicSlugString);
+            }
+            return;
+        }
+
+        const targetNavigationButtonElement = findNavigationButtonByTopic(
+            chatRootElement,
+            topicSlugString
+        );
+
+        if (!targetNavigationButtonElement) {
+            if (window.console && typeof window.console.log === "function") {
+                window.console.log(
+                    "[Askee Chat]",
+                    "Received topic without matching chat navigation button:",
+                    topicSlugString
+                );
+            }
+            return;
+        }
+
+        savePendingChatTransfer(topicSlugString, boxElement);
+
+        if (window.console && typeof window.console.log === "function") {
+            window.console.log(
+                "[Askee Chat]",
+                "Switching topic from",
+                currentTopicSlug,
+                "to",
+                topicSlugString
+            );
+        }
+
+        targetNavigationButtonElement.dispatchEvent(
+            new MouseEvent("click", { bubbles: true, cancelable: true })
+        );
+    }
+
     const chatConfig = window.AskeeChatConfig || {};
 
     let restUrl = "";
@@ -579,6 +864,17 @@ function initSingleChatBox(boxElement) {
             return null;
         }
 
+        const currentTopicSlug = getTopicSlugFromChatRoot(chatRootElement);
+        const requestPayloadObject = { input: inputTextString };
+
+        if (currentTopicSlug) {
+            requestPayloadObject.topic = currentTopicSlug;
+        }
+
+        if (window.console && typeof window.console.log === "function") {
+            window.console.log("[Askee Chat]", "Sending request topic:", currentTopicSlug || "-");
+        }
+
         abortController = new AbortController();
 
         const responseObject = await fetch(restUrl, {
@@ -588,7 +884,7 @@ function initSingleChatBox(boxElement) {
                 "Content-Type": "application/json",
                 "X-WP-Nonce": nonce,
             },
-            body: JSON.stringify({ input: inputTextString }),
+            body: JSON.stringify(requestPayloadObject),
             signal: abortController.signal,
         });
 
@@ -628,6 +924,11 @@ function initSingleChatBox(boxElement) {
 
         try {
             const apiResponseObject = await sendToApi(textValue);
+            const assistantTopicSlug = extractAssistantTopicFromApiResponse(apiResponseObject);
+
+            if (assistantTopicSlug && window.console && typeof window.console.log === "function") {
+                window.console.log("[Askee Chat]", "Received response topic:", assistantTopicSlug);
+            }
 
             normalizeToSingleActiveElement();
             const welcomeElementAfterResponse = resetActiveContentKeepOnlyWelcome();
@@ -647,6 +948,10 @@ function initSingleChatBox(boxElement) {
                 }
 
                 renderTextIntoWelcome(welcomeElementAfterResponse, assistantTextString);
+
+                if (assistantTopicSlug) {
+                    trySwitchPageByAssistantTopic(assistantTopicSlug);
+                }
             } else {
                 renderTextIntoWelcome(welcomeElementAfterResponse, "Upstream Error");
             }
