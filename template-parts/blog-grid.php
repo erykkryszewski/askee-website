@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 global $wp_query;
 
@@ -13,79 +13,56 @@ $askee_default_thumbnail_id = 5091;
 $askee_post_index = 0;
 $askee_visible_posts_count = isset($wp_query) ? (int) $wp_query->post_count : 0;
 $askee_has_featured_layout = $askee_visible_posts_count > 4;
-$askee_blog_filter_state = function_exists("askee_get_blog_filter_state")
-    ? askee_get_blog_filter_state()
-    : [
-        "sort" => "newest",
-        "category" => "",
-        "search" => "",
-    ];
-$askee_blog_filter_categories = function_exists("askee_get_blog_filter_categories")
-    ? askee_get_blog_filter_categories()
-    : [];
-$askee_blog_filter_action_url = function_exists("askee_get_blog_base_url")
-    ? askee_get_blog_base_url()
-    : home_url("/blog/");
-
+$askee_blog_filter_categories = get_categories([
+    "taxonomy" => "category",
+    "orderby" => "name",
+    "order" => "ASC",
+    "hide_empty" => true,
+]);
+$askee_blog_url = home_url("/blog/");
+$askee_active_category_slug = "";
+if (is_category()) {
+    $askee_current_category = get_queried_object();
+    if ($askee_current_category instanceof WP_Term) {
+        $askee_active_category_slug = $askee_current_category->slug;
+    }
+}
 ?>
-<form
-    class="askee-blog__filtration"
-    action="<?php echo esc_url($askee_blog_filter_action_url); ?>"
-    method="get"
-    data-askee-blog-filtration
->
+<div class="askee-blog__filtration">
     <div class="askee-blog__filtration-item">
-        <select
-            id="askee-blog-sort"
-            name="askee_sort"
-            data-askee-blog-sort
-            aria-label="<?php esc_attr_e("Sortowanie", "askeetheme"); ?>"
+        <a
+            class="button button--ghost askee-blog__filter-button<?php if (
+                "" === $askee_active_category_slug
+            ) {
+                echo " askee-blog__filter-button--active";
+            } ?>"
+            href="<?php echo esc_url($askee_blog_url); ?>"
         >
-            <option value="newest" <?php selected($askee_blog_filter_state["sort"], "newest"); ?>>
-                <?php esc_html_e("Od najnowszych", "askeetheme"); ?>
-            </option>
-            <option value="oldest" <?php selected($askee_blog_filter_state["sort"], "oldest"); ?>>
-                <?php esc_html_e("Od najstarszych", "askeetheme"); ?>
-            </option>
-        </select>
+            <?php esc_html_e("Wszystkie", "askeetheme"); ?>
+        </a>
     </div>
-
-    <div class="askee-blog__filtration-item">
-        <select
-            id="askee-blog-category"
-            name="askee_category"
-            data-askee-blog-category
-            aria-label="<?php esc_attr_e("Kategoria", "askeetheme"); ?>"
-        >
-            <option value=""><?php esc_html_e("Wszystkie kategorie", "askeetheme"); ?></option>
-            <?php foreach ($askee_blog_filter_categories as $askee_filter_category): ?>
-                <?php if (!$askee_filter_category instanceof WP_Term) {
-                    continue;
-                } ?>
-                <option
-                    value="<?php echo esc_attr($askee_filter_category->slug); ?>"
-                    <?php selected($askee_blog_filter_state["category"], $askee_filter_category->slug); ?>
-                >
-                    <?php echo esc_html($askee_filter_category->name); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <div class="askee-blog__filtration-item askee-blog__filtration-item--search">
-        <input
-            id="askee-blog-search"
-            type="search"
-            name="askee_search"
-            value="<?php echo esc_attr($askee_blog_filter_state["search"]); ?>"
-            placeholder="<?php esc_attr_e("Szukaj wpisów...", "askeetheme"); ?>"
-            autocomplete="off"
-            data-askee-blog-search
-            aria-label="<?php esc_attr_e("Wyszukiwarka", "askeetheme"); ?>"
-        />
-    </div>
-</form>
-
+    <?php foreach ($askee_blog_filter_categories as $askee_filter_category): ?>
+        <?php if (!$askee_filter_category instanceof WP_Term) {
+            continue;
+        } ?>
+        <?php $askee_filter_category_link = get_category_link($askee_filter_category->term_id); ?>
+        <?php if (is_wp_error($askee_filter_category_link)) {
+            continue;
+        } ?>
+        <div class="askee-blog__filtration-item">
+            <a
+                class="button button--ghost askee-blog__filter-button<?php if (
+                    $askee_active_category_slug === $askee_filter_category->slug
+                ) {
+                    echo " askee-blog__filter-button--active";
+                } ?>"
+                href="<?php echo esc_url($askee_filter_category_link); ?>"
+            >
+                <?php echo esc_html($askee_filter_category->name); ?>
+            </a>
+        </div>
+    <?php endforeach; ?>
+</div>
 <?php if (have_posts()): ?>
     <div class="askee-blog__list<?php if ($askee_has_featured_layout) {
         echo " askee-blog__list--with-featured";

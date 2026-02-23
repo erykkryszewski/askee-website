@@ -97,6 +97,22 @@
         margin: 35px 0 0;
     }
 
+    &__related {
+        margin: 45px 0 0;
+    }
+
+    &__related-title {
+        margin: 0 0 20px;
+    }
+
+    &__related .askee-blog__list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    &__related .askee-blog__list--related-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     @media (width <= 1199px) {
         &__single-header {
             flex-direction: column;
@@ -124,6 +140,11 @@
 
         &__single-content {
             margin-top: 25px;
+        }
+
+        &__related .askee-blog__list,
+        &__related .askee-blog__list--related-2 {
+            grid-template-columns: minmax(0, 1fr);
         }
     }
 }

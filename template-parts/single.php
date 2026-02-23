@@ -208,6 +208,164 @@ if (have_posts()):
             <div class="askee-blog__single-content">
                 <?php the_content(); ?>
             </div>
+
+            <?php
+            $askee_related_category_ids = [];
+            if (!empty($askee_post_categories)) {
+                foreach ($askee_post_categories as $askee_current_post_category) {
+                    if ($askee_current_post_category instanceof WP_Term) {
+                        $askee_related_category_ids[] = (int) $askee_current_post_category->term_id;
+                    }
+                }
+            }
+
+            $askee_related_posts_args = [
+                "post_type" => "post",
+                "post_status" => "publish",
+                "posts_per_page" => 3,
+                "post__not_in" => [get_the_ID()],
+                "ignore_sticky_posts" => true,
+            ];
+
+            if (!empty($askee_related_category_ids)) {
+                $askee_related_posts_args["category__in"] = $askee_related_category_ids;
+            }
+
+            $askee_related_posts_query = new WP_Query($askee_related_posts_args);
+            $askee_related_posts_count = (int) $askee_related_posts_query->post_count;
+            ?>
+            <?php if ($askee_related_posts_count >= 2): ?>
+                <?php
+                $askee_related_list_modifier = 2 === $askee_related_posts_count
+                    ? " askee-blog__list--related-2"
+                    : " askee-blog__list--related-3";
+                ?>
+                <section class="askee-blog__related">
+                    <h2 class="askee-blog__related-title h3"><?php esc_html_e(
+                        "Przeczytaj także",
+                        "askeetheme",
+                    ); ?></h2>
+                    <div class="askee-blog__list<?php echo esc_attr($askee_related_list_modifier); ?>">
+                        <?php while ($askee_related_posts_query->have_posts()):
+                            $askee_related_posts_query->the_post(); ?>
+                            <?php
+                            $askee_related_post_categories = get_the_category();
+                            $askee_related_post_category =
+                                !empty($askee_related_post_categories) &&
+                                isset($askee_related_post_categories[0])
+                                    ? $askee_related_post_categories[0]
+                                    : null;
+
+                            $askee_related_post_category_slug =
+                                $askee_related_post_category instanceof WP_Term
+                                    ? $askee_related_post_category->slug
+                                    : "";
+                            $askee_related_post_category_name =
+                                $askee_related_post_category instanceof WP_Term
+                                    ? $askee_related_post_category->name
+                                    : __("Aktualnosci", "askeetheme");
+
+                            $askee_related_post_category_icon = isset(
+                                $askee_category_icon_map[$askee_related_post_category_slug],
+                            )
+                                ? $askee_category_icon_map[$askee_related_post_category_slug]
+                                : $askee_default_category_icon;
+
+                            $askee_related_author_id = (int) get_the_author_meta("ID");
+                            $askee_related_author_pseudonim = trim(
+                                (string) get_the_author_meta("pseudonim", $askee_related_author_id),
+                            );
+                            if ("" === $askee_related_author_pseudonim) {
+                                $askee_related_author_pseudonim = trim(
+                                    (string) get_user_meta(
+                                        $askee_related_author_id,
+                                        "pseudonim",
+                                        true,
+                                    ),
+                                );
+                            }
+                            if ("" === $askee_related_author_pseudonim) {
+                                $askee_related_author_pseudonim = trim(
+                                    (string) get_the_author_meta("nickname", $askee_related_author_id),
+                                );
+                            }
+                            if ("" === $askee_related_author_pseudonim) {
+                                $askee_related_author_pseudonim = trim(
+                                    (string) get_the_author_meta(
+                                        "display_name",
+                                        $askee_related_author_id,
+                                    ),
+                                );
+                            }
+
+                            $askee_related_post_image_id = has_post_thumbnail()
+                                ? get_post_thumbnail_id()
+                                : $askee_default_thumbnail_id;
+                            ?>
+                            <article class="askee-blog__post">
+                                <a class="askee-blog__post-link" href="<?php the_permalink(); ?>">
+                                    <div class="askee-blog__post-media">
+                                        <?php echo wp_get_attachment_image(
+                                            $askee_related_post_image_id,
+                                            "large",
+                                            false,
+                                            [
+                                                "class" => "askee-blog__post-image object-fit-cover",
+                                                "loading" => "lazy",
+                                            ],
+                                        ); ?>
+                                    </div>
+
+                                    <div class="askee-blog__post-content">
+                                        <div>
+                                            <span class="askee-blog__post-category text-small">
+                                                <i
+                                                    class="askee-blog__post-category-icon <?php echo esc_attr(
+                                                        $askee_related_post_category_icon ?: "fa-regular fa-folder",
+                                                    ); ?>"
+                                                    aria-hidden="true"
+                                                ></i>
+                                                <span><?php echo esc_html(
+                                                    $askee_related_post_category_name,
+                                                ); ?></span>
+                                            </span>
+
+                                            <h3 class="askee-blog__post-title h3 mt-15"><?php the_title(); ?></h3>
+                                        </div>
+
+                                        <div class="askee-blog__post-meta mt-10">
+                                            <span class="askee-blog__post-author text-small">
+                                                <span class="askee-blog__post-author-avatar">
+                                                    <?php echo get_avatar(
+                                                        $askee_related_author_id,
+                                                        32,
+                                                        "",
+                                                        "",
+                                                        [
+                                                            "class" => "askee-blog__post-author-image object-fit-cover",
+                                                        ],
+                                                    ); ?>
+                                                </span>
+                                                <span class="askee-blog__post-author-name"><?php echo esc_html(
+                                                    $askee_related_author_pseudonim,
+                                                ); ?></span>
+                                            </span>
+
+                                            <time
+                                                class="askee-blog__post-date text-small"
+                                                datetime="<?php echo esc_attr(get_the_date("c")); ?>"
+                                            >
+                                                <?php echo esc_html(get_the_date()); ?>
+                                            </time>
+                                        </div>
+                                    </div>
+                                </a>
+                            </article>
+                        <?php endwhile; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+            <?php wp_reset_postdata(); ?>
         </article>
     <?php
     endwhile;
