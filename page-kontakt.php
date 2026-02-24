@@ -19,7 +19,7 @@ get_header(); the_post();
                                 </span>
                                 <div>
                                     <div class="askee-contact__content">
-                                        <div class="askee-contact__image"><?php echo wp_get_attachment_image(5056, 'large'); ?></div>
+                                        <div class="askee-contact__image"><?php echo wp_get_attachment_image(5056, 'large', '', ['class' => 'contact-img']); ?></div>
                                         <div class="askee-contact__info">
                                             <p>Askee Sp. z o.o.</p>
                                             <p>ul. Gostyńska 91, 80-298 Gdańsk</p>

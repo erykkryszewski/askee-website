@@ -467,6 +467,10 @@ function trySetActiveButtonByPageSlug(navigationButtonsWrapperElement, chatRootE
         return false;
     }
 
+    if (normalizeTopicSlug(pageSlug) === "chat") {
+        return false;
+    }
+
     const buttonsArray = navigationButtonsWrapperElement.querySelectorAll("[data-id]");
     if (!buttonsArray || buttonsArray.length === 0) {
         return false;
@@ -481,7 +485,13 @@ function trySetActiveButtonByPageSlug(navigationButtonsWrapperElement, chatRootE
             continue;
         }
 
-        if (buttonIdValue.indexOf(pageSlug) !== -1) {
+        const normalizedButtonIdValue = normalizeTopicSlug(buttonIdValue);
+        const normalizedPageSlugValue = normalizeTopicSlug(pageSlug);
+        if (
+            normalizedButtonIdValue &&
+            normalizedPageSlugValue &&
+            normalizedButtonIdValue.endsWith("-" + normalizedPageSlugValue)
+        ) {
             buttonElement.classList.add("button--active");
             matchedAnyButton = true;
         }

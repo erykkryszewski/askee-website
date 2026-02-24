@@ -6,6 +6,7 @@ const HOMEPAGE_TYPING_CHAR_DELAY_MS = 32;
 const HOMEPAGE_BETWEEN_BOXES_DELAY_MS = 360;
 const HOMEPAGE_AFTER_SLIDE_DELAY_MS = 2000;
 const HOMEPAGE_FINAL_REDIRECT_DELAY_MS = 2000;
+const ASKEE_ONBOARDING_STORAGE_KEY = "askeeOnboardingCompleted";
 
 function escapeHtml(textString) {
     if (typeof textString !== "string") {
@@ -226,11 +227,15 @@ function typeText({
 }
 
 function triggerHomeCompletionNavigation(homePageContainer) {
-    const targetPathString = "/porozmawiajmy";
+    try {
+        window.localStorage.setItem(ASKEE_ONBOARDING_STORAGE_KEY, "1");
+    } catch (error) {}
+
+    const targetPathString = "/chat/";
 
     let targetButtonElement =
-        homePageContainer.querySelector('.button--header[href*="/porozmawiajmy"]') ||
-        document.querySelector('.button--header[href*="/porozmawiajmy"]');
+        homePageContainer.querySelector('.button--header[href*="/chat"]') ||
+        document.querySelector('.button--header[href*="/chat"]');
 
     if (!targetButtonElement) {
         targetButtonElement = homePageContainer.querySelector(".button--header");
@@ -258,6 +263,45 @@ function triggerHomeCompletionNavigation(homePageContainer) {
     window.location.assign(targetPathString);
 }
 
+function hasCompletedAskeeOnboarding() {
+    try {
+        return window.localStorage.getItem(ASKEE_ONBOARDING_STORAGE_KEY) === "1";
+    } catch (error) {
+        return false;
+    }
+}
+
+function redirectToChatPage() {
+    const targetPathString = "/chat/";
+    if (typeof window.AskeeSpaNavigateToUrl === "function") {
+        window.AskeeSpaNavigateToUrl(targetPathString);
+        return;
+    }
+    window.location.assign(targetPathString);
+}
+
+function bindOnboardingSkipButton(homePageContainer) {
+    if (!homePageContainer) {
+        return;
+    }
+
+    const homePageRootElement = homePageContainer.closest(".askee-homepage");
+    const skipButtonElement = homePageRootElement
+        ? homePageRootElement.querySelector(".askee-homepage__button")
+        : null;
+
+    if (!skipButtonElement || skipButtonElement.dataset.askeeOnboardingSkipBound === "1") {
+        return;
+    }
+
+    skipButtonElement.dataset.askeeOnboardingSkipBound = "1";
+    skipButtonElement.addEventListener("click", function () {
+        try {
+            window.localStorage.setItem(ASKEE_ONBOARDING_STORAGE_KEY, "1");
+        } catch (error) {}
+    });
+}
+
 function resetSlideSequenceClasses(slideElement) {
     if (!slideElement) {
         return;
@@ -283,6 +327,13 @@ export function initAskeeHomePage(rootElement) {
         return null;
     }
     homePageContainer.dataset.askeePageInitialized = "1";
+
+    if (hasCompletedAskeeOnboarding()) {
+        redirectToChatPage();
+        return null;
+    }
+
+    bindOnboardingSkipButton(homePageContainer);
 
     const initializedSlidersArray = [];
 
@@ -319,8 +370,6 @@ export function initAskeeHomePage(rootElement) {
                 rightOriginalHtmlString,
                 leftCharsArray: buildTypingCharsArrayFromHtml(leftOriginalHtmlString),
                 rightCharsArray: buildTypingCharsArrayFromHtml(rightOriginalHtmlString),
-                leftBoxMinHeightNumber: 0,
-                rightBoxMinHeightNumber: 0,
                 completed: false,
             };
         });
@@ -372,36 +421,6 @@ export function initAskeeHomePage(rootElement) {
             );
         }
 
-        function lockSlideBoxHeights(slideStateObject) {
-            if (!slideStateObject) {
-                return;
-            }
-
-            if (
-                slideStateObject.leftBoxElement &&
-                slideStateObject.leftBoxMinHeightNumber <= 0
-            ) {
-                const measuredLeftHeightNumber = slideStateObject.leftBoxElement.offsetHeight;
-                if (measuredLeftHeightNumber > 0) {
-                    slideStateObject.leftBoxMinHeightNumber = measuredLeftHeightNumber;
-                    slideStateObject.leftBoxElement.style.minHeight =
-                        String(measuredLeftHeightNumber) + "px";
-                }
-            }
-
-            if (
-                slideStateObject.rightBoxElement &&
-                slideStateObject.rightBoxMinHeightNumber <= 0
-            ) {
-                const measuredRightHeightNumber = slideStateObject.rightBoxElement.offsetHeight;
-                if (measuredRightHeightNumber > 0) {
-                    slideStateObject.rightBoxMinHeightNumber = measuredRightHeightNumber;
-                    slideStateObject.rightBoxElement.style.minHeight =
-                        String(measuredRightHeightNumber) + "px";
-                }
-            }
-        }
-
         slideStatesArray.forEach((slideStateObject) => {
             resetSlideToInitialState(slideStateObject);
         });
@@ -432,7 +451,6 @@ export function initAskeeHomePage(rootElement) {
             }
 
             slideStateObject.slideElement.classList.add("askee-homepage__item--started");
-            lockSlideBoxHeights(slideStateObject);
             slideStateObject.slideElement.classList.add("askee-homepage__item--left-visible");
 
             const leftTypingFinished = await typeText({

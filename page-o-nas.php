@@ -26,16 +26,16 @@ get_header(); the_post();
 
                                     <div class="askee-about__icons">
                                         <div class="askee-about__item">
-                                            <?php echo wp_get_attachment_image(5088, 'large'); ?>
+                                            <?php echo wp_get_attachment_image(5088, 'large', '', ['class' => 'askee-about-img']); ?>
                                             <h4>Technologia</h4>
                                         </div>
-                                        <div class="askee-about__item"><?php echo wp_get_attachment_image(5087, 'large'); ?></div>
+                                        <div class="askee-about__item"><?php echo wp_get_attachment_image(5087, 'large', '', ['class' => 'askee-about-img']); ?></div>
                                         <div class="askee-about__item">
-                                            <?php echo wp_get_attachment_image(5090, 'large'); ?>
+                                            <?php echo wp_get_attachment_image(5090, 'large', '', ['class' => 'askee-about-img']); ?>
                                             <h4>Bezpieczeństwo</h4>
                                         </div>
                                         <div class="askee-about__item">
-                                            <?php echo wp_get_attachment_image(5089, 'large'); ?>
+                                            <?php echo wp_get_attachment_image(5089, 'large', '', ['class' => 'askee-about-img']); ?>
                                             <h4>Analiza</h4>
                                         </div>
                                     </div>

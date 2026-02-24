@@ -14,6 +14,102 @@ import { initAskeeNewsPage } from "./pages/news";
 
 import { initAskeeButtonComponent } from "./components/button";
 
+const ASKEE_ONBOARDING_STORAGE_KEY = "askeeOnboardingCompleted";
+const ASKEE_CHAT_PATH = "/chat/";
+
+function normalizePathnameForComparison(pathnameString) {
+    let safePathnameString = pathnameString;
+
+    if (typeof safePathnameString !== "string" || safePathnameString === "") {
+        safePathnameString = "/";
+    }
+
+    if (!safePathnameString.startsWith("/")) {
+        safePathnameString = "/" + safePathnameString;
+    }
+
+    if (safePathnameString.length > 1 && safePathnameString.endsWith("/")) {
+        safePathnameString = safePathnameString.slice(0, -1);
+    }
+
+    return safePathnameString;
+}
+
+function hasCompletedOnboarding() {
+    try {
+        return window.localStorage.getItem(ASKEE_ONBOARDING_STORAGE_KEY) === "1";
+    } catch (error) {
+        return false;
+    }
+}
+
+function isHomepagePath(pathnameString) {
+    return normalizePathnameForComparison(pathnameString) === "/";
+}
+
+function retargetHomepageAnchors(rootElement) {
+    if (!hasCompletedOnboarding()) {
+        return;
+    }
+
+    const safeRootElement = rootElement instanceof Element ? rootElement : document;
+    const anchorElementsArray = safeRootElement.querySelectorAll("a[href]");
+
+    for (let index = 0; index < anchorElementsArray.length; index += 1) {
+        const anchorElement = anchorElementsArray[index];
+        const hrefValue = anchorElement.getAttribute("href");
+        if (!hrefValue) {
+            continue;
+        }
+
+        let parsedUrlObject = null;
+        try {
+            parsedUrlObject = new URL(hrefValue, window.location.origin);
+        } catch (error) {
+            continue;
+        }
+
+        if (parsedUrlObject.origin !== window.location.origin) {
+            continue;
+        }
+
+        if (!isHomepagePath(parsedUrlObject.pathname)) {
+            continue;
+        }
+
+        anchorElement.setAttribute("href", ASKEE_CHAT_PATH);
+    }
+}
+
+function redirectHomepageToChatWhenOnboardingDone() {
+    if (!hasCompletedOnboarding()) {
+        return;
+    }
+
+    if (!isHomepagePath(window.location.pathname)) {
+        return;
+    }
+
+    if (typeof window.AskeeSpaNavigateToUrl === "function") {
+        window.AskeeSpaNavigateToUrl(ASKEE_CHAT_PATH);
+        return;
+    }
+
+    window.location.replace(ASKEE_CHAT_PATH);
+}
+
+function initOnboardingRedirects() {
+    retargetHomepageAnchors(document);
+    redirectHomepageToChatWhenOnboardingDone();
+
+    window.addEventListener("askee:navigation:complete", function () {
+        retargetHomepageAnchors(document);
+        redirectHomepageToChatWhenOnboardingDone();
+    });
+}
+
+initOnboardingRedirects();
+
 initAskeeHeader();
 initAskeeZoom();
 initAskeeParallax();
