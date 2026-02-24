@@ -70,6 +70,8 @@
         display: none;
         opacity: 0;
         width: calc(100% - 38px);
+        padding: 0 0 0 36px;
+        position: relative;
 
         &--active {
             display: block;
@@ -78,7 +80,6 @@
 
         > div {
             width: 100%;
-            padding: 0 0 0 36px;
 
             p {
                 font-size: 15px;
@@ -92,11 +93,6 @@
 
         // chat html override
 
-        * {
-            font-family: $font-primary !important;
-            color: $text-color !important;
-        }
-
         img, svg {
             max-width: 20px !important;
         }
@@ -105,7 +101,7 @@
             font-size: 30px !important;
             line-height: 1.1 !important;
             font-weight: 600 !important;
-            margin: 0 0 20px !important;
+            margin: 20px 0 !important;
 
             strong {
                 font-weight: 600 !important;
@@ -192,14 +188,23 @@
                 font-weight: 600 !important;
             }
         }
+
+        
+        * {
+            font-family: $font-primary !important;
+            color: $text-color !important;
+
+            &:first-child {
+                margin-top: 0 !important;
+            }
+        }
     }
 
     &__welcome {
         margin: 0;
-        position: relative;
+        position: static;
         font-size: 15px;
         line-height: 28px;
-        padding: 0 0 0 36px;
 
         * {
             font-size: 15px;
@@ -215,7 +220,7 @@
             flex-shrink: 0;
             position: absolute;
             left: 0;
-            top: 7px;
+            top: 3px;
         }
     }
 

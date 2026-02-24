@@ -62,12 +62,7 @@ function normalizeTopicSlug(topicString) {
             continue;
         }
 
-        if (
-            character === "-" ||
-            character === "_" ||
-            character === "/" ||
-            character === " "
-        ) {
+        if (character === "-" || character === "_" || character === "/" || character === " ") {
             normalizedTopicString += "-";
         }
     }
@@ -118,11 +113,9 @@ function tryParseJsonString(jsonCandidateString) {
     }
 
     const looksLikeObjectJson =
-        trimmedJsonCandidateString.startsWith("{") &&
-        trimmedJsonCandidateString.endsWith("}");
+        trimmedJsonCandidateString.startsWith("{") && trimmedJsonCandidateString.endsWith("}");
     const looksLikeArrayJson =
-        trimmedJsonCandidateString.startsWith("[") &&
-        trimmedJsonCandidateString.endsWith("]");
+        trimmedJsonCandidateString.startsWith("[") && trimmedJsonCandidateString.endsWith("]");
 
     if (!looksLikeObjectJson && !looksLikeArrayJson) {
         return null;
@@ -222,11 +215,7 @@ function extractAssistantPayloadFromApiResponse(apiResponseObject) {
         }
     }
 
-    if (
-        !outputCandidateString &&
-        apiResponseObject &&
-        typeof apiResponseObject.raw === "string"
-    ) {
+    if (!outputCandidateString && apiResponseObject && typeof apiResponseObject.raw === "string") {
         outputCandidateString = apiResponseObject.raw;
     }
 
@@ -281,10 +270,7 @@ function extractTopicFromNode(nodeValue, depthNumber) {
 
     const nestedValuesArray = Object.values(nodeValue);
     for (let index = 0; index < nestedValuesArray.length; index += 1) {
-        const topicFromNestedNode = extractTopicFromNode(
-            nestedValuesArray[index],
-            depthNumber + 1
-        );
+        const topicFromNestedNode = extractTopicFromNode(nestedValuesArray[index], depthNumber + 1);
         if (topicFromNestedNode) {
             return topicFromNestedNode;
         }
@@ -1054,11 +1040,12 @@ function initSingleChatBox(boxElement) {
         if (window.console && typeof window.console.log === "function") {
             window.console.log("[Askee Chat]", "Sending request topic:", currentTopicSlug || "-");
             window.console.log("[Askee Chat]", "topicSent:", currentTopicSlug || "-");
+            window.console.log("[Askee Chat]", "requestToWp:", requestPayloadObject);
         }
 
         abortController = new AbortController();
 
-        // tu dzwonimy do jsona, odbiera chat-proxy.php 
+        // tu dzwonimy do jsona, odbiera chat-proxy.php
         const responseObject = await fetch(restUrl, {
             method: "POST",
             credentials: "same-origin",
@@ -1108,10 +1095,36 @@ function initSingleChatBox(boxElement) {
 
         try {
             const apiResponseObject = await sendToApi(textValue);
-            const assistantPayloadObject = extractAssistantPayloadFromApiResponse(apiResponseObject);
+            const assistantPayloadObject =
+                extractAssistantPayloadFromApiResponse(apiResponseObject);
             const assistantTopicSlug =
                 assistantPayloadObject.topicSlugString ||
                 extractAssistantTopicFromApiResponse(apiResponseObject);
+            const sessionIdValue =
+                apiResponseObject && typeof apiResponseObject.session === "string"
+                    ? apiResponseObject.session
+                    : "";
+
+            if (window.console && typeof window.console.log === "function") {
+                window.console.log("[Askee Chat]", "session:", sessionIdValue || "-");
+
+                let upstreamPayloadObject = null;
+                if (
+                    apiResponseObject &&
+                    apiResponseObject.upstreamPayload &&
+                    typeof apiResponseObject.upstreamPayload === "object"
+                ) {
+                    upstreamPayloadObject = apiResponseObject.upstreamPayload;
+                } else {
+                    upstreamPayloadObject = {
+                        Input: textValue,
+                        topic: getTopicSlugFromChatRoot(chatRootElement),
+                        session: sessionIdValue,
+                    };
+                }
+
+                window.console.log("[Askee Chat]", "payload:", upstreamPayloadObject);
+            }
 
             if (assistantTopicSlug && window.console && typeof window.console.log === "function") {
                 window.console.log("[Askee Chat]", "Received response topic:", assistantTopicSlug);

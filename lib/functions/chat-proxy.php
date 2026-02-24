@@ -13,6 +13,33 @@ add_action("rest_api_init", function () {
     ]);
 });
 
+// pobiera aktywne id sesji albo probuje uruchomic sesje i je zwrocic
+function askee_chat_get_or_start_session_id() {
+    if (!function_exists("session_status") || !function_exists("session_id")) {
+        return "";
+    }
+
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        $active_session_id = session_id();
+        return is_string($active_session_id) ? $active_session_id : "";
+    }
+
+    if (
+        session_status() === PHP_SESSION_NONE &&
+        !headers_sent() &&
+        function_exists("session_start")
+    ) {
+        $started = @session_start();
+        if ($started && session_status() === PHP_SESSION_ACTIVE) {
+            $started_session_id = session_id();
+            return is_string($started_session_id) ? $started_session_id : "";
+        }
+    }
+
+    $fallback_session_id = session_id();
+    return is_string($fallback_session_id) ? $fallback_session_id : "";
+}
+
 // obsluguje request z frontu i przekazuje go do webhooka
 function askee_chat_proxy_callback(WP_REST_Request $request) {
     $nonce = $request->get_header("x-wp-nonce");
@@ -53,9 +80,13 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
 
     $topic = is_string($topic_raw) ? sanitize_title($topic_raw) : "";
 
+    $session_id_raw = askee_chat_get_or_start_session_id();
+    $session_id = is_string($session_id_raw) ? sanitize_text_field($session_id_raw) : "";
+
     $payload = [
         "Input" => $input,
         "topic" => $topic,
+        "session" => $session_id,
     ];
 
     $response = wp_remote_post($webhook_url, [
@@ -92,6 +123,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
         [
             "ok" => $status >= 200 && $status < 300,
             "status" => $status,
+            "session" => $session_id,
             "raw" => $body,
             "json" => $decoded,
         ],
