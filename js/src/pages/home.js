@@ -381,6 +381,32 @@ export function initAskeeHomePage(rootElement) {
             finalNavigationTriggered: false,
         };
 
+        function clearBoxHeightPrediction(boxElement) {
+            if (!boxElement) {
+                return;
+            }
+
+            boxElement.style.minHeight = "";
+        }
+
+        function lockPredictedBoxHeight(boxElement, paragraphElement, originalHtmlString) {
+            if (!boxElement || !paragraphElement) {
+                return;
+            }
+
+            const originalParagraphHtmlString = paragraphElement.innerHTML;
+
+            paragraphElement.innerHTML = originalHtmlString;
+            clearBoxHeightPrediction(boxElement);
+
+            const measuredHeightNumber = Math.ceil(boxElement.getBoundingClientRect().height);
+            if (measuredHeightNumber > 0) {
+                boxElement.style.minHeight = String(measuredHeightNumber) + "px";
+            }
+
+            paragraphElement.innerHTML = originalParagraphHtmlString;
+        }
+
         function resetSlideToInitialState(slideStateObject) {
             if (!slideStateObject) {
                 return;
@@ -392,16 +418,30 @@ export function initAskeeHomePage(rootElement) {
                 slideStateObject.leftParagraphElement.innerHTML =
                     slideStateObject.leftOriginalHtmlString;
             }
+            clearBoxHeightPrediction(slideStateObject.leftBoxElement);
+
             if (slideStateObject.rightParagraphElement) {
                 slideStateObject.rightParagraphElement.innerHTML =
                     slideStateObject.rightOriginalHtmlString;
             }
+            clearBoxHeightPrediction(slideStateObject.rightBoxElement);
         }
 
         function setSlideAsCompleted(slideStateObject) {
             if (!slideStateObject) {
                 return;
             }
+
+            lockPredictedBoxHeight(
+                slideStateObject.leftBoxElement,
+                slideStateObject.leftParagraphElement,
+                slideStateObject.leftOriginalHtmlString
+            );
+            lockPredictedBoxHeight(
+                slideStateObject.rightBoxElement,
+                slideStateObject.rightParagraphElement,
+                slideStateObject.rightOriginalHtmlString
+            );
 
             if (slideStateObject.leftParagraphElement) {
                 slideStateObject.leftParagraphElement.innerHTML =
@@ -451,6 +491,11 @@ export function initAskeeHomePage(rootElement) {
             }
 
             slideStateObject.slideElement.classList.add("askee-homepage__item--started");
+            lockPredictedBoxHeight(
+                slideStateObject.leftBoxElement,
+                slideStateObject.leftParagraphElement,
+                slideStateObject.leftOriginalHtmlString
+            );
             slideStateObject.slideElement.classList.add("askee-homepage__item--left-visible");
 
             const leftTypingFinished = await typeText({
@@ -478,6 +523,11 @@ export function initAskeeHomePage(rootElement) {
                 return;
             }
 
+            lockPredictedBoxHeight(
+                slideStateObject.rightBoxElement,
+                slideStateObject.rightParagraphElement,
+                slideStateObject.rightOriginalHtmlString
+            );
             slideStateObject.slideElement.classList.add("askee-homepage__item--right-visible");
 
             const rightTypingFinished = await typeText({
