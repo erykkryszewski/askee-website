@@ -4,7 +4,7 @@ if (!defined("ABSPATH")) {
     exit();
 }
 
-// rejestruje endpoint rest dla chatu
+// rejestruje endpoint rest dla chatu, jak ktoś zrobi POST na wp-json/askee/v1/chat to odpala sie callback
 add_action("rest_api_init", function () {
     register_rest_route("askee/v1", "/chat", [
         "methods" => "POST",
@@ -17,10 +17,12 @@ add_action("rest_api_init", function () {
 function askee_chat_proxy_callback(WP_REST_Request $request) {
     $nonce = $request->get_header("x-wp-nonce");
 
+    // walidacja nonce
     if (!$nonce || !wp_verify_nonce($nonce, "wp_rest")) {
         return new WP_REST_Response(["ok" => false, "error" => "invalid_nonce"], 403);
     }
 
+    // walidacja kluczy itd
     if (!defined("ASKEE_WISE_WEBHOOK_URL") || !defined("ASKEE_WISE_API_KEY")) {
         return new WP_REST_Response(["ok" => false, "error" => "server_not_configured"], 500);
     }
@@ -76,6 +78,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
         );
     }
 
+    // domyślne funkcje wp żeby wziać wszystko
     $status = (int) wp_remote_retrieve_response_code($response);
     $body = (string) wp_remote_retrieve_body($response);
 
@@ -84,6 +87,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
         $decoded = json_decode($body, true);
     }
 
+    // zwraca do frontu wszystko co potrzeba
     return new WP_REST_Response(
         [
             "ok" => $status >= 200 && $status < 300,
