@@ -14,7 +14,7 @@ get_header(); the_post();
                             <div class="askee-homepage__welcome">
                                 <h1 class="askee-homepage__title">
                                     <span>Cześć!</span>
-                                    Jestem Twoim Asystentem Askee.
+                                    Jestem Twoim asystentem askee.
                                 </h1>
                             </div>
                         </div>
@@ -33,15 +33,13 @@ get_header(); the_post();
                             </div>
                             <div class="askee-homepage__boxes askee-homepage__boxes--first">
                                 <div class="askee-homepage__box askee-homepage__box--left">
-                                    <p>
-                                        <strong>Pomagam w codziennej pracy.</strong>
-                                            W jednym miejscu, bez przełączania się między systemami i aplikacjami.
-                                    </p>
+                                    <p>Wspieram Cię w podejmowaniu decyzji i realizowaniu codziennej pracy w Twojej organizacji.</p>
                                 </div>
                                 <div class="askee-homepage__box askee-homepage__box--right">
                                     <p>
-                                            Wystarczy, że zadasz pytanie lub zlecisz zadanie – odpowiem albo zrobię to za Ciebie. Szybko, prosto i w sposób
-                                        <strong>dopasowany do Twojej roli.</strong>
+                                            Zadajesz pytanie lub zlecasz zadanie — odpowiadam albo realizuję je za Ciebie. Szybko, jasno i
+                                        <strong>zgodnie z Twoją rolą</strong>
+                                            w organizacji.
                                     </p>
                                 </div>
                             </div>
@@ -53,7 +51,7 @@ get_header(); the_post();
                 <div class="row">
                     <div class="col-12 askee-homepage__column askee-homepage__column--welcome">
                         <div class="askee-homepage__welcome">
-                            <h2 class="askee-homepage__title">Dopasuję się do Twoich potrzeb!</h2>
+                            <h2 class="askee-homepage__title">Dopasowuję się do Twoich potrzeb.</h2>
                         </div>
                     </div>
                 </div>
@@ -71,17 +69,10 @@ get_header(); the_post();
                         </div>
                         <div class="askee-homepage__boxes askee-homepage__boxes--second">
                             <div class="askee-homepage__box askee-homepage__box--left">
-                                <p>
-                                    <strong>Mogę wspierać Cię w różnych obszarach</strong>
-                                            – wybierz, w czym mam Ci pomóc. Dopasuję się do Ciebie.
-                                </p>
+                                <p>Rozumiem, kim jesteś w organizacji. Znam Twoją rolę, uprawnienia i zakres odpowiedzialności. Pracuję na Twoich danych jakie mi udostępnisz.</p>
                             </div>
                             <div class="askee-homepage__box askee-homepage__box--right">
-                                <p>
-                                            Wspieram w sprawach kadrowych, rozwoju i ocenie pracowników, szybkim dostępie do wiedzy oraz zgodności z zasadami i procedurami firmy.
-                                    <strong>Zawsze działam w oparciu o kontekst,</strong>
-                                            rolę użytkownika i zasady Twojej organizacji.
-                                </p>
+                                <p>Inaczej wspieram menedżera, inaczej pracownika. Każde działanie realizuję zgodnie z zasadami firmy i sposobem, w jaki pracujecie na co dzień.</p>
                             </div>
                         </div>
                     </div>
@@ -92,7 +83,7 @@ get_header(); the_post();
             <div class="row">
                 <div class="col-12 askee-homepage__column askee-homepage__column--welcome">
                     <div class="askee-homepage__welcome">
-                        <h2 class="askee-homepage__title">Zawsze jestem przy Tobie!</h2>
+                        <h2 class="askee-homepage__title">Zawsze jestem przy Tobie.</h2>
                     </div>
                 </div>
             </div>
@@ -111,14 +102,13 @@ get_header(); the_post();
                     <div class="askee-homepage__boxes askee-homepage__boxes--third">
                         <div class="askee-homepage__box askee-homepage__box--left">
                             <p>
-                                            Jestem dostępny zawsze, gdy mnie potrzebujesz. Odpowiadam na pytania i wspieram Cię w pracy
-                                <strong>bez przerw i bez czekania.</strong>
+                                            Jestem z Tobą w narzędziach, z których korzystasz każdego dnia. W systemach firmowych, aplikacjach i komunikatorach. Nie musisz zmieniać sposobu pracy, żeby ze mnie korzystać.
                             </p>
                         </div>
                         <div class="askee-homepage__box askee-homepage__box--right">
                             <p>
-                                            Możesz korzystać ze mnie w aplikacji ASKee oraz w narzędziach, których używasz na co dzień: na komputerze, tablecie, telefonie, w Teams, Slacku i innych systemach.
-                                <strong>Jestem zawsze pod ręką!</strong>
+                                            Zamiast szukać informacji i klikać w systemach, zlecasz sprawę w jednym miejscu. Odpowiadam albo realizuję ją za Ciebie.
+                                <strong>Zawsze pod ręką.</strong>
                             </p>
                         </div>
                     </div>
@@ -130,7 +120,7 @@ get_header(); the_post();
         <div class="row">
             <div class="col-12 askee-homepage__column askee-homepage__column--welcome">
                 <div class="askee-homepage__welcome">
-                    <h2 class="askee-homepage__title">Twoje bezpieczeństwo to mój priorytet!</h2>
+                    <h2 class="askee-homepage__title">Bezpieczeństwo danych to mój priorytet.</h2>
                 </div>
             </div>
         </div>
@@ -149,15 +139,14 @@ get_header(); the_post();
                 <div class="askee-homepage__boxes askee-homepage__boxes--fourth">
                     <div class="askee-homepage__box askee-homepage__box--left">
                         <p>
-                            <strong>Nie wysyłam żadnych wrażliwych ani biznesowych danych</strong>
-                                            do chmury publicznej.
+                                            Jestem gotowy do pracy w środowisku enterprise. Zgodność, kontrola i odpowiedzialność to fundament mojej pracy. Chronię dane i wykorzystuję je tylko w dozwolonym zakresie. Ty
+                                            możesz skupić się na pracy, ja pilnuję reszty.
                         </p>
                     </div>
                     <div class="askee-homepage__box askee-homepage__box--right">
                         <p>
-                            <strong>Anonimizuję i szyfruję wszystkie informacje,</strong>
-                                            które mi powierzysz. Twoje dane są w pełni chronione – zawsze i wszędzie są dostępne
-                            <strong>wyłącznie między nami.</strong>
+                                            Nie wysyłam wrażliwych ani biznesowych danych poza infrastrukturę z której korzysta Twoja firma. Działam zgodnie z zasadami bezpieczeństwa Twojej organizacji.
+                            <strong>Zawsze bezpiecznie. Zawsze zgodnie z regułami.</strong>
                         </p>
                     </div>
                 </div>

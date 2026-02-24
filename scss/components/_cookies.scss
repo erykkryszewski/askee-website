@@ -26,17 +26,21 @@
         color: $text-color !important;
         border-radius: $theme-border-radius !important;
         padding: 4px !important;
+        font-weight: 400 !important;
 
         &:hover {
             background: $theme-color !important;
             color: $white !important;
             opacity: 1 !important;
+            font-weight: 400 !important;
         }
     }
 
     .cky-btn-accept {
         background: $theme-color !important;
         color: $white !important;
+        border: 1px solid $theme-color !important;
+        font-weight: 400 !important;
     }
 }
 
