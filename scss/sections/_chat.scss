@@ -85,6 +85,113 @@
                 line-height: 28px;
             }
         }
+
+        > section {
+            padding: 5px 0 0 27px !important;
+        }
+
+        // chat html override
+
+        * {
+            font-family: $font-primary !important;
+            color: $text-color !important;
+        }
+
+        img, svg {
+            max-width: 20px !important;
+        }
+
+        h2 {
+            font-size: 30px !important;
+            line-height: 1.1 !important;
+            font-weight: 600 !important;
+            margin: 0 0 20px !important;
+
+            strong {
+                font-weight: 600 !important;
+            }
+
+            @media (width <= 767px) {
+                font-size: 30px !important;
+            }
+        }
+
+        h3 {
+            font-size: 18px !important;
+            line-height: 1.1 !important;
+            font-weight: 600 !important;
+            margin: 20px 0 !important;
+
+            strong {
+                font-weight: 600 !important;
+            }
+
+            @media (width <= 767px) {
+                font-size: 18px !important;
+            }
+        }
+
+        h4 {
+            font-size: 18px !important;
+            line-height: 1.1 !important;
+            font-weight: 600 !important;
+            margin: 20px 0 !important;
+
+            strong {
+                font-weight: 600 !important;
+            }
+
+            @media (width <= 767px) {
+                font-size: 18px !important;
+            }
+        }
+
+        h5 {
+            font-size: 18px !important;
+            line-height: 1.1 !important;
+            font-weight: 600 !important;
+
+            strong {
+                font-weight: 600 !important;
+            }
+
+            @media (width <= 767px) {
+                font-size: 18px !important;
+            }
+        }
+
+        p {
+            font-size: 15px !important;
+            line-height: 28px !important;
+
+            > a {
+                font-size: 18px !important;
+                line-height: 28px !important;
+                font-weight: 400 !important;
+                color: $theme-color !important;
+
+                &:hover {
+                    text-decoration: none !important;
+                    color: $theme-color !important;
+                }
+            }
+
+            strong {
+                font-weight: 600 !important;
+            }
+
+        }
+
+        ul > li,
+        ol > li {
+            font-size: 15px !important;
+            line-height: 28px !important;
+            font-weight: 400 !important;
+
+            strong {
+                font-weight: 600 !important;
+            }
+        }
     }
 
     &__welcome {
