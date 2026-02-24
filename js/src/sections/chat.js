@@ -106,6 +106,141 @@ function getTopicSlugFromChatRoot(chatRootElement) {
     return getTopicSlugFromHref(window.location.href);
 }
 
+// bezpiecznie parsuje string JSON, jesli string nie wyglada jak json to zwraca null
+function tryParseJsonString(jsonCandidateString) {
+    if (typeof jsonCandidateString !== "string") {
+        return null;
+    }
+
+    const trimmedJsonCandidateString = jsonCandidateString.trim();
+    if (!trimmedJsonCandidateString) {
+        return null;
+    }
+
+    const looksLikeObjectJson =
+        trimmedJsonCandidateString.startsWith("{") &&
+        trimmedJsonCandidateString.endsWith("}");
+    const looksLikeArrayJson =
+        trimmedJsonCandidateString.startsWith("[") &&
+        trimmedJsonCandidateString.endsWith("]");
+
+    if (!looksLikeObjectJson && !looksLikeArrayJson) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(trimmedJsonCandidateString);
+    } catch (error) {
+        return null;
+    }
+}
+
+// dekoduje encje html typu &lt;div&gt; do <div>
+function decodeHtmlEntities(encodedString) {
+    if (typeof encodedString !== "string" || !encodedString) {
+        return "";
+    }
+
+    const textareaElement = document.createElement("textarea");
+    textareaElement.innerHTML = encodedString;
+    return textareaElement.value;
+}
+
+// szybki check czy string wyglada jak html
+function looksLikeHtmlString(valueString) {
+    if (typeof valueString !== "string") {
+        return false;
+    }
+
+    return /<\/?[a-z][\s\S]*>/i.test(valueString);
+}
+
+function getPrimaryAssistantResponseNode(apiResponseObject) {
+    if (!apiResponseObject) {
+        return null;
+    }
+
+    if (Array.isArray(apiResponseObject.json) && apiResponseObject.json[0]) {
+        return apiResponseObject.json[0];
+    }
+
+    if (apiResponseObject.json && typeof apiResponseObject.json === "object") {
+        return apiResponseObject.json;
+    }
+
+    const parsedRawObject = tryParseJsonString(apiResponseObject.raw);
+    if (Array.isArray(parsedRawObject) && parsedRawObject[0]) {
+        return parsedRawObject[0];
+    }
+
+    if (parsedRawObject && typeof parsedRawObject === "object") {
+        return parsedRawObject;
+    }
+
+    return null;
+}
+
+function extractAssistantPayloadFromApiResponse(apiResponseObject) {
+    const payloadObject = {
+        textString: "",
+        topicSlugString: "",
+        renderAsHtml: false,
+    };
+
+    const responseNodeObject = getPrimaryAssistantResponseNode(apiResponseObject);
+
+    let outputCandidateString = "";
+    let topicCandidateString = "";
+
+    if (responseNodeObject && typeof responseNodeObject === "object") {
+        if (typeof responseNodeObject.output === "string") {
+            outputCandidateString = responseNodeObject.output;
+        } else if (typeof responseNodeObject.Output === "string") {
+            outputCandidateString = responseNodeObject.Output;
+        }
+
+        if (typeof responseNodeObject.topic === "string") {
+            topicCandidateString = responseNodeObject.topic;
+        } else if (typeof responseNodeObject.Topic === "string") {
+            topicCandidateString = responseNodeObject.Topic;
+        }
+    }
+
+    // obsluga przypadku: output to string z kolejnym jsonem {"output":"...","topic":"..."}
+    const nestedOutputObject = tryParseJsonString(outputCandidateString);
+    if (nestedOutputObject && typeof nestedOutputObject === "object") {
+        if (typeof nestedOutputObject.output === "string") {
+            outputCandidateString = nestedOutputObject.output;
+        } else if (typeof nestedOutputObject.Output === "string") {
+            outputCandidateString = nestedOutputObject.Output;
+        }
+
+        if (!topicCandidateString && typeof nestedOutputObject.topic === "string") {
+            topicCandidateString = nestedOutputObject.topic;
+        } else if (!topicCandidateString && typeof nestedOutputObject.Topic === "string") {
+            topicCandidateString = nestedOutputObject.Topic;
+        }
+    }
+
+    if (
+        !outputCandidateString &&
+        apiResponseObject &&
+        typeof apiResponseObject.raw === "string"
+    ) {
+        outputCandidateString = apiResponseObject.raw;
+    }
+
+    const normalizedOutputString = outputCandidateString.replace(/\r\n/g, "\n").trim();
+    const decodedOutputString = decodeHtmlEntities(normalizedOutputString);
+    const shouldRenderAsHtml = looksLikeHtmlString(decodedOutputString);
+
+    payloadObject.textString = shouldRenderAsHtml ? decodedOutputString : normalizedOutputString;
+    payloadObject.topicSlugString = normalizeTopicSlug(topicCandidateString);
+    payloadObject.renderAsHtml = shouldRenderAsHtml;
+
+    return payloadObject;
+}
+
 // szuka tematu w zagniezdzonych danych odpowiedzi
 function extractTopicFromNode(nodeValue, depthNumber) {
     if (depthNumber > 5 || !nodeValue) {
@@ -118,6 +253,14 @@ function extractTopicFromNode(nodeValue, depthNumber) {
             if (topicFromArrayElement) {
                 return topicFromArrayElement;
             }
+        }
+        return "";
+    }
+
+    if (typeof nodeValue === "string") {
+        const parsedNodeValue = tryParseJsonString(nodeValue);
+        if (parsedNodeValue) {
+            return extractTopicFromNode(parsedNodeValue, depthNumber + 1);
         }
         return "";
     }
@@ -570,7 +713,7 @@ function initSingleChatBox(boxElement) {
     }
 
     // renderuje tekst odpowiedzi z podzialem na linie i akapity
-    function renderTextIntoWelcome(welcomeElement, textString) {
+    function renderTextIntoWelcome(welcomeElement, textString, renderAsHtmlValue) {
         if (!welcomeElement) {
             return;
         }
@@ -585,6 +728,11 @@ function initSingleChatBox(boxElement) {
         const normalizedTextString = safeTextString.replace(/\r\n/g, "\n").trim();
         if (!normalizedTextString) {
             welcomeElement.textContent = "Empty response";
+            return;
+        }
+
+        if (renderAsHtmlValue === true) {
+            welcomeElement.innerHTML = normalizedTextString;
             return;
         }
 
@@ -905,6 +1053,7 @@ function initSingleChatBox(boxElement) {
 
         if (window.console && typeof window.console.log === "function") {
             window.console.log("[Askee Chat]", "Sending request topic:", currentTopicSlug || "-");
+            window.console.log("[Askee Chat]", "topicSent:", currentTopicSlug || "-");
         }
 
         abortController = new AbortController();
@@ -959,30 +1108,48 @@ function initSingleChatBox(boxElement) {
 
         try {
             const apiResponseObject = await sendToApi(textValue);
-            const assistantTopicSlug = extractAssistantTopicFromApiResponse(apiResponseObject);
+            const assistantPayloadObject = extractAssistantPayloadFromApiResponse(apiResponseObject);
+            const assistantTopicSlug =
+                assistantPayloadObject.topicSlugString ||
+                extractAssistantTopicFromApiResponse(apiResponseObject);
 
             if (assistantTopicSlug && window.console && typeof window.console.log === "function") {
                 window.console.log("[Askee Chat]", "Received response topic:", assistantTopicSlug);
+                window.console.log("[Askee Chat]", "topicReceived:", assistantTopicSlug);
             }
 
             normalizeToSingleActiveElement();
             const welcomeElementAfterResponse = resetActiveContentKeepOnlyWelcome();
 
             if (apiResponseObject && apiResponseObject.ok) {
-                let assistantTextString = "";
+                let assistantTextString = assistantPayloadObject.textString;
+                let renderAsHtmlValue = assistantPayloadObject.renderAsHtml;
 
-                if (
-                    apiResponseObject.json &&
-                    Array.isArray(apiResponseObject.json) &&
-                    apiResponseObject.json[0] &&
-                    apiResponseObject.json[0].output
-                ) {
-                    assistantTextString = apiResponseObject.json[0].output;
-                } else if (typeof apiResponseObject.raw === "string") {
-                    assistantTextString = apiResponseObject.raw;
+                // fallback na starszy kontrakt, gdy parser payloadu nic nie wyciagnal
+                if (!assistantTextString) {
+                    if (
+                        apiResponseObject.json &&
+                        Array.isArray(apiResponseObject.json) &&
+                        apiResponseObject.json[0] &&
+                        apiResponseObject.json[0].output
+                    ) {
+                        assistantTextString = apiResponseObject.json[0].output;
+                    } else if (typeof apiResponseObject.raw === "string") {
+                        assistantTextString = apiResponseObject.raw;
+                    }
+
+                    const decodedFallbackTextString = decodeHtmlEntities(assistantTextString);
+                    if (looksLikeHtmlString(decodedFallbackTextString)) {
+                        assistantTextString = decodedFallbackTextString;
+                        renderAsHtmlValue = true;
+                    }
                 }
 
-                renderTextIntoWelcome(welcomeElementAfterResponse, assistantTextString);
+                renderTextIntoWelcome(
+                    welcomeElementAfterResponse,
+                    assistantTextString,
+                    renderAsHtmlValue
+                );
 
                 if (assistantTopicSlug) {
                     trySwitchPageByAssistantTopic(assistantTopicSlug);
@@ -1126,4 +1293,3 @@ export function initAskeeChatSection(rootElement) {
         }
     };
 }
-
