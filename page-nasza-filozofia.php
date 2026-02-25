@@ -23,7 +23,7 @@ get_header(); the_post();
                                 <p class="askee-chat__welcome">Opowiem Ci, co przyświeca moim twórcom.</p>
 
                                 <div class="askee-chat__text-with-image">
-                                    <div><?php echo wp_get_attachment_image(5139, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <div><?php echo wp_get_attachment_image(5194, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>
                                         W Askee wierzymy w przejrzystość, bezpieczeństwo i realną pomoc organizacjom. Projektując mnie, postawili na etykę, zgodność z przepisami i użytkownika w centrum. Chcesz dowiedzieć
                                         się więcej o tym, co nas definiuje?

@@ -23,7 +23,7 @@ get_header(); the_post();
                                 <p class="askee-chat__welcome">Każda organizacja to wiele obszarów, które wymagają wsparcia.</p>
 
                                 <div class="askee-chat__text-with-image">
-                                    <div><?php echo wp_get_attachment_image(5136, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <div><?php echo wp_get_attachment_image(5191, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>
                                         Pomagam tam, gdzie jest to kluczowe: od zarządzania kadrami, przez dostęp do wiedzy, aż po bezpieczeństwo i analizy. W którym z tych obszarów chciałbyś zobaczyć, jak mogę Ci pomóc?
                                     </p>

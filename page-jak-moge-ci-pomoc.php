@@ -23,7 +23,7 @@ get_header(); the_post();
                                 <p class="askee-chat__welcome">Wiem, że każda rola w organizacji ma inne potrzeby.</p>
 
                                 <div class="askee-chat__text-with-image">
-                                    <div><?php echo wp_get_attachment_image(5137, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <div><?php echo wp_get_attachment_image(5192, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>
                                         Dla pracowników upraszczam codzienne zadania, dla menedżerów daję pełny obraz zespołu, a dla HR-u i zarządu tworzę przestrzeń do świadomych decyzji. Powiedz mi, jaka rola najlepiej
                                         opisuje Ciebie, a pokażę, jak mogę Cię wesprzeć.

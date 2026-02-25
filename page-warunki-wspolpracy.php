@@ -23,7 +23,7 @@ get_header(); the_post();
                                 <p class="askee-chat__welcome">Zanim zaczniemy współpracę, chcę, żebyś wiedział, że stawiam na przejrzystość i elastyczność.</p>
 
                                 <div class="askee-chat__text-with-image">
-                                    <div><?php echo wp_get_attachment_image(5138, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <div><?php echo wp_get_attachment_image(5193, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>Możesz zacząć od krótkiego okresu testowego lub zaplanować wdrożenie na większą skalę. Dopasuję się do Twoich potrzeb i tempa. Jak chciałbyś zacząć naszą współpracę?</p>
                                 </div>
 

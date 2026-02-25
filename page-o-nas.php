@@ -23,7 +23,7 @@ get_header(); the_post();
                                 <p class="askee-chat__welcome">Za mną stoi zespół, który od lat wspiera organizacje w ich rozwoju.</p>
 
                                 <div class="askee-chat__text-with-image">
-                                    <div><?php echo wp_get_attachment_image(5140, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <div><?php echo wp_get_attachment_image(5195, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>
                                         W Askee łączymy technologię z doświadczeniem, tworząc narzędzia, które naprawdę ułatwiają pracę. Naszą misją jest wspierać ludzi w podejmowaniu lepszych decyzji, bez zbędnych
                                         komplikacji. Chcesz dowiedzieć się, co nas wyróżnia?

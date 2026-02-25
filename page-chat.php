@@ -22,7 +22,7 @@ get_header(); the_post();
                             <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
                                 <p class="askee-chat__welcome">Cieszę się, że tu jesteś!</p>
                                 <div class="askee-chat__text-with-image">
-                                    <div><?php echo wp_get_attachment_image(5134, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <div><?php echo wp_get_attachment_image(5189, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>
                                         Skoro już mnie poznałeś, to teraz możemy działać razem. Możesz zapytać o cokolwiek, co dotyczy tego, jak pomagam w organizacjach. Mam nadzieję, że to dopiero początek naszej
                                         współpracy. Na co masz ochotę zapytać mnie najpierw?

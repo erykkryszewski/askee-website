@@ -23,7 +23,7 @@ get_header(); the_post();
                                 <p class="askee-chat__welcome">Jeśli masz ochotę się z nami skontaktować, jestem tu, by to ułatwić.</p>
 
                                 <div class="askee-chat__text-with-image">
-                                    <div><?php echo wp_get_attachment_image(5141, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <div><?php echo wp_get_attachment_image(5188, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>Możemy umówić spotkanie, możesz przekazać mi informacje, a ja zajmę się resztą, lub mogę podpowiedzieć, gdzie spotkasz nas na żywo w najbliższym czasie. Co wybierasz?</p>
                                 </div>
 
