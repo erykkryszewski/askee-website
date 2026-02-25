@@ -1182,7 +1182,10 @@ function initSingleChatBox(boxElement) {
                     trySwitchPageByAssistantTopic(assistantTopicSlug);
                 }
             } else {
-                renderTextIntoWelcome(welcomeElementAfterResponse, "Upstream Error");
+                renderTextIntoWelcome(
+                    welcomeElementAfterResponse,
+                    "Przepraszamy, spróbuj ponownie"
+                );
             }
         } catch (error) {
             if (error && error.name === "AbortError") {

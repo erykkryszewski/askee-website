@@ -91,7 +91,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
 
     // 5. WYSYŁKA WSZYSTKIEGO CO MAMY
     $response = wp_remote_post($webhook_url, [
-        "timeout" => 60,
+        "timeout" => 80,
         "headers" => [
             "Content-Type" => "application/json; charset=utf-8",
             "x-api-key" => $api_key,
