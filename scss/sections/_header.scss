@@ -17,6 +17,15 @@
         align-items: center;
     }
 
+    &__logo {
+        img,
+        svg {
+            @media (width <= 767px) {
+                max-width: 135px;
+            }
+        }
+    }
+
     &__column {
         width: 100%;
 
