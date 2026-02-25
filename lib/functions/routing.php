@@ -36,6 +36,7 @@ function askee_register_theme_config() {
 }
 add_action("wp_enqueue_scripts", "askee_register_theme_config", 20);
 
+// 1.1 REJESTRACJA
 function askee_register_chat_config() {
     if (!wp_script_is("askeetheme-main", "enqueued")) {
         return;

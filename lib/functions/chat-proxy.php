@@ -4,7 +4,7 @@ if (!defined("ABSPATH")) {
     exit();
 }
 
-// rejestruje endpoint rest dla chatu, jak ktoś zrobi POST na wp-json/askee/v1/chat to odpala sie callback
+// 1.2 REJESTRUJE ENDPOINT, jak ktoś zrobi POST na wp-json/askee/v1/chat to odpala sie callback
 add_action("rest_api_init", function () {
     register_rest_route("askee/v1", "/chat", [
         "methods" => "POST",
@@ -40,7 +40,7 @@ function askee_chat_get_or_start_session_id() {
     return is_string($fallback_session_id) ? $fallback_session_id : "";
 }
 
-// obsluguje request z frontu i przekazuje go do webhooka
+// 4. ODBIERAMY REQUEST Z FRONTU I PRZEKAZUJEMY DO WEBHOOKA
 function askee_chat_proxy_callback(WP_REST_Request $request) {
     $nonce = $request->get_header("x-wp-nonce");
 
@@ -89,6 +89,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
         "session" => $session_id,
     ];
 
+    // 5. WYSYŁKA WSZYSTKIEGO CO MAMY
     $response = wp_remote_post($webhook_url, [
         "timeout" => 20,
         "headers" => [
@@ -118,7 +119,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
         $decoded = json_decode($body, true);
     }
 
-    // zwraca do frontu wszystko co potrzeba
+    // 6. ZWROT WSZYSTKIEGO CO POTRZEBUJEMY
     return new WP_REST_Response(
         [
             "ok" => $status >= 200 && $status < 300,

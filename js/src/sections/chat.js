@@ -1047,6 +1047,7 @@ function initSingleChatBox(boxElement) {
             requestPayloadObject.topic = currentTopicSlug;
         }
 
+        // tymczasowe debugowanie
         if (window.console && typeof window.console.log === "function") {
             window.console.log("[Askee Chat]", "Sending request topic:", currentTopicSlug || "-");
             window.console.log("[Askee Chat]", "topicSent:", currentTopicSlug || "-");
@@ -1073,7 +1074,7 @@ function initSingleChatBox(boxElement) {
         return parsedResponseObject;
     }
 
-    // AJAX - tu sie wszystko zaczyna
+    // 2. PO SUBMIT ROZPOCZYNA SIE CALY CALL
     async function onFormSubmit(eventObject) {
         eventObject.preventDefault();
 
@@ -1087,6 +1088,7 @@ function initSingleChatBox(boxElement) {
             return;
         }
 
+        // zeby nikt nie klikal 100 razy
         if (isSending) {
             return;
         }
@@ -1096,7 +1098,7 @@ function initSingleChatBox(boxElement) {
             submitButton.disabled = true;
         }
 
-        textareaElement.value = "";
+        textareaElement.value = ""; // zerujemy wszystko i zaczynaja sie animacje itd
 
         // normalizacje i animacje
         normalizeToSingleActiveElement();
@@ -1104,7 +1106,7 @@ function initSingleChatBox(boxElement) {
         renderTypingDotsIntoWelcome(welcomeElement);
 
         try {
-            const apiResponseObject = await sendToApi(textValue);
+            const apiResponseObject = await sendToApi(textValue); // 3. BUDOWA PAYLOADU PRZEKAZUJAC MU TEXT VALUE
             const assistantPayloadObject =
                 extractAssistantPayloadFromApiResponse(apiResponseObject);
             const assistantTopicSlug =
@@ -1144,11 +1146,12 @@ function initSingleChatBox(boxElement) {
             normalizeToSingleActiveElement();
             const welcomeElementAfterResponse = resetActiveContentKeepOnlyWelcome();
 
+            // 7. SPRAWDZANIE TEGO CO PRZYSZŁO, NORMALIZACJE I RENDER ODPOWIEDZI
             if (apiResponseObject && apiResponseObject.ok) {
                 let assistantTextString = assistantPayloadObject.textString;
                 let renderAsHtmlValue = assistantPayloadObject.renderAsHtml;
 
-                // fallback na starszy kontrakt, gdy parser payloadu nic nie wyciagnal
+                // fallback gdy parser payloadu nic nie wyciagnal
                 if (!assistantTextString) {
                     if (
                         apiResponseObject.json &&
@@ -1168,6 +1171,7 @@ function initSingleChatBox(boxElement) {
                     }
                 }
 
+                // tu renderujemy odpowiedź
                 renderTextIntoWelcome(
                     welcomeElementAfterResponse,
                     assistantTextString,
