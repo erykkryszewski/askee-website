@@ -1,6 +1,7 @@
 <?php
 
-get_header(); the_post();
+get_header();
+the_post();
 
 ?>
 
@@ -20,12 +21,13 @@ get_header(); the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--letstalk askee-chat__content--active" id="askee-chat-content-letstalk">
-                                <p class="askee-chat__welcome">Opowiem, jak pracuję. Jeśli chcesz porozmawiać z moimi twórcami, zostaw dane kontaktowe lub wybierz termin spotkania, który Ci pasuje.</p>
-                                <div class="askee-chat__inner-buttons">
-                                    <button class="button button--ghost">12.02 - czwartek, 10:00</button>
-                                    <button class="button button--ghost">12.02 - czwartek, 10:00</button>
-                                    <button class="button button--ghost">12.02 - czwartek, 10:00</button>
-                                    <button class="button button--ghost">12.02 - czwartek, 10:00</button>
+                                <p class="askee-chat__welcome">
+                                    Jeśli masz ochotę się z nami skontaktować, jestem tu, by to ułatwić. Możemy umówić spotkanie, możesz przekazać mi informacje, a ja zajmę się resztą, lub mogę podpowiedzieć, gdzie spotkasz nas na żywo w najbliższym czasie. Co wybierasz?
+                                </p>
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                    <button type="button" class="button button--ghost">Chcę umówić spotkanie.</button>
+                                    <button type="button" class="button button--ghost">Chcę przekazać Wam informację.</button>
+                                    <button type="button" class="button button--ghost">Chcę zobaczyć, gdzie będę mógł Was spotkać na wydarzeniu.</button>
                                 </div>
                             </div>
                         </div>

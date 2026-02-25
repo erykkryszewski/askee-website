@@ -1,6 +1,7 @@
 <?php
 
-get_header(); the_post();
+get_header();
+the_post();
 
 ?>
 
@@ -19,21 +20,14 @@ get_header(); the_post();
                                     <img src="<?php echo get_template_directory_uri(); ?>/images/hr-payroll.svg" alt="user-profile-picture" />
                                 </div>
                             </div>
-                            <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
-                                <span class="askee-contact__welcome-wrapper">
-                                    <p class="askee-chat__welcome">Kontakt z nami:?</p>
-                                </span>
-                                <div>
-                                    <div class="askee-contact__content">
-                                        <div class="askee-contact__image"><?php echo wp_get_attachment_image(5056, 'large', '', ['class' => 'contact-img']); ?></div>
-                                        <div class="askee-contact__info">
-                                            <p>Askee Sp. z o.o.</p>
-                                            <p>ul. Gostyńska 91, 80-298 Gdańsk</p>
-                                            <p>NIP: 5223018301</p>
-                                            <a href="mailto:kontakt@askee.pl">Email: kontakt@askee.pl</a>
-                                            <a href="tel:+48500025365">Tel. 500 025 365</a>
-                                        </div>
-                                    </div>
+                            <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
+                                <p class="askee-chat__welcome">
+                                    Jeśli masz ochotę się z nami skontaktować, jestem tu, by to ułatwić. Możemy umówić spotkanie, możesz przekazać mi informacje, a ja zajmę się resztą, lub mogę podpowiedzieć, gdzie spotkasz nas na żywo w najbliższym czasie. Co wybierasz?
+                                </p>
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                    <button type="button" class="button button--ghost">Chcę umówić spotkanie.</button>
+                                    <button type="button" class="button button--ghost">Chcę przekazać Wam informację.</button>
+                                    <button type="button" class="button button--ghost">Chcę zobaczyć, gdzie będę mógł Was spotkać na wydarzeniu.</button>
                                 </div>
                             </div>
                         </div>

@@ -1,6 +1,7 @@
 <?php
 
-get_header(); the_post();
+get_header();
+the_post();
 
 ?>
 
@@ -20,14 +21,13 @@ get_header(); the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--help askee-chat__content--active" id="askee-chat-content-help">
-                                <p class="askee-chat__welcome">ASKEE – jeden asystent, wiele ról, jedno miejsce pracy</p>
-                                <div>
-                                    <p>Mogę wspierać Cię w różnych obszarach - zgodnie z Twoją rolą. Napisz, jaką rolę pełnisz - wtedy opowiem, jak mogę Ci pomóc.</p>
-                                    <div class="askee-chat__inner-buttons">
-                                        <button class="button button--ghost">Pracownik</button>
-                                        <button class="button button--ghost">Manager</button>
-                                        <button class="button button--ghost">Administrator</button>
-                                    </div>
+                                <p class="askee-chat__welcome">
+                                    Wiem, że każda rola w organizacji ma inne potrzeby. Dla pracowników upraszczam codzienne zadania, dla menedżerów daję pełny obraz zespołu, a dla HR-u i zarządu tworzę przestrzeń do świadomych decyzji. Powiedz mi, jaka rola najlepiej opisuje Ciebie, a pokażę, jak mogę Cię wesprzeć.
+                                </p>
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                    <button type="button" class="button button--ghost">Pokaż, jak pomagasz pracownikom w codziennych sprawach.</button>
+                                    <button type="button" class="button button--ghost">Pokaż, jak wspierasz menedżerów w pracy z zespołem.</button>
+                                    <button type="button" class="button button--ghost">Pokaż, jak pomagasz HR i zarządowi w decyzjach i strategii.</button>
                                 </div>
                             </div>
                         </div>

@@ -1,6 +1,7 @@
 <?php
 
-get_header(); the_post();
+get_header();
+the_post();
 
 ?>
 
@@ -21,22 +22,13 @@ get_header(); the_post();
                             </div>
                             <div class="askee-chat__content askee-chat__content--areas askee-chat__content--active" id="askee-chat-content-areas">
                                 <p class="askee-chat__welcome">
-                                    Mam wiele specjalizacji, dzięki którym wspieram organizacje w codziennej pracy. Możesz poznać je według obszarów działania albo Twojej roli w firmie - chętnie opowiem Ci o tym.
+                                    Każda organizacja to wiele obszarów, które wymagają wsparcia. Pomagam tam, gdzie jest to kluczowe: od zarządzania kadrami, przez dostęp do wiedzy, aż po bezpieczeństwo i analizy. W którym z tych obszarów chciałbyś zobaczyć, jak mogę Ci pomóc?
                                 </p>
-                                <div>
-                                    <p><strong>Poznaj mnie bliżej.</strong></p>
-                                    <p>
-                                        Cześć, jestem ASKee – Twój asystent w organizacji. Pomagam w pracy działać szybciej, mądrzej i w zgodzie z zasadami firmy. Potrafię zarządzać danymi, wiedzą i doświadczeniem w 4
-                                        obszarach.
-                                    </p>
-                                    <p>Kliknij w obszar, który mam Ci opisać.</p>
-                                </div>
-                                <div class="askee-chat__inner-buttons askee-chat__inner-buttons--areas">
-                                    <button class="button button--ghost button--hr-payroll">ASKee Kadry</button>
-                                    <button class="button button--ghost button--hr">ASKee HR</button>
-                                    <button class="button button--ghost button--compliance">ASKee Compliance</button>
-                                    <button class="button button--ghost button--know-how">ASKee Know</button>
-                                    <button class="button button--ghost button--admin-structure-reports">ASKee Settings, Structure & Reports</button>
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                    <button type="button" class="button button--ghost">Pokaż, jak wspierasz obszar kadrowy i HR.</button>
+                                    <button type="button" class="button button--ghost">Pokaż, jak pomagasz w dostępie do wiedzy o organizacji.</button>
+                                    <button type="button" class="button button--ghost">Pokaż, jak dbasz o compliance i bezpieczeństwo.</button>
+                                    <button type="button" class="button button--ghost">Pokaż, jak wspierasz analizy i raportowanie.</button>
                                 </div>
                             </div>
                         </div>

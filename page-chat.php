@@ -1,6 +1,7 @@
 <?php
 
-get_header(); the_post();
+get_header();
+the_post();
 
 ?>
 
@@ -21,10 +22,13 @@ get_header(); the_post();
                             </div>
                             <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
                                 <p class="askee-chat__welcome">
-                                    Hej, to ja -
-                                    <span>Twój asystent!</span>
+                                    Cieszę się, że tu jesteś! Skoro już mnie poznałeś, to teraz możemy działać razem. Możesz zapytać o cokolwiek, co dotyczy tego, jak pomagam w organizacjach. Mam nadzieję, że to dopiero początek naszej współpracy. Na co masz ochotę zapytać mnie najpierw?
                                 </p>
-                                <div></div>
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                    <button type="button" class="button button--ghost">Jak możesz pomóc w codziennych decyzjach?</button>
+                                    <button type="button" class="button button--ghost">Pokaż mi, w jakich obszarach działasz.</button>
+                                    <button type="button" class="button button--ghost">Opowiedz, jak wygląda współpraca z Tobą.</button>
+                                </div>
                             </div>
                         </div>
 

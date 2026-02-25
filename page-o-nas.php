@@ -1,6 +1,7 @@
 <?php
 
-get_header(); the_post();
+get_header();
+the_post();
 
 ?>
 
@@ -19,32 +20,14 @@ get_header(); the_post();
                                     <img src="<?php echo get_template_directory_uri(); ?>/images/hr-payroll.svg" alt="user-profile-picture" />
                                 </div>
                             </div>
-                            <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
-                                <span class="askee-about__welcome-wrapper">
-                                    <p class="askee-chat__welcome">Chcesz wiedzieć, kto mnie stworzył?</p>
-                                    <!-- <button class="button button--ghost">Tak</button> -->
-                                </span>
-                                <div>
-                                    <p>
-                                        Działam dzięki doświadczeniu zespołu, który od 20 lat tworzy dla firm systemy wspierające automatyzację i optymalizację. Ich wiedza, kontakt z różnymi branżami i organizacjami
-                                        pozwalają wdrożyć rozwiązania zwiększające efektywność, bezpieczeństwo danych i optymalizując pracę ludzi.
-                                    </p>
-
-                                    <div class="askee-about__icons">
-                                        <div class="askee-about__item">
-                                            <?php echo wp_get_attachment_image(5088, 'large', '', ['class' => 'askee-about-img']); ?>
-                                            <h4>Technologia</h4>
-                                        </div>
-                                        <div class="askee-about__item"><?php echo wp_get_attachment_image(5087, 'large', '', ['class' => 'askee-about-img']); ?></div>
-                                        <div class="askee-about__item">
-                                            <?php echo wp_get_attachment_image(5090, 'large', '', ['class' => 'askee-about-img']); ?>
-                                            <h4>Bezpieczeństwo</h4>
-                                        </div>
-                                        <div class="askee-about__item">
-                                            <?php echo wp_get_attachment_image(5089, 'large', '', ['class' => 'askee-about-img']); ?>
-                                            <h4>Analiza</h4>
-                                        </div>
-                                    </div>
+                            <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
+                                <p class="askee-chat__welcome">
+                                    Za mną stoi zespół, który od lat wspiera organizacje w ich rozwoju. W Askee łączymy technologię z doświadczeniem, tworząc narzędzia, które naprawdę ułatwiają pracę. Naszą misją jest wspierać ludzi w podejmowaniu lepszych decyzji, bez zbędnych komplikacji. Chcesz dowiedzieć się, co nas wyróżnia?
+                                </p>
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                    <button type="button" class="button button--ghost">Opowiedz, jakie macie doświadczenie w pracy z organizacjami.</button>
+                                    <button type="button" class="button button--ghost">Pokaż, jak powstał pomysł na Askee.</button>
+                                    <button type="button" class="button button--ghost">Opowiedz, jak wygląda współpraca z Waszym zespołem.</button>
                                 </div>
                             </div>
                         </div>

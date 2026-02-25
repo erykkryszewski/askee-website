@@ -7,7 +7,6 @@
             "posts_per_page" => 3,
             "post_status" => "publish",
             "ignore_sticky_posts" => true,
-            "post__not_in" => is_single() ? [get_queried_object_id()] : [],
         ]);
 
         if ($askee_latest_posts_query->have_posts()):
@@ -31,22 +30,4 @@
     </ul>
     <a href="/blog/" class="askee-sidebar__link">Blog</a>
     <a href="/kategoria/aktualnosci/" class="askee-sidebar__link">Aktualności</a>
-
-    <ul class="askee-social-media">
-        <!-- <li>
-            <a href="#" target="_blank">
-                <?php echo wp_get_attachment_image(5069, "large"); ?>
-            </a>
-        </li>
-        <li>
-            <a href="#" target="_blank">
-                <?php echo wp_get_attachment_image(5068, "large"); ?>
-            </a>
-        </li> -->
-        <li>
-            <a href="#" target="_blank">
-                <?php echo wp_get_attachment_image(5067, "large"); ?>
-            </a>
-        </li>
-    </ul>
 </div>
