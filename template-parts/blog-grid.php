@@ -3,10 +3,11 @@
 global $wp_query;
 
 $askee_category_icon_map = [
-    "biznes" => "fa-regular fa-briefcase",
-    "sztuczna-inteligencja" => "fa-regular fa-lightbulb",
+    "biznes" => "fa-solid fa-briefcase",
+    "sztuczna-inteligencja" => "fa-solid fa-lightbulb",
     "hr" => "fa-solid fa-user-group",
-    "aktualnosci" => "fa-regular fa-newspaper",
+    "aktualnosci" => "fa-solid fa-newspaper",
+    "technologia" => "fa-solid fa-microchip",
 ];
 $askee_default_category_icon = $askee_category_icon_map["aktualnosci"];
 $askee_default_thumbnail_id = 5091;
@@ -165,9 +166,11 @@ if (is_category()) {
                 }
             }
             ?>
-            <article class="askee-blog__post<?php if ($askee_is_featured_post) {
-                echo " askee-blog__post--featured";
-            } ?>">
+<article id="post-<?php the_ID(); ?>" data-id="<?php the_ID(); ?>" class="askee-blog__post<?php if (
+    $askee_is_featured_post
+) {
+    echo " askee-blog__post--featured";
+} ?>">
                 <a class="askee-blog__post-link" href="<?php the_permalink(); ?>">
                     <div class="askee-blog__post-media">
                         <?php echo wp_get_attachment_image($askee_post_image_id, "large", false, [

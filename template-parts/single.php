@@ -1,10 +1,11 @@
 <?php
 
 $askee_category_icon_map = [
-    "biznes" => "fa-regular fa-briefcase",
-    "sztuczna-inteligencja" => "fa-regular fa-lightbulb",
+    "biznes" => "fa-solid fa-briefcase",
+    "sztuczna-inteligencja" => "fa-solid fa-lightbulb",
     "hr" => "fa-solid fa-user-group",
-    "aktualnosci" => "fa-regular fa-newspaper",
+    "aktualnosci" => "fa-solid fa-newspaper",
+    "technologia" => "fa-solid fa-microchip",
 ];
 $askee_default_category_icon = $askee_category_icon_map["aktualnosci"];
 $askee_default_thumbnail_id = 5091;
@@ -235,17 +236,18 @@ if (have_posts()):
             $askee_related_posts_count = (int) $askee_related_posts_query->post_count;
             ?>
             <?php if ($askee_related_posts_count >= 2): ?>
-                <?php
-                $askee_related_list_modifier = 2 === $askee_related_posts_count
-                    ? " askee-blog__list--related-2"
-                    : " askee-blog__list--related-3";
-                ?>
+                <?php $askee_related_list_modifier =
+                    2 === $askee_related_posts_count
+                        ? " askee-blog__list--related-2"
+                        : " askee-blog__list--related-3"; ?>
                 <section class="askee-blog__related">
                     <h2 class="askee-blog__related-title h3"><?php esc_html_e(
                         "Przeczytaj także",
                         "askeetheme",
                     ); ?></h2>
-                    <div class="askee-blog__list<?php echo esc_attr($askee_related_list_modifier); ?>">
+                    <div class="askee-blog__list<?php echo esc_attr(
+                        $askee_related_list_modifier,
+                    ); ?>">
                         <?php while ($askee_related_posts_query->have_posts()):
                             $askee_related_posts_query->the_post(); ?>
                             <?php
@@ -286,7 +288,10 @@ if (have_posts()):
                             }
                             if ("" === $askee_related_author_pseudonim) {
                                 $askee_related_author_pseudonim = trim(
-                                    (string) get_the_author_meta("nickname", $askee_related_author_id),
+                                    (string) get_the_author_meta(
+                                        "nickname",
+                                        $askee_related_author_id,
+                                    ),
                                 );
                             }
                             if ("" === $askee_related_author_pseudonim) {
@@ -310,7 +315,8 @@ if (have_posts()):
                                             "large",
                                             false,
                                             [
-                                                "class" => "askee-blog__post-image object-fit-cover",
+                                                "class" =>
+                                                    "askee-blog__post-image object-fit-cover",
                                                 "loading" => "lazy",
                                             ],
                                         ); ?>
@@ -321,7 +327,8 @@ if (have_posts()):
                                             <span class="askee-blog__post-category text-small">
                                                 <i
                                                     class="askee-blog__post-category-icon <?php echo esc_attr(
-                                                        $askee_related_post_category_icon ?: "fa-regular fa-folder",
+                                                        $askee_related_post_category_icon ?:
+                                                        "fa-regular fa-folder",
                                                     ); ?>"
                                                     aria-hidden="true"
                                                 ></i>
@@ -342,7 +349,8 @@ if (have_posts()):
                                                         "",
                                                         "",
                                                         [
-                                                            "class" => "askee-blog__post-author-image object-fit-cover",
+                                                            "class" =>
+                                                                "askee-blog__post-author-image object-fit-cover",
                                                         ],
                                                     ); ?>
                                                 </span>
@@ -353,7 +361,9 @@ if (have_posts()):
 
                                             <time
                                                 class="askee-blog__post-date text-small"
-                                                datetime="<?php echo esc_attr(get_the_date("c")); ?>"
+                                                datetime="<?php echo esc_attr(
+                                                    get_the_date("c"),
+                                                ); ?>"
                                             >
                                                 <?php echo esc_html(get_the_date()); ?>
                                             </time>
@@ -361,7 +371,8 @@ if (have_posts()):
                                     </div>
                                 </a>
                             </article>
-                        <?php endwhile; ?>
+                        <?php
+                        endwhile; ?>
                     </div>
                 </section>
             <?php endif; ?>

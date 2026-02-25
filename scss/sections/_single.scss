@@ -84,12 +84,14 @@
         width: 100%;
         overflow: hidden;
         border-radius: $theme-border-radius;
-        aspect-ratio: 16 / 9;
         height: 490px;
 
-        @media (width <= 767px) {
+        @media (width <= 1450px) {
+            height: 413px;
+        }
+
+        @media (width <= 1199px) {
             height: auto;
-            aspect-ratio: initial !important;
         }
 
         img {
