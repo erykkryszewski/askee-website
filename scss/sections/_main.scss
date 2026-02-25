@@ -3,9 +3,5 @@ main.askee-app-content {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 50px 0;
-
-    @media (width <= 767px) {
-        padding: 25px 0;
-    }
+    padding: 25px 0;
 }

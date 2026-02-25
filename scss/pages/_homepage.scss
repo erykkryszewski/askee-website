@@ -197,10 +197,10 @@
         }
 
         &--second {
-            --askee-left-box-align: flex-start;
-            --askee-right-box-align: flex-end;
-            --askee-left-box-offset: 185px;
-            --askee-right-box-offset: 335px;
+            --askee-left-box-align: flex-end;
+            --askee-right-box-align: flex-start;
+            --askee-left-box-offset: 335px;
+            --askee-right-box-offset: 185px;
         }
 
         &--third {
@@ -211,10 +211,10 @@
         }
 
         &--fourth {
-            --askee-left-box-align: flex-start;
-            --askee-right-box-align: flex-end;
-            --askee-left-box-offset: 165px;
-            --askee-right-box-offset: 355px;
+            --askee-left-box-align: flex-end;
+            --askee-right-box-align: flex-start;
+            --askee-left-box-offset: 355px;
+            --askee-right-box-offset: 165px;
         }
 
         &--first,

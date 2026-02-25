@@ -149,6 +149,38 @@ function looksLikeHtmlString(valueString) {
     return /<\/?[a-z][\s\S]*>/i.test(valueString);
 }
 
+function normalizeSuggestionsArray(suggestionsCandidateValue) {
+    if (!Array.isArray(suggestionsCandidateValue)) {
+        return [];
+    }
+
+    const normalizedSuggestionsArray = [];
+
+    for (let index = 0; index < suggestionsCandidateValue.length; index += 1) {
+        const suggestionValue = suggestionsCandidateValue[index];
+        if (typeof suggestionValue !== "string") {
+            continue;
+        }
+
+        const normalizedSuggestionValue = suggestionValue.trim();
+        if (!normalizedSuggestionValue) {
+            continue;
+        }
+
+        if (normalizedSuggestionsArray.includes(normalizedSuggestionValue)) {
+            continue;
+        }
+
+        normalizedSuggestionsArray.push(normalizedSuggestionValue);
+
+        if (normalizedSuggestionsArray.length >= 3) {
+            break;
+        }
+    }
+
+    return normalizedSuggestionsArray;
+}
+
 function getPrimaryAssistantResponseNode(apiResponseObject) {
     if (!apiResponseObject) {
         return null;
@@ -179,12 +211,14 @@ function extractAssistantPayloadFromApiResponse(apiResponseObject) {
         textString: "",
         topicSlugString: "",
         renderAsHtml: false,
+        suggestionsArray: [],
     };
 
     const responseNodeObject = getPrimaryAssistantResponseNode(apiResponseObject);
 
     let outputCandidateString = "";
     let topicCandidateString = "";
+    let suggestionsCandidateArray = [];
 
     if (responseNodeObject && typeof responseNodeObject === "object") {
         if (typeof responseNodeObject.output === "string") {
@@ -197,6 +231,12 @@ function extractAssistantPayloadFromApiResponse(apiResponseObject) {
             topicCandidateString = responseNodeObject.topic;
         } else if (typeof responseNodeObject.Topic === "string") {
             topicCandidateString = responseNodeObject.Topic;
+        }
+
+        if (Array.isArray(responseNodeObject.suggestions)) {
+            suggestionsCandidateArray = normalizeSuggestionsArray(responseNodeObject.suggestions);
+        } else if (Array.isArray(responseNodeObject.Suggestions)) {
+            suggestionsCandidateArray = normalizeSuggestionsArray(responseNodeObject.Suggestions);
         }
     }
 
@@ -214,10 +254,23 @@ function extractAssistantPayloadFromApiResponse(apiResponseObject) {
         } else if (!topicCandidateString && typeof nestedOutputObject.Topic === "string") {
             topicCandidateString = nestedOutputObject.Topic;
         }
+
+        const nestedSuggestionsArray = normalizeSuggestionsArray(
+            nestedOutputObject.suggestions || nestedOutputObject.Suggestions
+        );
+        if (nestedSuggestionsArray.length > 0) {
+            suggestionsCandidateArray = nestedSuggestionsArray;
+        }
     }
 
     if (!outputCandidateString && apiResponseObject && typeof apiResponseObject.raw === "string") {
         outputCandidateString = apiResponseObject.raw;
+    }
+
+    if (suggestionsCandidateArray.length === 0 && apiResponseObject) {
+        suggestionsCandidateArray = normalizeSuggestionsArray(
+            apiResponseObject.suggestions || apiResponseObject.Suggestions
+        );
     }
 
     const normalizedOutputString = outputCandidateString.replace(/\r\n/g, "\n").trim();
@@ -227,6 +280,7 @@ function extractAssistantPayloadFromApiResponse(apiResponseObject) {
     payloadObject.textString = shouldRenderAsHtml ? decodedOutputString : normalizedOutputString;
     payloadObject.topicSlugString = normalizeTopicSlug(topicCandidateString);
     payloadObject.renderAsHtml = shouldRenderAsHtml;
+    payloadObject.suggestionsArray = suggestionsCandidateArray;
 
     return payloadObject;
 }
@@ -687,6 +741,9 @@ function initSingleChatBox(boxElement) {
 
         welcomeElement.replaceChildren();
 
+        const stateElement = document.createElement("div");
+        stateElement.className = "askee-chat__dots-state";
+
         const bubbleElement = document.createElement("span");
         bubbleElement.className = "askee-chat__dots";
         bubbleElement.setAttribute("role", "status");
@@ -706,7 +763,14 @@ function initSingleChatBox(boxElement) {
         bubbleElement.appendChild(dotTwoElement);
         bubbleElement.appendChild(dotThreeElement);
 
-        welcomeElement.appendChild(bubbleElement);
+        const messageElement = document.createElement("span");
+        messageElement.className = "askee-chat__dots-label";
+        messageElement.textContent = "Przygotowywanie odpowiedzi...";
+
+        stateElement.appendChild(bubbleElement);
+        stateElement.appendChild(messageElement);
+
+        welcomeElement.appendChild(stateElement);
     }
 
     // renderuje tekst odpowiedzi z podzialem na linie i akapity
@@ -922,6 +986,20 @@ function initSingleChatBox(boxElement) {
             return;
         }
 
+        const suggestionButtonElement = clickedElement.closest(
+            ".askee-chat__info-buttons .button.button--ghost"
+        );
+        if (suggestionButtonElement) {
+            eventObject.preventDefault();
+            if (!textareaElement || !formElement) {
+                return;
+            }
+
+            textareaElement.value = suggestionButtonElement.textContent || "";
+            formElement.dispatchEvent(new Event("submit"));
+            return;
+        }
+
         const navigationTargetElement = clickedElement.closest(".askee-chat__buttons [data-id]");
         if (!navigationTargetElement) {
             return;
@@ -1010,9 +1088,69 @@ function initSingleChatBox(boxElement) {
     const formElement = boxElement.querySelector(".askee-chat__form");
     const textareaElement = formElement ? formElement.querySelector(".askee-chat__textarea") : null;
     const submitButton = formElement ? formElement.querySelector('[type="submit"]') : null;
+    const userMessageElement = switchSectionsElement
+        ? switchSectionsElement.querySelector(".askee-chat__user-message")
+        : null;
+    const userMessageParagraphElement = userMessageElement
+        ? userMessageElement.querySelector("p")
+        : null;
 
     let isSending = false; // blokowanie podwójnych wysyłek jakby ktoś spamował submitem
     let abortController = null;
+
+    function renderLatestUserMessage(messageTextString) {
+        if (!userMessageElement || !userMessageParagraphElement) {
+            return;
+        }
+
+        if (typeof messageTextString !== "string") {
+            return;
+        }
+
+        const normalizedMessageTextString = messageTextString.trim();
+        if (!normalizedMessageTextString) {
+            return;
+        }
+
+        userMessageParagraphElement.textContent = normalizedMessageTextString;
+        userMessageElement.style.display = "flex";
+    }
+
+    function renderSuggestionsButtons(suggestionsArray) {
+        if (!activeContentElement) {
+            return;
+        }
+
+        const existingSuggestionsElement = activeContentElement.querySelector(
+            ".askee-chat__info-buttons--suggestions"
+        );
+        if (existingSuggestionsElement) {
+            existingSuggestionsElement.remove();
+        }
+
+        const normalizedSuggestionsArray = normalizeSuggestionsArray(suggestionsArray);
+        if (normalizedSuggestionsArray.length === 0) {
+            return;
+        }
+
+        const suggestionsElement = document.createElement("div");
+        suggestionsElement.className = "askee-chat__info-buttons askee-chat__info-buttons--suggestions";
+
+        for (
+            let suggestionIndexNumber = 0;
+            suggestionIndexNumber < normalizedSuggestionsArray.length;
+            suggestionIndexNumber += 1
+        ) {
+            const suggestionString = normalizedSuggestionsArray[suggestionIndexNumber];
+            const suggestionButtonElement = document.createElement("button");
+            suggestionButtonElement.type = "button";
+            suggestionButtonElement.className = "button button--ghost";
+            suggestionButtonElement.textContent = suggestionString;
+            suggestionsElement.appendChild(suggestionButtonElement);
+        }
+
+        activeContentElement.appendChild(suggestionsElement);
+    }
 
     // wysyla wiadomosc do backendu i zwraca odpowiedz json
     async function sendToApi(inputTextString) {
@@ -1077,6 +1215,8 @@ function initSingleChatBox(boxElement) {
         if (submitButton) {
             submitButton.disabled = true;
         }
+
+        renderLatestUserMessage(textValue);
 
         textareaElement.value = ""; // zerujemy wszystko i zaczynaja sie animacje itd
 
@@ -1157,6 +1297,7 @@ function initSingleChatBox(boxElement) {
                     assistantTextString,
                     renderAsHtmlValue
                 );
+                renderSuggestionsButtons(assistantPayloadObject.suggestionsArray);
 
                 if (assistantTopicSlug) {
                     trySwitchPageByAssistantTopic(assistantTopicSlug);

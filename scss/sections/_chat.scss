@@ -50,7 +50,7 @@
         border: 1px solid $theme-color;
         border-radius: 18px;
         padding: 25px;
-        min-height: 420px;
+        min-height: 320px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -125,23 +125,7 @@
             max-width: 20px !important;
         }
 
-        h1,
-        h2 {
-            font-size: 30px !important;
-            line-height: 1.1 !important;
-            font-weight: 600 !important;
-            margin: 20px 0 !important;
-
-            strong {
-                font-weight: 600 !important;
-            }
-
-            @media (width <= 767px) {
-                font-size: 30px !important;
-            }
-        }
-
-        h3 {
+        h1 {
             font-size: 18px !important;
             line-height: 1.1 !important;
             font-weight: 600 !important;
@@ -156,25 +140,14 @@
             }
         }
 
-        h4 {
-            font-size: 18px !important;
-            line-height: 1.1 !important;
-            font-weight: 600 !important;
-            margin: 20px 0 !important;
-
-            strong {
-                font-weight: 600 !important;
-            }
-
-            @media (width <= 767px) {
-                font-size: 18px !important;
-            }
-        }
-
+        h2,
+        h3,
+        h4,
         h5 {
             font-size: 18px !important;
             line-height: 1.1 !important;
             font-weight: 600 !important;
+            margin: 20px 0 !important;
 
             strong {
                 font-weight: 600 !important;
@@ -345,6 +318,14 @@
 
     &__info-buttons {
         width: 100%;
+
+        &--suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin: 24px 0 0;
+        }
     }
 
     &__info-element {
