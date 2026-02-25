@@ -15,8 +15,8 @@
                 $askee_latest_posts_query->the_post(); ?>
                 <li>
                     <a href="<?php echo esc_url(get_permalink()); ?>"><?php echo esc_html(
-                        get_the_title(),
-                    ); ?></a>
+    get_the_title(),
+); ?></a>
                 </li>
             <?php
             endwhile;
@@ -29,8 +29,8 @@
         wp_reset_postdata();
         ?>
     </ul>
-    <a href="/blog" class="askee-sidebar__link">Blog</a>
-    <a href="/kategoria/aktualnosci" class="askee-sidebar__link">Aktualności</a>
+    <a href="/blog/" class="askee-sidebar__link">Blog</a>
+    <a href="/kategoria/aktualnosci/" class="askee-sidebar__link">Aktualności</a>
 
     <ul class="askee-social-media">
         <!-- <li>
