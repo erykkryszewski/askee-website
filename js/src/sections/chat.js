@@ -996,7 +996,7 @@ function initSingleChatBox(boxElement) {
             }
 
             textareaElement.value = suggestionButtonElement.textContent || "";
-            formElement.dispatchEvent(new Event("submit"));
+            triggerChatFormSubmit();
             return;
         }
 
@@ -1097,6 +1097,19 @@ function initSingleChatBox(boxElement) {
 
     let isSending = false; // blokowanie podwójnych wysyłek jakby ktoś spamował submitem
     let abortController = null;
+
+    function triggerChatFormSubmit() {
+        if (!formElement) {
+            return;
+        }
+
+        if (typeof formElement.requestSubmit === "function") {
+            formElement.requestSubmit();
+            return;
+        }
+
+        formElement.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    }
 
     function renderLatestUserMessage(messageTextString) {
         if (!userMessageElement || !userMessageParagraphElement) {
@@ -1343,7 +1356,7 @@ function initSingleChatBox(boxElement) {
 
             if (eventObject.key === "Enter" && !eventObject.shiftKey) {
                 eventObject.preventDefault();
-                formElement.dispatchEvent(new Event("submit"));
+                triggerChatFormSubmit();
             }
         });
     }
