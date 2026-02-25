@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,16 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--help askee-chat__content--active" id="askee-chat-content-help">
-                                <p class="askee-chat__welcome">
-                                    Wiem, że każda rola w organizacji ma inne potrzeby. Dla pracowników upraszczam codzienne zadania, dla menedżerów daję pełny obraz zespołu, a dla HR-u i zarządu tworzę przestrzeń do świadomych decyzji. Powiedz mi, jaka rola najlepiej opisuje Ciebie, a pokażę, jak mogę Cię wesprzeć.
-                                </p>
+                                <p class="askee-chat__welcome">Wiem, że każda rola w organizacji ma inne potrzeby.</p>
+
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5137, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>
+                                        Dla pracowników upraszczam codzienne zadania, dla menedżerów daję pełny obraz zespołu, a dla HR-u i zarządu tworzę przestrzeń do świadomych decyzji. Powiedz mi, jaka rola najlepiej
+                                        opisuje Ciebie, a pokażę, jak mogę Cię wesprzeć.
+                                    </p>
+                                </div>
+
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Pokaż, jak pomagasz pracownikom w codziennych sprawach.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak wspierasz menedżerów w pracy z zespołem.</button>

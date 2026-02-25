@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,16 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
-                                <p class="askee-chat__welcome">
-                                    Opowiem Ci, co przyświeca moim twórcom. W Askee wierzymy w przejrzystość, bezpieczeństwo i realną pomoc organizacjom. Projektując mnie, postawili na etykę, zgodność z przepisami i użytkownika w centrum. Chcesz dowiedzieć się więcej o tym, co nas definiuje?
-                                </p>
+                                <p class="askee-chat__welcome">Opowiem Ci, co przyświeca moim twórcom.</p>
+
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5139, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>
+                                        W Askee wierzymy w przejrzystość, bezpieczeństwo i realną pomoc organizacjom. Projektując mnie, postawili na etykę, zgodność z przepisami i użytkownika w centrum. Chcesz dowiedzieć
+                                        się więcej o tym, co nas definiuje?
+                                    </p>
+                                </div>
+
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Opowiedz, dlaczego przejrzystość jest dla Was tak ważna.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak podchodzicie do etyki i zgodności.</button>

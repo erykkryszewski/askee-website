@@ -121,7 +121,7 @@
 
         // chat html override
 
-        img:not(.contact-img, .our-philosophy-img, .askee-about-img) {
+        img:not(.contact-img, .our-philosophy-img, .askee-about-img, .askee-welcome-img) {
             max-width: 20px !important;
         }
 
@@ -221,6 +221,28 @@
             position: absolute;
             left: 0;
             top: 3px;
+        }
+    }
+
+    &__text-with-image {
+        display: flex;
+        width: 100%;
+        gap: 30px;
+        align-items: center;
+        justify-content: flex-start;
+
+        div {
+            width: 250px;
+            flex-shrink: 0;
+        }
+
+        p {
+            margin: 0;
+        }
+
+        @media (width <= 1199px) {
+            flex-wrap: wrap;
+            gap: 0;
         }
     }
 

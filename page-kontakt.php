@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,13 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
-                                <p class="askee-chat__welcome">
-                                    Jeśli masz ochotę się z nami skontaktować, jestem tu, by to ułatwić. Możemy umówić spotkanie, możesz przekazać mi informacje, a ja zajmę się resztą, lub mogę podpowiedzieć, gdzie spotkasz nas na żywo w najbliższym czasie. Co wybierasz?
-                                </p>
+                                <p class="askee-chat__welcome">Jeśli masz ochotę się z nami skontaktować, jestem tu, by to ułatwić.</p>
+
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5141, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>Możemy umówić spotkanie, możesz przekazać mi informacje, a ja zajmę się resztą, lub mogę podpowiedzieć, gdzie spotkasz nas na żywo w najbliższym czasie. Co wybierasz?</p>
+                                </div>
+
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Chcę umówić spotkanie.</button>
                                     <button type="button" class="button button--ghost">Chcę przekazać Wam informację.</button>

@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,14 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
-                                <p class="askee-chat__welcome">
-                                    Cieszę się, że tu jesteś! Skoro już mnie poznałeś, to teraz możemy działać razem. Możesz zapytać o cokolwiek, co dotyczy tego, jak pomagam w organizacjach. Mam nadzieję, że to dopiero początek naszej współpracy. Na co masz ochotę zapytać mnie najpierw?
-                                </p>
+                                <p class="askee-chat__welcome">Cieszę się, że tu jesteś!</p>
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5134, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>
+                                        Skoro już mnie poznałeś, to teraz możemy działać razem. Możesz zapytać o cokolwiek, co dotyczy tego, jak pomagam w organizacjach. Mam nadzieję, że to dopiero początek naszej
+                                        współpracy. Na co masz ochotę zapytać mnie najpierw?
+                                    </p>
+                                </div>
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Jak możesz pomóc w codziennych decyzjach?</button>
                                     <button type="button" class="button button--ghost">Pokaż mi, w jakich obszarach działasz.</button>

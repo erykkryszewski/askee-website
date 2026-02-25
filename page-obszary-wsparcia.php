@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,15 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--areas askee-chat__content--active" id="askee-chat-content-areas">
-                                <p class="askee-chat__welcome">
-                                    Każda organizacja to wiele obszarów, które wymagają wsparcia. Pomagam tam, gdzie jest to kluczowe: od zarządzania kadrami, przez dostęp do wiedzy, aż po bezpieczeństwo i analizy. W którym z tych obszarów chciałbyś zobaczyć, jak mogę Ci pomóc?
-                                </p>
+                                <p class="askee-chat__welcome">Każda organizacja to wiele obszarów, które wymagają wsparcia.</p>
+
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5136, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>
+                                        Pomagam tam, gdzie jest to kluczowe: od zarządzania kadrami, przez dostęp do wiedzy, aż po bezpieczeństwo i analizy. W którym z tych obszarów chciałbyś zobaczyć, jak mogę Ci pomóc?
+                                    </p>
+                                </div>
+
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Pokaż, jak wspierasz obszar kadrowy i HR.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak pomagasz w dostępie do wiedzy o organizacji.</button>

@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,16 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--default askee-chat__content--active" id="askee-chat-content-default">
-                                <p class="askee-chat__welcome">
-                                    Za mną stoi zespół, który od lat wspiera organizacje w ich rozwoju. W Askee łączymy technologię z doświadczeniem, tworząc narzędzia, które naprawdę ułatwiają pracę. Naszą misją jest wspierać ludzi w podejmowaniu lepszych decyzji, bez zbędnych komplikacji. Chcesz dowiedzieć się, co nas wyróżnia?
-                                </p>
+                                <p class="askee-chat__welcome">Za mną stoi zespół, który od lat wspiera organizacje w ich rozwoju.</p>
+
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5140, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>
+                                        W Askee łączymy technologię z doświadczeniem, tworząc narzędzia, które naprawdę ułatwiają pracę. Naszą misją jest wspierać ludzi w podejmowaniu lepszych decyzji, bez zbędnych
+                                        komplikacji. Chcesz dowiedzieć się, co nas wyróżnia?
+                                    </p>
+                                </div>
+
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Opowiedz, jakie macie doświadczenie w pracy z organizacjami.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak powstał pomysł na Askee.</button>

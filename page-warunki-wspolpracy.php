@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,13 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--terms askee-chat__content--active" id="askee-chat-content-terms">
-                                <p class="askee-chat__welcome">
-                                    Zanim zaczniemy współpracę, chcę, żebyś wiedział, że stawiam na przejrzystość i elastyczność. Możesz zacząć od krótkiego okresu testowego lub zaplanować wdrożenie na większą skalę. Dopasuję się do Twoich potrzeb i tempa. Jak chciałbyś zacząć naszą współpracę?
-                                </p>
+                                <p class="askee-chat__welcome">Zanim zaczniemy współpracę, chcę, żebyś wiedział, że stawiam na przejrzystość i elastyczność.</p>
+
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5138, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>Możesz zacząć od krótkiego okresu testowego lub zaplanować wdrożenie na większą skalę. Dopasuję się do Twoich potrzeb i tempa. Jak chciałbyś zacząć naszą współpracę?</p>
+                                </div>
+
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Pokaż, jak wygląda okres testowy i pierwsze kroki.</button>
                                     <button type="button" class="button button--ghost">Opowiedz, jak wygląda pełne wdrożenie.</button>

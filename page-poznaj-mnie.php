@@ -1,7 +1,6 @@
 <?php
 
-get_header();
-the_post();
+get_header(); the_post();
 
 ?>
 
@@ -21,9 +20,16 @@ the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--meet askee-chat__content--active" id="askee-chat-content-meet">
-                                <p class="askee-chat__welcome">
-                                    Skoro chcesz mnie lepiej poznać, wyjaśnię Ci, kim jestem. Jestem Twoim cyfrowym asystentem, który zna Twoją organizację od środka. Łączę wiedzę o strukturze, procesach i danych, aby ułatwić Ci podejmowanie decyzji. Nie tylko odpowiadam na pytania, ale też wspieram działanie, tam, gdzie tego potrzebujesz.
-                                </p>
+                                <p class="askee-chat__welcome">Skoro chcesz mnie lepiej poznać, wyjaśnię Ci, kim jestem.</p>
+
+                                <div class="askee-chat__text-with-image">
+                                    <div><?php echo wp_get_attachment_image(5135, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
+                                    <p>
+                                        Jestem Twoim cyfrowym asystentem, który zna Twoją organizację od środka. Łączę wiedzę o strukturze, procesach i danych, aby ułatwić Ci podejmowanie decyzji. Nie tylko odpowiadam na
+                                        pytania, ale też wspieram działanie, tam, gdzie tego potrzebujesz.
+                                    </p>
+                                </div>
+
                                 <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
                                     <button type="button" class="button button--ghost">Pokaż, jak pomagasz mi w codziennych decyzjach.</button>
                                     <button type="button" class="button button--ghost">Jak sprawiasz, że wszystko, czego potrzebuję, jest w jednym miejscu?</button>
