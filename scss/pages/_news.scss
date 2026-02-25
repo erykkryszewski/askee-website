@@ -17,6 +17,27 @@
         align-items: stretch;
         grid-auto-rows: auto;
 
+        &--aktualnosci {
+            grid-template-columns: minmax(0, 1fr);
+
+            .askee-blog__post-media {
+                @media (width >= 1200px) {
+                    width: 100%;
+                    overflow: hidden;
+                    border-radius: 15px;
+                    border-radius: 15px 0 0 15px;
+                    height: 290px;
+                    max-width: 50%;
+                }
+            }
+
+            .askee-blog__post-link {
+                @media (width >= 1200px) {
+                    flex-direction: row;
+                }
+            }
+        }
+
         @media (width <= 991px) {
             grid-template-columns: minmax(0, 1fr);
             grid-auto-rows: auto;

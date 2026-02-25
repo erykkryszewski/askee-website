@@ -28,6 +28,7 @@ if (is_category()) {
         $askee_active_category_slug = $askee_current_category->slug;
     }
 }
+$askee_list_category_slug = "" !== $askee_active_category_slug ? $askee_active_category_slug : "all";
 ?>
 <div class="askee-blog__filtration">
     <div class="askee-blog__filtration-item">
@@ -65,7 +66,9 @@ if (is_category()) {
     <?php endforeach; ?>
 </div>
 <?php if (have_posts()): ?>
-    <div class="askee-blog__list<?php if ($askee_has_featured_layout) {
+    <div class="askee-blog__list askee-blog__list--<?php echo esc_attr(
+        $askee_list_category_slug,
+    ); ?><?php if ($askee_has_featured_layout) {
         echo " askee-blog__list--with-featured";
     } ?>">
         <?php while (have_posts()):
