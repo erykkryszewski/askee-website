@@ -14,7 +14,7 @@ get_header(); the_post();
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
                             <div class="askee-chat__user-message">
-                                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam enim libero, excepturi quod consequatur cupiditate.</p>
+                                <p></p>
                                 <div class="askee-chat__profile-picture">
                                     <img src="<?php echo get_template_directory_uri(); ?>/images/hr-payroll.svg" alt="user-profile-picture" />
                                 </div>

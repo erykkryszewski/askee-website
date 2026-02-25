@@ -13,6 +13,12 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
+                            <div class="askee-chat__user-message">
+                                <p></p>
+                                <div class="askee-chat__profile-picture">
+                                    <img src="<?php echo get_template_directory_uri(); ?>/images/hr-payroll.svg" alt="user-profile-picture" />
+                                </div>
+                            </div>
                             <div class="askee-chat__content askee-chat__content--letstalk askee-chat__content--active" id="askee-chat-content-letstalk">
                                 <p class="askee-chat__welcome">Opowiem, jak pracuję. Jeśli chcesz porozmawiać z moimi twórcami, zostaw dane kontaktowe lub wybierz termin spotkania, który Ci pasuje.</p>
                                 <div class="askee-chat__inner-buttons">

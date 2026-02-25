@@ -13,6 +13,12 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
+                            <div class="askee-chat__user-message">
+                                <p></p>
+                                <div class="askee-chat__profile-picture">
+                                    <img src="<?php echo get_template_directory_uri(); ?>/images/hr-payroll.svg" alt="user-profile-picture" />
+                                </div>
+                            </div>
                             <div class="askee-chat__content askee-chat__content--terms askee-chat__content--active" id="askee-chat-content-terms">
                                 <p class="askee-chat__welcome">ASKEE – brakuje tekstu i widoku dla podstrony warunki współpracy</p>
                                 <div>

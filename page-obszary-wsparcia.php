@@ -13,6 +13,12 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
+                            <div class="askee-chat__user-message">
+                                <p></p>
+                                <div class="askee-chat__profile-picture">
+                                    <img src="<?php echo get_template_directory_uri(); ?>/images/hr-payroll.svg" alt="user-profile-picture" />
+                                </div>
+                            </div>
                             <div class="askee-chat__content askee-chat__content--areas askee-chat__content--active" id="askee-chat-content-areas">
                                 <p class="askee-chat__welcome">
                                     Mam wiele specjalizacji, dzięki którym wspieram organizacje w codziennej pracy. Możesz poznać je według obszarów działania albo Twojej roli w firmie - chętnie opowiem Ci o tym.
