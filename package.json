@@ -60,8 +60,10 @@
         "bootstrap": "^4.5.2",
         "core-js": "^3",
         "gsap": "^3.11.4",
+        "markdown-js": "^0.0.4",
         "morphext": "^2.4.7",
         "parallax-js": "^3.1.0",
+        "punycode": "^2.3.1",
         "slick-carousel": "^1.8.1",
         "smoothscroll-polyfill": "^0.4.4"
     },

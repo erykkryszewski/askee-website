@@ -66,6 +66,34 @@
         }
     }
 
+    &__user-message {
+        width: 100%;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 25px;
+        margin: 0 0 15px;
+        padding: 0 0 15px;
+        border-bottom: 1px solid $light-gray;
+        // ukrywamy zanim submit bedz
+        display: none;
+
+        p {
+            font-size: 15px;
+            line-height: 28px;
+            margin: 0;
+        }
+    }
+
+    &__profile-picture {
+        min-width: 25px;
+
+        img,
+        svg {
+            width: 100%;
+        }
+    }
+
     &__content {
         display: none;
         opacity: 0;
@@ -97,6 +125,7 @@
             max-width: 20px !important;
         }
 
+        h1,
         h2 {
             font-size: 30px !important;
             line-height: 1.1 !important;

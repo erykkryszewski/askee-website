@@ -41,7 +41,7 @@
         &:hover {
             border: 1px solid $theme-color;
             background: $theme-color;
-            color: $white;
+            color: $white !important;
         }
     }
 

@@ -13,6 +13,12 @@ get_header(); the_post();
 
                     <div class="askee-chat__box">
                         <div class="askee-chat__switch-sections">
+                            <div class="askee-chat__user-message">
+                                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam enim libero, excepturi quod consequatur cupiditate.</p>
+                                <div class="askee-chat__profile-picture">
+                                    <img src="<?php echo get_template_directory_uri(); ?>/images/hr-payroll.svg" alt="user-profile-picture" />
+                                </div>
+                            </div>
                             <div class="askee-chat__content askee-chat__content--default" id="askee-chat-content-default">
                                 <p class="askee-chat__welcome">
                                     Hej, to ja -

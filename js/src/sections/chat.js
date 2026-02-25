@@ -1,4 +1,5 @@
 import { gsap } from "gsap";
+import * as markdownJs from "markdown-js";
 
 const ASKEE_CHAT_TRANSFER_KEY = "__askeePendingChatTransfer";
 const ASKEE_CHAT_TRANSFER_MAX_AGE_MS = 30000;
@@ -732,28 +733,7 @@ function initSingleChatBox(boxElement) {
             return;
         }
 
-        const paragraphsArray = normalizedTextString.split(/\n{2,}/g);
-
-        for (let paragraphIndex = 0; paragraphIndex < paragraphsArray.length; paragraphIndex += 1) {
-            const paragraphTextString = paragraphsArray[paragraphIndex].trim();
-            if (!paragraphTextString) {
-                continue;
-            }
-
-            const linesArray = paragraphTextString.split("\n");
-            for (let lineIndex = 0; lineIndex < linesArray.length; lineIndex += 1) {
-                welcomeElement.appendChild(document.createTextNode(linesArray[lineIndex]));
-
-                if (lineIndex !== linesArray.length - 1) {
-                    welcomeElement.appendChild(document.createElement("br"));
-                }
-            }
-
-            if (paragraphIndex !== paragraphsArray.length - 1) {
-                welcomeElement.appendChild(document.createElement("br"));
-                welcomeElement.appendChild(document.createElement("br"));
-            }
-        }
+        welcomeElement.innerHTML = markdownJs.makeHtml(normalizedTextString);
     }
 
     // pilnuje zeby tylko jeden content byl aktywny
