@@ -17,7 +17,7 @@
         opacity: 0;
         visibility: hidden;
 
-        &:not(.is-ready) {
+        &:not(.is-ready):not(.is-measuring) {
             .askee-chat__title:not(:first-child) {
                 display: none;
             }

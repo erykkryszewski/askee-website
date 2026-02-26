@@ -652,6 +652,7 @@ function initTitleRotator(boxElement) {
     if (!rotatorElement) return null;
 
     rotatorElement.classList.remove("is-ready");
+    rotatorElement.classList.remove("is-measuring");
 
     let trackElement = rotatorElement.querySelector(".askee-chat__title-track");
     let titlesArray = [];
@@ -677,27 +678,58 @@ function initTitleRotator(boxElement) {
 
     let timeline = null;
     let resizeObserver = null;
-    let lastWidth = rotatorElement.offsetWidth;
+    let requestAnimationFrameId = null;
+    let windowResizeTimeoutId = null;
+    let isDestroyed = false;
+    let lastWidth = wrapperElement.offsetWidth;
+
+    // sklada build rotatora do kolejnej klatki po stabilizacji layoutu
+    function scheduleBuildRotator() {
+        if (isDestroyed) {
+            return;
+        }
+
+        if (requestAnimationFrameId) {
+            window.cancelAnimationFrame(requestAnimationFrameId);
+        }
+
+        requestAnimationFrameId = window.requestAnimationFrame(function () {
+            requestAnimationFrameId = null;
+            buildRotator();
+        });
+    }
 
     // liczy wysokosci i buduje animacje przesuwania tytulow
     function buildRotator() {
+        if (isDestroyed) {
+            return;
+        }
+
         if (timeline) timeline.kill();
         gsap.set(trackElement, { clearProps: "all" });
         gsap.set(rotatorElement, { clearProps: "height" });
         titlesArray.forEach((t) => gsap.set(t, { clearProps: "height" }));
 
+        rotatorElement.classList.add("is-measuring");
+
         let maxHeight = 0;
         titlesArray.forEach(function (title) {
-            const h = title.offsetHeight;
-            if (h > maxHeight) maxHeight = h;
+            title.style.height = "auto";
+            const titleHeight = Math.ceil(title.getBoundingClientRect().height);
+            if (titleHeight > maxHeight) {
+                maxHeight = titleHeight;
+            }
         });
 
-        if (maxHeight === 0) return;
-
-        rotatorElement.classList.add("is-ready");
+        rotatorElement.classList.remove("is-measuring");
+        if (maxHeight === 0) {
+            return;
+        }
 
         rotatorElement.style.height = maxHeight + "px";
-        titlesArray.forEach((t) => (t.style.height = maxHeight + "px"));
+        titlesArray.forEach(function (title) {
+            title.style.height = maxHeight + "px";
+        });
 
         timeline = gsap.timeline({ repeat: -1 });
 
@@ -716,22 +748,71 @@ function initTitleRotator(boxElement) {
             ease: "power2.out",
             delay: 3,
         });
+
+        rotatorElement.classList.add("is-ready");
     }
 
-    buildRotator();
+    // pierwszy build robimy po klatce + po gotowosci fontow, zeby miec finalny font-size
+    scheduleBuildRotator();
+    window.requestAnimationFrame(function () {
+        scheduleBuildRotator();
+    });
+
+    if (
+        document.fonts &&
+        document.fonts.ready &&
+        typeof document.fonts.ready.then === "function"
+    ) {
+        document.fonts.ready
+            .then(function () {
+                scheduleBuildRotator();
+            })
+            .catch(function () {});
+    }
 
     resizeObserver = new ResizeObserver(function () {
-        if (Math.abs(rotatorElement.offsetWidth - lastWidth) > 0.5) {
-            lastWidth = rotatorElement.offsetWidth;
-            buildRotator();
+        const nextWidth = wrapperElement.offsetWidth;
+        if (Math.abs(nextWidth - lastWidth) <= 0.5) {
+            return;
         }
+
+        lastWidth = nextWidth;
+        scheduleBuildRotator();
     });
-    resizeObserver.observe(rotatorElement);
+    resizeObserver.observe(wrapperElement);
+
+    function onWindowResize() {
+        if (windowResizeTimeoutId) {
+            window.clearTimeout(windowResizeTimeoutId);
+        }
+
+        windowResizeTimeoutId = window.setTimeout(function () {
+            windowResizeTimeoutId = null;
+            scheduleBuildRotator();
+        }, 120);
+    }
+
+    window.addEventListener("resize", onWindowResize);
 
     return {
         kill: function () {
+            isDestroyed = true;
+
+            if (requestAnimationFrameId) {
+                window.cancelAnimationFrame(requestAnimationFrameId);
+                requestAnimationFrameId = null;
+            }
+
+            if (windowResizeTimeoutId) {
+                window.clearTimeout(windowResizeTimeoutId);
+                windowResizeTimeoutId = null;
+            }
+
             if (timeline) timeline.kill();
             if (resizeObserver) resizeObserver.disconnect();
+
+            window.removeEventListener("resize", onWindowResize);
+            rotatorElement.classList.remove("is-measuring");
         },
     };
 }
