@@ -5,12 +5,16 @@
 
     &__single-breadcrumbs {
         margin: 0 0 30px;
+
+        @media (width <= 767px) {
+            margin: 0 0 40px;
+        }
     }
 
     &__single-breadcrumbs-list {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 8px 0;
         flex-wrap: wrap;
     }
 
@@ -55,6 +59,8 @@
         border-top: 1px solid $light-gray;
         display: flex;
         gap: 30px;
+        width: 100%;
+        overflow: hidden;
         justify-content: space-between;
     }
 

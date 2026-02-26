@@ -25,7 +25,7 @@ get_header(); the_post();
                                     spotkasz nas na żywo w najbliższym czasie. Co wybierasz?
                                 </p>
 
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
                                     <button type="button" class="button button--ghost">Chcę umówić spotkanie.</button>
                                     <button type="button" class="button button--ghost">Chcę przekazać Wam informację.</button>
                                     <button type="button" class="button button--ghost">Chcę zobaczyć, gdzie będę mógł Was spotkać na wydarzeniu.</button>

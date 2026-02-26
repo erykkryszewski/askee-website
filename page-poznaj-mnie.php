@@ -30,7 +30,7 @@ get_header(); the_post();
                                     </p>
                                 </div>
 
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
                                     <button type="button" class="button button--ghost">Pokaż, jak pomagasz mi w codziennych decyzjach.</button>
                                     <button type="button" class="button button--ghost">Jak sprawiasz, że wszystko, czego potrzebuję, jest w jednym miejscu?</button>
                                     <button type="button" class="button button--ghost">Jak możesz wspierać mnie w szerszych działaniach z zespołem?</button>

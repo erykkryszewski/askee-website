@@ -30,7 +30,7 @@ get_header(); the_post();
                                     </p>
                                 </div>
 
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
                                     <button type="button" class="button button--ghost">Opowiedz, jakie macie doświadczenie w pracy z organizacjami.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak powstał pomysł na Askee.</button>
                                     <button type="button" class="button button--ghost">Opowiedz, jak wygląda współpraca z Waszym zespołem.</button>

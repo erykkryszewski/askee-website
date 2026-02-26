@@ -28,7 +28,7 @@ get_header(); the_post();
                                         współpracy. Na co masz ochotę zapytać mnie najpierw?
                                     </p>
                                 </div>
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
                                     <button type="button" class="button button--ghost">Jak możesz pomóc w codziennych decyzjach?</button>
                                     <button type="button" class="button button--ghost">Pokaż mi, w jakich obszarach działasz.</button>
                                     <button type="button" class="button button--ghost">Opowiedz, jak wygląda współpraca z Tobą.</button>

@@ -29,7 +29,7 @@ get_header(); the_post();
                                     </p>
                                 </div>
 
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
                                     <button type="button" class="button button--ghost">Pokaż, jak wspierasz obszar kadrowy i HR.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak pomagasz w dostępie do wiedzy o organizacji.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak dbasz o compliance i bezpieczeństwo.</button>

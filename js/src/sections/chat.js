@@ -587,12 +587,17 @@ function initTitleRotator(boxElement) {
     const rotatorElement = wrapperElement.querySelector(".askee-chat__title-rotator");
     if (!rotatorElement) return null;
 
+    rotatorElement.classList.remove("is-ready");
+
     let trackElement = rotatorElement.querySelector(".askee-chat__title-track");
     let titlesArray = [];
 
     if (!trackElement) {
         titlesArray = Array.from(rotatorElement.querySelectorAll(".askee-chat__title"));
-        if (titlesArray.length < 2) return null;
+        if (titlesArray.length < 2) {
+            rotatorElement.classList.add("is-ready");
+            return null;
+        }
 
         trackElement = document.createElement("div");
         trackElement.className = "askee-chat__title-track";
@@ -624,6 +629,8 @@ function initTitleRotator(boxElement) {
         });
 
         if (maxHeight === 0) return;
+
+        rotatorElement.classList.add("is-ready");
 
         rotatorElement.style.height = maxHeight + "px";
         titlesArray.forEach((t) => (t.style.height = maxHeight + "px"));

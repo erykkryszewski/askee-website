@@ -30,7 +30,7 @@ get_header(); the_post();
                                     </p>
                                 </div>
 
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
                                     <button type="button" class="button button--ghost">Opowiedz, dlaczego przejrzystość jest dla Was tak ważna.</button>
                                     <button type="button" class="button button--ghost">Pokaż, jak podchodzicie do etyki i zgodności.</button>
                                     <button type="button" class="button button--ghost">Wyjaśnij, co oznacza stawianie użytkownika w centrum Waszej filozofii.</button>

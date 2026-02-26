@@ -27,7 +27,7 @@ get_header(); the_post();
                                     <p>Możesz zacząć od krótkiego okresu testowego lub zaplanować wdrożenie na większą skalę. Dopasuję się do Twoich potrzeb i tempa. Jak chciałbyś zacząć naszą współpracę?</p>
                                 </div>
 
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions">
+                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
                                     <button type="button" class="button button--ghost">Pokaż, jak wygląda okres testowy i pierwsze kroki.</button>
                                     <button type="button" class="button button--ghost">Opowiedz, jak wygląda pełne wdrożenie.</button>
                                     <button type="button" class="button button--ghost">Chciałbym porozmawiać i dopasować model do naszej firmy.</button>
