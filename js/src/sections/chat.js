@@ -3,6 +3,70 @@ import * as markdownJs from "markdown-js";
 
 const ASKEE_CHAT_TRANSFER_KEY = "__askeePendingChatTransfer";
 const ASKEE_CHAT_TRANSFER_MAX_AGE_MS = 30000;
+const ASKEE_CHAT_TURNSTILE_SCRIPT_ID = "askee-chat-turnstile-script";
+const ASKEE_CHAT_TURNSTILE_SCRIPT_URL =
+    "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+const ASKEE_CHAT_TURNSTILE_TOKEN_TIMEOUT_MS = 15000;
+
+let askeeChatTurnstileScriptPromise = null;
+
+// laduje skrypt Cloudflare Turnstile i zwraca obiekt window.turnstile
+function loadTurnstileApiObject() {
+    if (window.turnstile) {
+        return Promise.resolve(window.turnstile);
+    }
+
+    if (askeeChatTurnstileScriptPromise) {
+        return askeeChatTurnstileScriptPromise;
+    }
+
+    askeeChatTurnstileScriptPromise = new Promise(function (resolve, reject) {
+        const existingScriptElement = document.getElementById(ASKEE_CHAT_TURNSTILE_SCRIPT_ID);
+
+        if (existingScriptElement) {
+            existingScriptElement.addEventListener("load", function () {
+                if (window.turnstile) {
+                    resolve(window.turnstile);
+                    return;
+                }
+
+                reject(new Error("Turnstile API is unavailable after script load."));
+            });
+
+            existingScriptElement.addEventListener("error", function () {
+                reject(new Error("Failed to load Turnstile script."));
+            });
+
+            return;
+        }
+
+        const scriptElement = document.createElement("script");
+        scriptElement.id = ASKEE_CHAT_TURNSTILE_SCRIPT_ID;
+        scriptElement.src = ASKEE_CHAT_TURNSTILE_SCRIPT_URL;
+        scriptElement.async = true;
+        scriptElement.defer = true;
+
+        scriptElement.addEventListener("load", function () {
+            if (window.turnstile) {
+                resolve(window.turnstile);
+                return;
+            }
+
+            reject(new Error("Turnstile API is unavailable after script load."));
+        });
+
+        scriptElement.addEventListener("error", function () {
+            reject(new Error("Failed to load Turnstile script."));
+        });
+
+        document.head.appendChild(scriptElement);
+    }).catch(function (error) {
+        askeeChatTurnstileScriptPromise = null;
+        throw error;
+    });
+
+    return askeeChatTurnstileScriptPromise;
+}
 
 // ujednolica pathname zeby latwo porownywac adresy
 function normalizePathnameForComparison(pathnameString) {
@@ -393,7 +457,7 @@ function readPendingChatTransfer() {
     return pendingTransferValue;
 }
 
-// czyści dane tymczasowego transferu chatu
+// czysci dane tymczasowego transferu chatu
 function clearPendingChatTransfer() {
     try {
         delete window[ASKEE_CHAT_TRANSFER_KEY];
@@ -714,7 +778,7 @@ function initSingleChatBox(boxElement) {
         return welcomeElement;
     }
 
-    // czyści aktywny content i zostawia tylko welcome
+    // czysci aktywny content i zostawia tylko welcome
     function resetActiveContentKeepOnlyWelcome() {
         const welcomeElement = getWelcomeElementFromActiveContent();
         if (!activeContentElement || !welcomeElement) {
@@ -867,7 +931,7 @@ function initSingleChatBox(boxElement) {
         activeTimeline = null;
     }
 
-    // czyści style ustawione przez gsap
+    // czysci style ustawione przez gsap
     function clearGsapProps(element) {
         if (!element) {
             return;
@@ -1112,6 +1176,11 @@ function initSingleChatBox(boxElement) {
         nonce = chatConfig.nonce;
     }
 
+    let turnstileSiteKey = "";
+    if (typeof chatConfig.turnstileSiteKey === "string") {
+        turnstileSiteKey = chatConfig.turnstileSiteKey.trim();
+    }
+
     const formElement = boxElement.querySelector(".askee-chat__form");
     const textareaElement = formElement ? formElement.querySelector(".askee-chat__textarea") : null;
     const submitButton = formElement ? formElement.querySelector('[type="submit"]') : null;
@@ -1122,8 +1191,111 @@ function initSingleChatBox(boxElement) {
         ? userMessageElement.querySelector("p")
         : null;
 
-    let isSending = false; // blokowanie podwójnych wysyłek jakby ktoś spamował submitem
+    let isSending = false; // blokowanie podwojnych wysylek jakby ktos spamowal submitem
     let abortController = null;
+    let turnstileWidgetId = null;
+    let turnstileContainerElement = null;
+    let pendingTurnstileTokenResolve = null;
+    let pendingTurnstileTokenReject = null;
+    let pendingTurnstileTokenTimeoutId = null;
+
+    function clearPendingTurnstileTokenRequest() {
+        if (pendingTurnstileTokenTimeoutId) {
+            window.clearTimeout(pendingTurnstileTokenTimeoutId);
+            pendingTurnstileTokenTimeoutId = null;
+        }
+
+        pendingTurnstileTokenResolve = null;
+        pendingTurnstileTokenReject = null;
+    }
+
+    function settlePendingTurnstileTokenRequestSuccess(tokenString) {
+        const resolveFunction = pendingTurnstileTokenResolve;
+        clearPendingTurnstileTokenRequest();
+        if (typeof resolveFunction === "function") {
+            resolveFunction(tokenString);
+        }
+    }
+
+    function settlePendingTurnstileTokenRequestError(errorMessageString) {
+        const rejectFunction = pendingTurnstileTokenReject;
+        clearPendingTurnstileTokenRequest();
+        if (typeof rejectFunction === "function") {
+            rejectFunction(new Error(errorMessageString));
+        }
+    }
+
+    async function ensureTurnstileWidgetReady() {
+        if (!turnstileSiteKey) {
+            throw new Error("Turnstile site key is missing.");
+        }
+
+        if (!formElement) {
+            throw new Error("Chat form is unavailable.");
+        }
+
+        const turnstileApiObject = await loadTurnstileApiObject();
+
+        if (!turnstileContainerElement) {
+            turnstileContainerElement = document.createElement("div");
+            turnstileContainerElement.className = "askee-chat__turnstile";
+            turnstileContainerElement.style.display = "none";
+            turnstileContainerElement.setAttribute("aria-hidden", "true");
+            formElement.appendChild(turnstileContainerElement);
+        }
+
+        if (turnstileWidgetId === null) {
+            turnstileWidgetId = turnstileApiObject.render(turnstileContainerElement, {
+                sitekey: turnstileSiteKey,
+                size: "invisible",
+                callback: function (tokenString) {
+                    if (typeof tokenString !== "string" || tokenString.trim() === "") {
+                        settlePendingTurnstileTokenRequestError("Turnstile token is empty.");
+                        return;
+                    }
+
+                    settlePendingTurnstileTokenRequestSuccess(tokenString.trim());
+                },
+                "error-callback": function () {
+                    settlePendingTurnstileTokenRequestError("Turnstile returned an error.");
+                },
+                "expired-callback": function () {
+                    settlePendingTurnstileTokenRequestError("Turnstile token has expired.");
+                },
+                "timeout-callback": function () {
+                    settlePendingTurnstileTokenRequestError(
+                        "Turnstile verification timed out."
+                    );
+                },
+            });
+        }
+
+        return {
+            turnstileApiObject: turnstileApiObject,
+            turnstileWidgetId: turnstileWidgetId,
+        };
+    }
+
+    async function requestTurnstileTokenForChatMessage() {
+        const widgetStateObject = await ensureTurnstileWidgetReady();
+
+        return new Promise(function (resolve, reject) {
+            clearPendingTurnstileTokenRequest();
+
+            pendingTurnstileTokenResolve = resolve;
+            pendingTurnstileTokenReject = reject;
+            pendingTurnstileTokenTimeoutId = window.setTimeout(function () {
+                settlePendingTurnstileTokenRequestError("Turnstile token request timeout.");
+            }, ASKEE_CHAT_TURNSTILE_TOKEN_TIMEOUT_MS);
+
+            try {
+                widgetStateObject.turnstileApiObject.reset(widgetStateObject.turnstileWidgetId);
+                widgetStateObject.turnstileApiObject.execute(widgetStateObject.turnstileWidgetId);
+            } catch (error) {
+                settlePendingTurnstileTokenRequestError("Turnstile execute failed.");
+            }
+        });
+    }
 
     function triggerChatFormSubmit() {
         if (!formElement) {
@@ -1198,12 +1370,30 @@ function initSingleChatBox(boxElement) {
             return null;
         }
 
+        let turnstileTokenString = "";
+        try {
+            turnstileTokenString = await requestTurnstileTokenForChatMessage();
+        } catch (error) {
+            return {
+                ok: true,
+                status: 403,
+                raw: "Przepraszamy, nie udalo sie zweryfikowac zabezpieczenia. Sprobuj ponownie.",
+                json: [
+                    {
+                        output:
+                            "Przepraszamy, nie udalo sie zweryfikowac zabezpieczenia. Sprobuj ponownie.",
+                    },
+                ],
+            };
+        }
+
         const currentTopicSlug = getTopicSlugFromChatRoot(chatRootElement);
         const requestPayloadObject = { input: inputTextString };
 
         if (currentTopicSlug) {
             requestPayloadObject.topic = currentTopicSlug;
         }
+        requestPayloadObject.turnstileToken = turnstileTokenString;
 
         // tymczasowe debugowanie
         if (window.console && typeof window.console.log === "function") {
@@ -1306,7 +1496,7 @@ function initSingleChatBox(boxElement) {
             normalizeToSingleActiveElement();
             const welcomeElementAfterResponse = resetActiveContentKeepOnlyWelcome();
 
-            // 7. SPRAWDZANIE TEGO CO PRZYSZŁO, NORMALIZACJE I RENDER ODPOWIEDZI
+            // 7. SPRAWDZANIE TEGO CO PRZYSZLO, NORMALIZACJE I RENDER ODPOWIEDZI
             if (apiResponseObject && apiResponseObject.ok) {
                 let assistantTextString = assistantPayloadObject.textString;
                 let renderAsHtmlValue = assistantPayloadObject.renderAsHtml;
@@ -1331,7 +1521,7 @@ function initSingleChatBox(boxElement) {
                     }
                 }
 
-                // tu renderujemy odpowiedź
+                // tu renderujemy odpowiedz
                 renderTextIntoWelcome(
                     welcomeElementAfterResponse,
                     assistantTextString,
@@ -1343,9 +1533,17 @@ function initSingleChatBox(boxElement) {
                     trySwitchPageByAssistantTopic(assistantTopicSlug);
                 }
             } else {
+                let fallbackErrorMessage = "Przepraszamy, sproboj ponownie";
+                if (apiResponseObject && typeof apiResponseObject.raw === "string") {
+                    const normalizedErrorMessage = apiResponseObject.raw.trim();
+                    if (normalizedErrorMessage) {
+                        fallbackErrorMessage = normalizedErrorMessage;
+                    }
+                }
+
                 renderTextIntoWelcome(
                     welcomeElementAfterResponse,
-                    "Przepraszamy, spróbuj ponownie"
+                    fallbackErrorMessage
                 );
             }
         } catch (error) {
@@ -1407,6 +1605,17 @@ function initSingleChatBox(boxElement) {
             } catch (error) {}
             abortController = null;
         }
+        clearPendingTurnstileTokenRequest();
+        if (turnstileWidgetId !== null && window.turnstile) {
+            try {
+                window.turnstile.remove(turnstileWidgetId);
+            } catch (error) {}
+        }
+        turnstileWidgetId = null;
+        if (turnstileContainerElement && turnstileContainerElement.parentNode) {
+            turnstileContainerElement.parentNode.removeChild(turnstileContainerElement);
+        }
+        turnstileContainerElement = null;
         killActiveTimeline();
         delete boxElement.dataset.askeeBoxInitialized;
     };

@@ -6,6 +6,10 @@ if (!defined("ABSPATH")) {
 
 define("ASKEE_CHAT_SESSION_RATE_LIMIT_MAX_MESSAGES", 25);
 define("ASKEE_CHAT_SESSION_RATE_LIMIT_WINDOW_SECONDS", 1800);
+define(
+    "ASKEE_CHAT_TURNSTILE_VERIFY_URL",
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+);
 
 // 1.2 REJESTRUJE ENDPOINT, jak ktoś zrobi POST na wp-json/askee/v1/chat to odpala sie callback
 add_action("rest_api_init", function () {
@@ -153,6 +157,127 @@ function askee_chat_check_and_update_session_rate_limit() {
     ];
 }
 
+// pobiera ip usera z requestu (w tym naglowki proxy)
+function askee_chat_get_request_ip_address() {
+    $server_keys = ["HTTP_CF_CONNECTING_IP", "HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"];
+
+    foreach ($server_keys as $server_key) {
+        if (!isset($_SERVER[$server_key]) || !is_string($_SERVER[$server_key])) {
+            continue;
+        }
+
+        $raw_ip_value = trim($_SERVER[$server_key]);
+        if ($raw_ip_value === "") {
+            continue;
+        }
+
+        // dla X-Forwarded-For bierzemy pierwszy adres z listy
+        if (strpos($raw_ip_value, ",") !== false) {
+            $ip_parts = explode(",", $raw_ip_value);
+            $raw_ip_value = trim((string) ($ip_parts[0] ?? ""));
+        }
+
+        if (filter_var($raw_ip_value, FILTER_VALIDATE_IP)) {
+            return $raw_ip_value;
+        }
+    }
+
+    return "";
+}
+
+// pobiera sekret Turnstile (na teraz fallback do testowego klucza)
+function askee_chat_get_turnstile_secret_key() {
+    if (defined("ASKEE_TURNSTILE_SECRET_KEY")) {
+        return sanitize_text_field((string) ASKEE_TURNSTILE_SECRET_KEY);
+    }
+
+    return "0x4AAAAAACir8eibLTaoNsp1IN7m1B2SOmY";
+}
+
+// weryfikuje token Turnstile po stronie serwera
+function askee_chat_verify_turnstile_token($turnstile_token_string) {
+    $secret_key = askee_chat_get_turnstile_secret_key();
+    if ($secret_key === "") {
+        return [
+            "is_valid" => false,
+            "error_code" => "turnstile_not_configured",
+        ];
+    }
+
+    if (!is_string($turnstile_token_string) || trim($turnstile_token_string) === "") {
+        return [
+            "is_valid" => false,
+            "error_code" => "turnstile_missing_token",
+        ];
+    }
+
+    $verification_body = [
+        "secret" => $secret_key,
+        "response" => trim($turnstile_token_string),
+    ];
+
+    $request_ip_address = askee_chat_get_request_ip_address();
+    if ($request_ip_address !== "") {
+        $verification_body["remoteip"] = $request_ip_address;
+    }
+
+    $verification_response = wp_remote_post(ASKEE_CHAT_TURNSTILE_VERIFY_URL, [
+        "timeout" => 15,
+        "body" => $verification_body,
+    ]);
+
+    if (is_wp_error($verification_response)) {
+        return [
+            "is_valid" => false,
+            "error_code" => "turnstile_upstream_error",
+        ];
+    }
+
+    $verification_status = (int) wp_remote_retrieve_response_code($verification_response);
+    $verification_body_raw = (string) wp_remote_retrieve_body($verification_response);
+
+    if (
+        $verification_status < 200 ||
+        $verification_status >= 300 ||
+        $verification_body_raw === ""
+    ) {
+        return [
+            "is_valid" => false,
+            "error_code" => "turnstile_invalid_response",
+        ];
+    }
+
+    $verification_data = json_decode($verification_body_raw, true);
+    if (!is_array($verification_data) || empty($verification_data["success"])) {
+        return [
+            "is_valid" => false,
+            "error_code" => "turnstile_failed",
+        ];
+    }
+
+    // dodatkowy check hosta z odpowiedzi Turnstile
+    $expected_host = (string) parse_url(home_url(), PHP_URL_HOST);
+    $response_host = isset($verification_data["hostname"])
+        ? strtolower(trim((string) $verification_data["hostname"]))
+        : "";
+
+    if (
+        $expected_host !== "" &&
+        $response_host !== "" &&
+        strtolower($expected_host) !== $response_host
+    ) {
+        return [
+            "is_valid" => false,
+            "error_code" => "turnstile_hostname_mismatch",
+        ];
+    }
+
+    return [
+        "is_valid" => true,
+        "error_code" => "",
+    ];
+}
+
 // 4. ODBIERAMY REQUEST Z FRONTU I PRZEKAZUJEMY DO WEBHOOKA
 function askee_chat_proxy_callback(WP_REST_Request $request) {
     $nonce = $request->get_header("x-wp-nonce");
@@ -193,6 +318,22 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
 
     $topic = is_string($topic_raw) ? sanitize_title($topic_raw) : "";
 
+    $turnstile_token_raw = $request->get_param("turnstileToken");
+    if (!is_string($turnstile_token_raw)) {
+        $json = isset($json) && is_array($json) ? $json : $request->get_json_params();
+        if (
+            is_array($json) &&
+            isset($json["turnstileToken"]) &&
+            is_string($json["turnstileToken"])
+        ) {
+            $turnstile_token_raw = $json["turnstileToken"];
+        }
+    }
+
+    $turnstile_token = is_string($turnstile_token_raw)
+        ? sanitize_text_field($turnstile_token_raw)
+        : "";
+
     $session_id_raw = askee_chat_get_or_start_session_id();
     $session_id = is_string($session_id_raw) ? sanitize_text_field($session_id_raw) : "";
 
@@ -227,6 +368,29 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
                 ],
             ],
             429,
+        );
+    }
+
+    $turnstile_verification_result = askee_chat_verify_turnstile_token($turnstile_token);
+    if (empty($turnstile_verification_result["is_valid"])) {
+        $captcha_error_message =
+            "Przepraszamy, nie udalo sie zweryfikowac zabezpieczenia. Sprobuj ponownie.";
+
+        return new WP_REST_Response(
+            [
+                "ok" => false,
+                "status" => 403,
+                "error" => "turnstile_verification_failed",
+                "error_code" => (string) ($turnstile_verification_result["error_code"] ?? ""),
+                "session" => $session_id,
+                "raw" => $captcha_error_message,
+                "json" => [
+                    [
+                        "output" => $captcha_error_message,
+                    ],
+                ],
+            ],
+            403,
         );
     }
 

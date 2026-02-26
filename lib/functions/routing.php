@@ -42,10 +42,15 @@ function askee_register_chat_config() {
         return;
     }
 
+    $turnstile_site_key = defined("ASKEE_TURNSTILE_SITE_KEY")
+        ? (string) ASKEE_TURNSTILE_SITE_KEY
+        : "0x4AAAAAACir8YHYWDO-p3Kf";
+
     $config_array = [
         "restUrl" => esc_url_raw(rest_url("askee/v1/chat")),
         "nonce" => wp_create_nonce("wp_rest"),
         "storageKey" => "askee_chat_state_v1",
+        "turnstileSiteKey" => sanitize_text_field($turnstile_site_key),
     ];
 
     wp_add_inline_script(
