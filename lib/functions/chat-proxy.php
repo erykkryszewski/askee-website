@@ -4,6 +4,9 @@ if (!defined("ABSPATH")) {
     exit();
 }
 
+define("ASKEE_CHAT_SESSION_RATE_LIMIT_MAX_MESSAGES", 25);
+define("ASKEE_CHAT_SESSION_RATE_LIMIT_WINDOW_SECONDS", 1800);
+
 // 1.2 REJESTRUJE ENDPOINT, jak ktoś zrobi POST na wp-json/askee/v1/chat to odpala sie callback
 add_action("rest_api_init", function () {
     register_rest_route("askee/v1", "/chat", [
@@ -38,6 +41,116 @@ function askee_chat_get_or_start_session_id() {
 
     $fallback_session_id = session_id();
     return is_string($fallback_session_id) ? $fallback_session_id : "";
+}
+
+// zwraca domyslny stan licznika rate limitu dla sesji
+function askee_chat_get_default_session_rate_limit_state() {
+    return [
+        "window_started_at_timestamp" => 0,
+        "messages_sent_in_window_count" => 0,
+        "blocked_until_timestamp" => 0,
+    ];
+}
+
+// odczytuje i normalizuje stan licznika z sesji
+function askee_chat_get_session_rate_limit_state() {
+    $default_state = askee_chat_get_default_session_rate_limit_state();
+
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return $default_state;
+    }
+
+    if (
+        !isset($_SESSION["askee_chat_rate_limit"]) ||
+        !is_array($_SESSION["askee_chat_rate_limit"])
+    ) {
+        return $default_state;
+    }
+
+    $stored_state = $_SESSION["askee_chat_rate_limit"];
+
+    return [
+        "window_started_at_timestamp" => max(
+            0,
+            (int) ($stored_state["window_started_at_timestamp"] ?? 0),
+        ),
+        "messages_sent_in_window_count" => max(
+            0,
+            (int) ($stored_state["messages_sent_in_window_count"] ?? 0),
+        ),
+        "blocked_until_timestamp" => max(0, (int) ($stored_state["blocked_until_timestamp"] ?? 0)),
+    ];
+}
+
+// zapisuje stan licznika do sesji
+function askee_chat_set_session_rate_limit_state($state) {
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return;
+    }
+
+    $_SESSION["askee_chat_rate_limit"] = [
+        "window_started_at_timestamp" => max(0, (int) ($state["window_started_at_timestamp"] ?? 0)),
+        "messages_sent_in_window_count" => max(
+            0,
+            (int) ($state["messages_sent_in_window_count"] ?? 0),
+        ),
+        "blocked_until_timestamp" => max(0, (int) ($state["blocked_until_timestamp"] ?? 0)),
+    ];
+}
+
+// sprawdza i aktualizuje licznik rate limitu po sesji
+function askee_chat_check_and_update_session_rate_limit() {
+    $current_timestamp = time();
+    $window_seconds = ASKEE_CHAT_SESSION_RATE_LIMIT_WINDOW_SECONDS;
+    $max_messages = ASKEE_CHAT_SESSION_RATE_LIMIT_MAX_MESSAGES;
+
+    $state = askee_chat_get_session_rate_limit_state();
+
+    // jesli blokada nadal trwa, zwracamy pozostaly czas i nie zwiekszamy licznika
+    if ($state["blocked_until_timestamp"] > $current_timestamp) {
+        $seconds_left = $state["blocked_until_timestamp"] - $current_timestamp;
+        $minutes_left = (int) ceil($seconds_left / 60);
+
+        return [
+            "is_blocked" => true,
+            "minutes_left" => max(1, $minutes_left),
+            "blocked_until_timestamp" => $state["blocked_until_timestamp"],
+        ];
+    }
+
+    // blokada minela, resetujemy stan
+    if (
+        $state["blocked_until_timestamp"] > 0 &&
+        $state["blocked_until_timestamp"] <= $current_timestamp
+    ) {
+        $state = askee_chat_get_default_session_rate_limit_state();
+    }
+
+    $window_started_at_timestamp = (int) $state["window_started_at_timestamp"];
+    $window_age_seconds = $current_timestamp - $window_started_at_timestamp;
+
+    // jesli nie ma aktywnego okna lub okno wygaslo, zaczynamy nowe
+    if ($window_started_at_timestamp <= 0 || $window_age_seconds >= $window_seconds) {
+        $state["window_started_at_timestamp"] = $current_timestamp;
+        $state["messages_sent_in_window_count"] = 0;
+        $state["blocked_until_timestamp"] = 0;
+    }
+
+    // aktualny request liczy sie do limitu
+    $state["messages_sent_in_window_count"] = (int) $state["messages_sent_in_window_count"] + 1;
+
+    // 25. request uruchamia blokade na 30 minut, ten request jeszcze przechodzi
+    if ($state["messages_sent_in_window_count"] >= $max_messages) {
+        $state["blocked_until_timestamp"] = $current_timestamp + $window_seconds;
+    }
+
+    askee_chat_set_session_rate_limit_state($state);
+
+    return [
+        "is_blocked" => false,
+        "minutes_left" => 0,
+        "blocked_until_timestamp" => (int) $state["blocked_until_timestamp"],
+    ];
 }
 
 // 4. ODBIERAMY REQUEST Z FRONTU I PRZEKAZUJEMY DO WEBHOOKA
@@ -82,6 +195,40 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
 
     $session_id_raw = askee_chat_get_or_start_session_id();
     $session_id = is_string($session_id_raw) ? sanitize_text_field($session_id_raw) : "";
+
+    // zabezpieczenie: rate limit dziala tylko gdy sesja jest aktywna
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return new WP_REST_Response(["ok" => false, "error" => "session_unavailable"], 503);
+    }
+
+    $rate_limit_result = askee_chat_check_and_update_session_rate_limit();
+    if (!empty($rate_limit_result["is_blocked"])) {
+        $minutes_left = max(1, (int) ($rate_limit_result["minutes_left"] ?? 1));
+        $blocked_message = sprintf(
+            "Przepraszamy, limit został przekroczony. Spróbuj ponownie za %d min.",
+            $minutes_left,
+        );
+
+        return new WP_REST_Response(
+            [
+                "ok" => true,
+                "status" => 429,
+                "session" => $session_id,
+                "raw" => $blocked_message,
+                "json" => [
+                    [
+                        "output" => $blocked_message,
+                    ],
+                ],
+                "rate_limit" => [
+                    "minutes_left" => $minutes_left,
+                    "blocked_until_timestamp" =>
+                        (int) ($rate_limit_result["blocked_until_timestamp"] ?? 0),
+                ],
+            ],
+            429,
+        );
+    }
 
     $payload = [
         "Input" => $input,
