@@ -45,9 +45,17 @@ button {
     }
 }
 
-.wp-block-heading,
-.wp-block-list {
-    margin: 30px 0 10px;
+.askee-chat__wrapper {
+    .wp-block-heading,
+    .wp-block-list {
+        margin: 30px 0 10px;
+        font-weight: 400;
+
+        li {
+            list-style: initial !important;
+            list-style-position: inside !important;
+        }
+    }
 }
 
 a,

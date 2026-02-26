@@ -1002,8 +1002,28 @@ function initSingleChatBox(boxElement) {
                 return;
             }
 
-            textareaElement.value = suggestionButtonElement.textContent || "";
-            triggerChatFormSubmit();
+            const suggestionTextString = (suggestionButtonElement.textContent || "").trim();
+            if (!suggestionTextString) {
+                return;
+            }
+
+            textareaElement.value = suggestionTextString;
+
+            const suggestionsWrapperElement = suggestionButtonElement.closest(
+                ".askee-chat__info-buttons--suggestions"
+            );
+            const isStaticSuggestionButton =
+                !!suggestionsWrapperElement &&
+                suggestionsWrapperElement.classList.contains("askee-chat__info-buttons--static");
+
+            if (isStaticSuggestionButton) {
+                triggerChatFormSubmit();
+                return;
+            }
+
+            textareaElement.focus();
+            const endPositionNumber = textareaElement.value.length;
+            textareaElement.setSelectionRange(endPositionNumber, endPositionNumber);
             return;
         }
 
