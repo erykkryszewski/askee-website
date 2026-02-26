@@ -1394,11 +1394,12 @@ function initSingleChatBox(boxElement) {
         requestPayloadObject.turnstileToken = turnstileTokenString;
 
         // tymczasowe debugowanie
-        if (window.console && typeof window.console.log === "function") {
-            window.console.log("[Askee Chat]", "Sending request topic:", currentTopicSlug || "-");
-            window.console.log("[Askee Chat]", "topicSent:", currentTopicSlug || "-");
-            window.console.log("[Askee Chat]", "requestToWp:", requestPayloadObject);
-        }
+
+        // if (window.console && typeof window.console.log === "function") {
+        //     window.console.log("[Askee Chat]", "Sending request topic:", currentTopicSlug || "-");
+        //     window.console.log("[Askee Chat]", "topicSent:", currentTopicSlug || "-");
+        //     window.console.log("[Askee Chat]", "requestToWp:", requestPayloadObject);
+        // }
 
         abortController = new AbortController();
 
@@ -1466,7 +1467,7 @@ function initSingleChatBox(boxElement) {
                     : "";
 
             if (window.console && typeof window.console.log === "function") {
-                window.console.log("[Askee Chat]", "session:", sessionIdValue || "-");
+                // window.console.log("[Askee Chat]", "session:", sessionIdValue || "-");
 
                 let upstreamPayloadObject = null;
                 if (
