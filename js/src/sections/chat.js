@@ -1007,7 +1007,7 @@ function initSingleChatBox(boxElement) {
                 return;
             }
 
-            textareaElement.value = suggestionTextString;
+            textareaElement.value = suggestionTextString + " ";
 
             const suggestionsWrapperElement = suggestionButtonElement.closest(
                 ".askee-chat__info-buttons--suggestions"
