@@ -1,4 +1,4 @@
-import { gsap } from "gsap";
+﻿import { gsap } from "gsap";
 import * as markdownJs from "markdown-js";
 
 const ASKEE_CHAT_TRANSFER_KEY = "__askeePendingChatTransfer";
@@ -1263,9 +1263,7 @@ function initSingleChatBox(boxElement) {
                     settlePendingTurnstileTokenRequestError("Turnstile token has expired.");
                 },
                 "timeout-callback": function () {
-                    settlePendingTurnstileTokenRequestError(
-                        "Turnstile verification timed out."
-                    );
+                    settlePendingTurnstileTokenRequestError("Turnstile verification timed out.");
                 },
             });
         }
@@ -1346,7 +1344,8 @@ function initSingleChatBox(boxElement) {
         }
 
         const suggestionsElement = document.createElement("div");
-        suggestionsElement.className = "askee-chat__info-buttons askee-chat__info-buttons--suggestions";
+        suggestionsElement.className =
+            "askee-chat__info-buttons askee-chat__info-buttons--suggestions";
 
         for (
             let suggestionIndexNumber = 0;
@@ -1375,13 +1374,12 @@ function initSingleChatBox(boxElement) {
             turnstileTokenString = await requestTurnstileTokenForChatMessage();
         } catch (error) {
             return {
-                ok: true,
+                ok: false,
                 status: 403,
-                raw: "Przepraszamy, nie udalo sie zweryfikowac zabezpieczenia. Sprobuj ponownie.",
+                raw: "Przepraszamy, nie udało sie zweryfikować zabezpieczenia. Spróbuj ponownie.",
                 json: [
                     {
-                        output:
-                            "Przepraszamy, nie udalo sie zweryfikowac zabezpieczenia. Sprobuj ponownie.",
+                        output: "Przepraszamy, nie udało sie zweryfikować zabezpieczenia. Spróbuj ponownie.",
                     },
                 ],
             };
@@ -1541,10 +1539,7 @@ function initSingleChatBox(boxElement) {
                     }
                 }
 
-                renderTextIntoWelcome(
-                    welcomeElementAfterResponse,
-                    fallbackErrorMessage
-                );
+                renderTextIntoWelcome(welcomeElementAfterResponse, fallbackErrorMessage);
             }
         } catch (error) {
             if (error && error.name === "AbortError") {

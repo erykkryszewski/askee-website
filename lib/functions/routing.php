@@ -44,7 +44,7 @@ function askee_register_chat_config() {
 
     $turnstile_site_key = defined("ASKEE_TURNSTILE_SITE_KEY")
         ? (string) ASKEE_TURNSTILE_SITE_KEY
-        : "0x4AAAAAACir8YHYWDO-p3Kf";
+        : "";
 
     $config_array = [
         "restUrl" => esc_url_raw(rest_url("askee/v1/chat")),

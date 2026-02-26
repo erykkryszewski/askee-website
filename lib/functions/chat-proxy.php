@@ -185,13 +185,13 @@ function askee_chat_get_request_ip_address() {
     return "";
 }
 
-// pobiera sekret Turnstile (na teraz fallback do testowego klucza)
+// pobiera sekret Turnstile z konfiguracji serwera (wp-config.php)
 function askee_chat_get_turnstile_secret_key() {
     if (defined("ASKEE_TURNSTILE_SECRET_KEY")) {
         return sanitize_text_field((string) ASKEE_TURNSTILE_SECRET_KEY);
     }
 
-    return "0x4AAAAAACir8eibLTaoNsp1IN7m1B2SOmY";
+    return "";
 }
 
 // weryfikuje token Turnstile po stronie serwera
@@ -374,7 +374,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
     $turnstile_verification_result = askee_chat_verify_turnstile_token($turnstile_token);
     if (empty($turnstile_verification_result["is_valid"])) {
         $captcha_error_message =
-            "Przepraszamy, nie udalo sie zweryfikowac zabezpieczenia. Sprobuj ponownie.";
+            "Przepraszamy, nie udało sie zweryfikować zabezpieczenia. Spróbuj ponownie.";
 
         return new WP_REST_Response(
             [
