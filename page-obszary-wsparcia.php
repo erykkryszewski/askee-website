@@ -20,43 +20,43 @@ get_header(); the_post();
                                 </div>
                             </div>
                             <div class="askee-chat__content askee-chat__content--areas askee-chat__content--active" id="askee-chat-content-areas">
-                                <p class="askee-chat__welcome">Każda organizacja to wiele obszarów, które wymagają wsparcia.</p>
+                                <p class="askee-chat__welcome">Każda organizacja mierzy się z tym samym wyzwaniem:</p>
 
                                 <div class="askee-chat__text-with-image">
                                     <div><?php echo wp_get_attachment_image(5191, 'large', '', ['class' => 'askee-welcome-img']); ?></div>
                                     <p>
-                                        Pomagam tam, gdzie jest to kluczowe: od zarządzania kadrami, przez dostęp do wiedzy, aż po bezpieczeństwo i analizy. W którym z tych obszarów chciałbyś zobaczyć, jak mogę Ci pomóc?
-                                    </p>
-                                </div>
-
-                                <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
-                                    <button type="button" class="button button--ghost">Pokaż, jak wspierasz obszar kadrowy i HR.</button>
-                                    <button type="button" class="button button--ghost">Pokaż, jak pomagasz w dostępie do wiedzy o organizacji.</button>
-                                    <button type="button" class="button button--ghost">Pokaż, jak dbasz o compliance i bezpieczeństwo.</button>
-                                    <button type="button" class="button button--ghost">Pokaż, jak wspierasz analizy i raportowanie.</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <form class="askee-chat__form">
-                            <textarea class="askee-chat__textarea" name="user_message" placeholder="Wyślij wiadomość do Askee..." required></textarea>
-
-                            <button type="submit" class="askee-chat__submit"><?php echo wp_get_attachment_image(5070, "large"); ?></button>
-                        </form>
-                    </div>
-
-                    <div class="askee-chat__buttons">
-                        <a class="button button--light" href="/poznaj-mnie/" data-id="askee-chat-content-meet">Poznaj mnie</a>
-                        <a class="button button--light" href="/obszary-wsparcia/" data-id="askee-chat-content-areas">Obszary wsparcia</a>
-                        <a class="button button--light" href="/jak-moge-ci-pomoc/" data-id="askee-chat-content-help">Jak mogę Ci pomóc?</a>
-                        <a class="button button--light" href="/warunki-wspolpracy/" data-id="askee-chat-content-terms">Warunki współpracy</a>
-                    </div>
-                </div>
+                                        czy podejmujemy właściwe decyzje,</br>czy potrafimy je skutecznie wdrażać,</br>czy realizujemy nasze cele,</br>czy robimy to bezpiecznie i zgodnie z zasadami? </br></br>Wspieram dokładnie te cztery obszary. Nie tylko dostarczam informacji. Pomagam przełożyć decyzje na działania i mierzalne efekty. W którym z tych obszarów chcesz zobaczyć, jak mogę wzmocnić Twoją organizację?
+                </p>
             </div>
 
-            <div class="col-12 col-lg-2 askee-chat__column askee-chat__column--right"><?php get_template_part("template-parts/sidebar"); ?></div>
+            <div class="askee-chat__info-buttons askee-chat__info-buttons--suggestions askee-chat__info-buttons--static">
+                <button type="button" class="button button--ghost">Pokaż, jak wspierasz podejmowanie decyzji.</button>
+                <button type="button" class="button button--ghost">Pokaż, jak uruchamiasz działania operacyjne.</button>
+                <button type="button" class="button button--ghost">Pokaż, jak wspierasz realizację celów i KPI.</button>
+                <button type="button" class="button button--ghost">Pokaż, jak dbasz o bezpieczeństwo i zgodność działań.</button>
+            </div>
         </div>
     </div>
+
+    <form class="askee-chat__form">
+        <textarea class="askee-chat__textarea" name="user_message" placeholder="Wyślij wiadomość do Askee..." required></textarea>
+
+        <button type="submit" class="askee-chat__submit"><?php echo wp_get_attachment_image(5070, "large"); ?></button>
+    </form>
+</div>
+
+<div class="askee-chat__buttons">
+    <a class="button button--light" href="/poznaj-mnie/" data-id="askee-chat-content-meet">Poznaj mnie</a>
+    <a class="button button--light" href="/obszary-wsparcia/" data-id="askee-chat-content-areas">Obszary wsparcia</a>
+    <a class="button button--light" href="/jak-moge-ci-pomoc/" data-id="askee-chat-content-help">Jak mogę Ci pomóc?</a>
+    <a class="button button--light" href="/warunki-wspolpracy/" data-id="askee-chat-content-terms">Warunki współpracy</a>
+</div>
+</div>
+</div>
+
+<div class="col-12 col-lg-2 askee-chat__column askee-chat__column--right"><?php get_template_part("template-parts/sidebar"); ?></div>
+</div>
+</div>
 </div>
 
 <?php get_footer(); ?>
