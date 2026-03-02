@@ -48,6 +48,7 @@ function askee_register_chat_config() {
 
     $config_array = [
         "restUrl" => esc_url_raw(rest_url("askee/v1/chat")),
+        "nonceRefreshUrl" => esc_url_raw(rest_url("askee/v1/chat-nonce")),
         "nonce" => wp_create_nonce("wp_rest"),
         "storageKey" => "askee_chat_state_v1",
         "turnstileSiteKey" => sanitize_text_field($turnstile_site_key),

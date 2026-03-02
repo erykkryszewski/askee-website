@@ -18,7 +18,27 @@ add_action("rest_api_init", function () {
         "callback" => "askee_chat_proxy_callback",
         "permission_callback" => "__return_true",
     ]);
+
+    register_rest_route("askee/v1", "/chat-nonce", [
+        "methods" => "GET",
+        "callback" => "askee_chat_nonce_callback",
+        "permission_callback" => "__return_true",
+    ]);
 });
+
+// zwraca swiezy nonce do ponownej proby requestu chat, gdy poprzedni wygasl
+function askee_chat_nonce_callback() {
+    $response = new WP_REST_Response([
+        "ok" => true,
+        "nonce" => wp_create_nonce("wp_rest"),
+    ]);
+
+    $response->header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    $response->header("Pragma", "no-cache");
+    $response->header("Expires", "0");
+
+    return $response;
+}
 
 // pobiera aktywne id sesji albo probuje uruchomic sesje i je zwrocic
 function askee_chat_get_or_start_session_id() {

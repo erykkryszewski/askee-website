@@ -17,7 +17,7 @@
         opacity: 0;
         visibility: hidden;
 
-        &:not(.is-ready):not(.is-measuring) {
+        &:not(.is-ready, .is-measuring) {
             .askee-chat__title:not(:first-child) {
                 display: none;
             }
@@ -265,6 +265,10 @@
             flex-wrap: wrap;
             gap: 0;
         }
+
+        img {
+            mix-blend-mode: multiply;
+        }
     }
 
     &__form {
@@ -442,6 +446,19 @@
                     filter: brightness(0) invert(1);
                 }
             }
+        }
+    }
+
+    &__submit {
+        position: relative;
+        z-index: 2;
+        cursor: pointer;
+        touch-action: manipulation;
+        pointer-events: auto;
+
+        img,
+        svg {
+            pointer-events: none;
         }
     }
 }

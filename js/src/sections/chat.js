@@ -513,10 +513,6 @@ function tryApplyPendingChatTransfer(boxElement, chatRootElement) {
     boxElement.innerHTML = pendingTransferObject.boxInnerHtmlString;
     clearPendingChatTransfer();
 
-    if (window.console && typeof window.console.log === "function") {
-        window.console.log("[Askee Chat]", "Transferred chat UI to topic:", currentTopicSlug);
-    }
-
     return true;
 }
 
@@ -758,11 +754,7 @@ function initTitleRotator(boxElement) {
         scheduleBuildRotator();
     });
 
-    if (
-        document.fonts &&
-        document.fonts.ready &&
-        typeof document.fonts.ready.then === "function"
-    ) {
+    if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === "function") {
         document.fonts.ready
             .then(function () {
                 scheduleBuildRotator();
@@ -1151,6 +1143,7 @@ function initSingleChatBox(boxElement) {
             if (!suggestionTextString) {
                 return;
             }
+            logChatDebug("klikam sugestię:", suggestionTextString);
 
             textareaElement.value = suggestionTextString + " ";
 
@@ -1162,7 +1155,7 @@ function initSingleChatBox(boxElement) {
                 suggestionsWrapperElement.classList.contains("askee-chat__info-buttons--static");
 
             if (isStaticSuggestionButton) {
-                triggerChatFormSubmit();
+                triggerChatFormSubmit("suggestion-static");
                 return;
             }
 
@@ -1199,16 +1192,10 @@ function initSingleChatBox(boxElement) {
 
         const currentTopicSlug = getTopicSlugFromChatRoot(chatRootElement);
         if (!currentTopicSlug) {
-            if (window.console && typeof window.console.log === "function") {
-                window.console.log("[Askee Chat]", "Missing current topic in DOM.");
-            }
             return;
         }
 
         if (currentTopicSlug === topicSlugString) {
-            if (window.console && typeof window.console.log === "function") {
-                window.console.log("[Askee Chat]", "Topic unchanged:", topicSlugString);
-            }
             return;
         }
 
@@ -1218,27 +1205,10 @@ function initSingleChatBox(boxElement) {
         );
 
         if (!targetNavigationButtonElement) {
-            if (window.console && typeof window.console.log === "function") {
-                window.console.log(
-                    "[Askee Chat]",
-                    "Received topic without matching chat navigation button:",
-                    topicSlugString
-                );
-            }
             return;
         }
 
         savePendingChatTransfer(topicSlugString, boxElement);
-
-        if (window.console && typeof window.console.log === "function") {
-            window.console.log(
-                "[Askee Chat]",
-                "Switching topic from",
-                currentTopicSlug,
-                "to",
-                topicSlugString
-            );
-        }
 
         targetNavigationButtonElement.dispatchEvent(
             new MouseEvent("click", { bubbles: true, cancelable: true })
@@ -1250,6 +1220,11 @@ function initSingleChatBox(boxElement) {
     let restUrl = "";
     if (typeof chatConfig.restUrl === "string") {
         restUrl = chatConfig.restUrl;
+    }
+
+    let nonceRefreshUrl = "";
+    if (typeof chatConfig.nonceRefreshUrl === "string") {
+        nonceRefreshUrl = chatConfig.nonceRefreshUrl;
     }
 
     let nonce = "";
@@ -1265,6 +1240,9 @@ function initSingleChatBox(boxElement) {
     const formElement = boxElement.querySelector(".askee-chat__form");
     const textareaElement = formElement ? formElement.querySelector(".askee-chat__textarea") : null;
     const submitButton = formElement ? formElement.querySelector('[type="submit"]') : null;
+    if (submitButton) {
+        submitButton.style.touchAction = "manipulation";
+    }
     const userMessageElement = switchSectionsElement
         ? switchSectionsElement.querySelector(".askee-chat__user-message")
         : null;
@@ -1279,6 +1257,36 @@ function initSingleChatBox(boxElement) {
     let pendingTurnstileTokenResolve = null;
     let pendingTurnstileTokenReject = null;
     let pendingTurnstileTokenTimeoutId = null;
+    let turnstileTokenRequestPromise = null;
+    let nonceRefreshPromise = null;
+    let pendingSubmitSourceString = "native-unknown";
+    let lastSubmitTouchTimestampNumber = 0;
+
+    function setPendingSubmitSource(sourceString) {
+        if (typeof sourceString !== "string") {
+            return;
+        }
+
+        const normalizedSourceString = sourceString.trim();
+        if (!normalizedSourceString) {
+            return;
+        }
+
+        pendingSubmitSourceString = normalizedSourceString;
+    }
+
+    function logChatDebug(labelString, payloadValue) {
+        if (!window.console || typeof window.console.log !== "function") {
+            return;
+        }
+
+        if (typeof payloadValue === "undefined") {
+            window.console.log(labelString);
+            return;
+        }
+
+        window.console.log(labelString, payloadValue);
+    }
 
     function clearPendingTurnstileTokenRequest() {
         if (pendingTurnstileTokenTimeoutId) {
@@ -1356,30 +1364,102 @@ function initSingleChatBox(boxElement) {
     }
 
     async function requestTurnstileTokenForChatMessage() {
-        const widgetStateObject = await ensureTurnstileWidgetReady();
+        if (turnstileTokenRequestPromise) {
+            return turnstileTokenRequestPromise;
+        }
 
-        return new Promise(function (resolve, reject) {
-            clearPendingTurnstileTokenRequest();
+        turnstileTokenRequestPromise = (async function () {
+            const widgetStateObject = await ensureTurnstileWidgetReady();
 
-            pendingTurnstileTokenResolve = resolve;
-            pendingTurnstileTokenReject = reject;
-            pendingTurnstileTokenTimeoutId = window.setTimeout(function () {
-                settlePendingTurnstileTokenRequestError("Turnstile token request timeout.");
-            }, ASKEE_CHAT_TURNSTILE_TOKEN_TIMEOUT_MS);
+            return new Promise(function (resolve, reject) {
+                clearPendingTurnstileTokenRequest();
 
-            try {
-                widgetStateObject.turnstileApiObject.reset(widgetStateObject.turnstileWidgetId);
-                widgetStateObject.turnstileApiObject.execute(widgetStateObject.turnstileWidgetId);
-            } catch (error) {
-                settlePendingTurnstileTokenRequestError("Turnstile execute failed.");
-            }
+                pendingTurnstileTokenResolve = resolve;
+                pendingTurnstileTokenReject = reject;
+                pendingTurnstileTokenTimeoutId = window.setTimeout(function () {
+                    settlePendingTurnstileTokenRequestError("Turnstile token request timeout.");
+                }, ASKEE_CHAT_TURNSTILE_TOKEN_TIMEOUT_MS);
+
+                try {
+                    widgetStateObject.turnstileApiObject.reset(widgetStateObject.turnstileWidgetId);
+                    widgetStateObject.turnstileApiObject.execute(
+                        widgetStateObject.turnstileWidgetId
+                    );
+                } catch (error) {
+                    settlePendingTurnstileTokenRequestError("Turnstile execute failed.");
+                }
+            });
+        })().finally(function () {
+            turnstileTokenRequestPromise = null;
         });
+
+        return turnstileTokenRequestPromise;
     }
 
-    function triggerChatFormSubmit() {
+    async function refreshChatNonceFromServer() {
+        if (!nonceRefreshUrl) {
+            return false;
+        }
+
+        if (nonceRefreshPromise) {
+            return nonceRefreshPromise;
+        }
+
+        nonceRefreshPromise = (async function () {
+            const separatorString = nonceRefreshUrl.includes("?") ? "&" : "?";
+            const requestUrlString =
+                nonceRefreshUrl + separatorString + "askee_nonce_refresh=" + Date.now();
+
+            const nonceResponseObject = await fetch(requestUrlString, {
+                method: "GET",
+                credentials: "same-origin",
+                cache: "no-store",
+                headers: {
+                    "Cache-Control": "no-cache",
+                },
+            });
+
+            const nonceResponseJsonObject = await nonceResponseObject.json().catch(function () {
+                return null;
+            });
+
+            if (
+                nonceResponseObject.ok &&
+                nonceResponseJsonObject &&
+                typeof nonceResponseJsonObject.nonce === "string" &&
+                nonceResponseJsonObject.nonce.trim() !== ""
+            ) {
+                nonce = nonceResponseJsonObject.nonce.trim();
+                if (window.AskeeChatConfig && typeof window.AskeeChatConfig === "object") {
+                    window.AskeeChatConfig.nonce = nonce;
+                }
+                logChatDebug("Odświeżono nonce dla czatu.");
+                return true;
+            }
+
+            return false;
+        })()
+            .catch(function () {
+                return false;
+            })
+            .finally(function () {
+                nonceRefreshPromise = null;
+            });
+
+        return nonceRefreshPromise;
+    }
+
+    function triggerChatFormSubmit(submitSourceString) {
         if (!formElement) {
             return;
         }
+
+        if (isSending) {
+            return;
+        }
+
+        setPendingSubmitSource(submitSourceString);
+        logChatDebug("submit klik", pendingSubmitSourceString);
 
         if (typeof formElement.requestSubmit === "function") {
             formElement.requestSubmit();
@@ -1387,6 +1467,29 @@ function initSingleChatBox(boxElement) {
         }
 
         formElement.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    }
+
+    function onSubmitButtonClick(eventObject) {
+        if (eventObject) {
+            eventObject.preventDefault();
+        }
+
+        triggerChatFormSubmit("submit-button-click");
+    }
+
+    function onSubmitButtonTouchEnd(eventObject) {
+        if (!eventObject) {
+            return;
+        }
+
+        const nowTimestampNumber = Date.now();
+        if (nowTimestampNumber - lastSubmitTouchTimestampNumber < 450) {
+            return;
+        }
+        lastSubmitTouchTimestampNumber = nowTimestampNumber;
+
+        eventObject.preventDefault();
+        triggerChatFormSubmit("submit-button-touchend");
     }
 
     function renderLatestUserMessage(messageTextString) {
@@ -1445,10 +1548,20 @@ function initSingleChatBox(boxElement) {
     }
 
     // wysyla wiadomosc do backendu i zwraca odpowiedz json
-    async function sendToApi(inputTextString) {
+    async function sendToApi(inputTextString, optionsObject) {
+        const safeOptionsObject =
+            optionsObject && typeof optionsObject === "object" ? optionsObject : {};
+        const shouldRetryNonce =
+            typeof safeOptionsObject.shouldRetryNonce === "boolean"
+                ? safeOptionsObject.shouldRetryNonce
+                : true;
+
         if (!restUrl) {
             return null;
         }
+
+        // odswiezamy nonce przed wysylka, zeby cache starej strony nie psul requestu
+        await refreshChatNonceFromServer();
 
         let turnstileTokenString = "";
         try {
@@ -1457,10 +1570,10 @@ function initSingleChatBox(boxElement) {
             return {
                 ok: false,
                 status: 403,
-                raw: "Przepraszamy, nie udało sie zweryfikować zabezpieczenia. Spróbuj ponownie.",
+                raw: "Przepraszamy, nie udało się zweryfikować zabezpieczenia. Spróbuj ponownie.",
                 json: [
                     {
-                        output: "Przepraszamy, nie udało sie zweryfikować zabezpieczenia. Spróbuj ponownie.",
+                        output: "Przepraszamy, nie udało się zweryfikować zabezpieczenia. Spróbuj ponownie.",
                     },
                 ],
             };
@@ -1474,31 +1587,61 @@ function initSingleChatBox(boxElement) {
         }
         requestPayloadObject.turnstileToken = turnstileTokenString;
 
-        // tymczasowe debugowanie
-
-        // if (window.console && typeof window.console.log === "function") {
-        //     window.console.log("[Askee Chat]", "Sending request topic:", currentTopicSlug || "-");
-        //     window.console.log("[Askee Chat]", "topicSent:", currentTopicSlug || "-");
-        //     window.console.log("[Askee Chat]", "requestToWp:", requestPayloadObject);
-        // }
+        logChatDebug("topic to:", currentTopicSlug || "-");
+        logChatDebug("wysyłamy payload:", {
+            input: inputTextString,
+            topic: requestPayloadObject.topic || "",
+            turnstileToken: "[ukryty]",
+        });
 
         abortController = new AbortController();
 
         // tu dzwonimy do jsona, odbiera chat-proxy.php
+        const headersObject = {
+            "Content-Type": "application/json",
+        };
+        if (nonce) {
+            headersObject["X-WP-Nonce"] = nonce;
+        }
+
         const responseObject = await fetch(restUrl, {
             method: "POST",
             credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json",
-                "X-WP-Nonce": nonce,
-            },
+            headers: headersObject,
             body: JSON.stringify(requestPayloadObject),
             signal: abortController.signal,
         });
 
-        const parsedResponseObject = await responseObject.json().catch(function () {
-            return null;
-        });
+        const responseBodyTextString = await responseObject.text();
+        let parsedResponseObject = null;
+        if (responseBodyTextString) {
+            try {
+                parsedResponseObject = JSON.parse(responseBodyTextString);
+            } catch (error) {
+                parsedResponseObject = null;
+            }
+        }
+
+        logChatDebug("odbieramy status:", responseObject.status);
+        logChatDebug("odbieramy payload:", parsedResponseObject);
+
+        const shouldRefreshNonceAndRetry =
+            shouldRetryNonce &&
+            responseObject.status === 403 &&
+            parsedResponseObject &&
+            typeof parsedResponseObject === "object" &&
+            (parsedResponseObject.code === "rest_cookie_invalid_nonce" ||
+                parsedResponseObject.error === "invalid_nonce");
+
+        if (shouldRefreshNonceAndRetry) {
+            logChatDebug("Wykryto nieważny nonce, odświeżam i ponawiam request.");
+            const refreshedNonceSuccessfully = await refreshChatNonceFromServer();
+            if (refreshedNonceSuccessfully) {
+                return sendToApi(inputTextString, { shouldRetryNonce: false });
+            }
+            logChatDebug("Nie udało się odświeżyć nonce.");
+        }
+
         return parsedResponseObject;
     }
 
@@ -1515,6 +1658,15 @@ function initSingleChatBox(boxElement) {
         if (!textValue) {
             return;
         }
+
+        const submitSourceString = pendingSubmitSourceString || "native-unknown";
+        pendingSubmitSourceString = "native-unknown";
+
+        logChatDebug("Start submitu:", {
+            zrodlo: submitSourceString,
+            topic: getTopicSlugFromChatRoot(chatRootElement) || "-",
+            tekst: textValue,
+        });
 
         // zeby nikt nie klikal 100 razy
         if (isSending) {
@@ -1542,36 +1694,9 @@ function initSingleChatBox(boxElement) {
             const assistantTopicSlug =
                 assistantPayloadObject.topicSlugString ||
                 extractAssistantTopicFromApiResponse(apiResponseObject);
-            const sessionIdValue =
-                apiResponseObject && typeof apiResponseObject.session === "string"
-                    ? apiResponseObject.session
-                    : "";
 
-            if (window.console && typeof window.console.log === "function") {
-                // window.console.log("[Askee Chat]", "session:", sessionIdValue || "-");
-
-                let upstreamPayloadObject = null;
-                if (
-                    apiResponseObject &&
-                    apiResponseObject.upstreamPayload &&
-                    typeof apiResponseObject.upstreamPayload === "object"
-                ) {
-                    upstreamPayloadObject = apiResponseObject.upstreamPayload;
-                } else {
-                    upstreamPayloadObject = {
-                        Input: textValue,
-                        topic: getTopicSlugFromChatRoot(chatRootElement),
-                        session: sessionIdValue,
-                    };
-                }
-
-                window.console.log("[Askee Chat]", "payload:", upstreamPayloadObject);
-            }
-
-            if (assistantTopicSlug && window.console && typeof window.console.log === "function") {
-                window.console.log("[Askee Chat]", "Received response topic:", assistantTopicSlug);
-                window.console.log("[Askee Chat]", "topicReceived:", assistantTopicSlug);
-            }
+            logChatDebug("topic received:", assistantTopicSlug || "-");
+            logChatDebug("odebrany payload asystenta:", assistantPayloadObject);
 
             normalizeToSingleActiveElement();
             const welcomeElementAfterResponse = resetActiveContentKeepOnlyWelcome();
@@ -1613,7 +1738,7 @@ function initSingleChatBox(boxElement) {
                     trySwitchPageByAssistantTopic(assistantTopicSlug);
                 }
             } else {
-                let fallbackErrorMessage = "Przepraszamy, sproboj ponownie";
+                let fallbackErrorMessage = "Przepraszamy, spróbuj ponownie";
                 if (apiResponseObject && typeof apiResponseObject.raw === "string") {
                     const normalizedErrorMessage = apiResponseObject.raw.trim();
                     if (normalizedErrorMessage) {
@@ -1622,6 +1747,7 @@ function initSingleChatBox(boxElement) {
                 }
 
                 renderTextIntoWelcome(welcomeElementAfterResponse, fallbackErrorMessage);
+                logChatDebug("Odebrano odpowiedź bez ok:", fallbackErrorMessage);
             }
         } catch (error) {
             if (error && error.name === "AbortError") {
@@ -1631,6 +1757,7 @@ function initSingleChatBox(boxElement) {
             normalizeToSingleActiveElement();
             const welcomeElementAfterError = resetActiveContentKeepOnlyWelcome();
             renderTextIntoWelcome(welcomeElementAfterError, "Network Error");
+            logChatDebug("Błąd w trakcie wysyłki czatu.");
         } finally {
             isSending = false;
             if (submitButton) {
@@ -1638,6 +1765,7 @@ function initSingleChatBox(boxElement) {
                 submitButton.focus();
             }
             abortController = null;
+            logChatDebug("submit przeszedł i jest ok");
         }
     }
 
@@ -1649,6 +1777,11 @@ function initSingleChatBox(boxElement) {
         formElement.addEventListener("submit", onFormSubmit);
     }
 
+    if (submitButton) {
+        submitButton.addEventListener("click", onSubmitButtonClick);
+        submitButton.addEventListener("touchend", onSubmitButtonTouchEnd, { passive: false });
+    }
+
     if (textareaElement && formElement) {
         // event keydown zamienia enter na wysylke formularza
         textareaElement.addEventListener("keydown", function (eventObject) {
@@ -1658,7 +1791,7 @@ function initSingleChatBox(boxElement) {
 
             if (eventObject.key === "Enter" && !eventObject.shiftKey) {
                 eventObject.preventDefault();
-                triggerChatFormSubmit();
+                triggerChatFormSubmit("keyboard-enter");
             }
         });
     }
@@ -1675,6 +1808,10 @@ function initSingleChatBox(boxElement) {
         boxElement.removeEventListener("click", onChatRootClick);
         if (formElement) {
             formElement.removeEventListener("submit", onFormSubmit);
+        }
+        if (submitButton) {
+            submitButton.removeEventListener("click", onSubmitButtonClick);
+            submitButton.removeEventListener("touchend", onSubmitButtonTouchEnd);
         }
         if (abortController) {
             try {
