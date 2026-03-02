@@ -157,6 +157,18 @@ p,
         font-size: 12px;
         line-height: 18px;
     }
+
+    &--smaller {
+        font-size: 10px;
+        line-height: 16px;
+
+        > a,
+        > strong,
+        > span {
+            font-size: 10px;
+            line-height: 16px;
+        }
+    }
 }
 
 .text-gray {

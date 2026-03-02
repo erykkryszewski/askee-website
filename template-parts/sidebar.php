@@ -12,7 +12,12 @@
         if ($askee_latest_posts_query->have_posts()):
             while ($askee_latest_posts_query->have_posts()):
                 $askee_latest_posts_query->the_post(); ?>
-                <li>
+                <li class="askee-sidebar__list-element">
+                    <a href="<?php echo esc_url(get_permalink()); ?>">
+                        <div class="askee-sidebar__thumbnail">
+                            <?php echo wp_get_attachment_image(get_post_thumbnail_id(), "large"); ?>
+                        </div>
+                    </a>
                     <a href="<?php echo esc_url(get_permalink()); ?>"><?php echo esc_html(
     get_the_title(),
 ); ?></a>
