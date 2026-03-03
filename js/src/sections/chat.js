@@ -166,6 +166,20 @@ function getTopicSlugFromChatRoot(chatRootElement) {
     return getTopicSlugFromHref(window.location.href);
 }
 
+// zwraca kod jezyka na podstawie aktualnego adresu
+function getCurrentChatLanguageCode() {
+    const currentPathnameString =
+        typeof window.location.pathname === "string"
+            ? window.location.pathname.toLowerCase()
+            : "/";
+
+    if (currentPathnameString.includes("/en")) {
+        return "EN";
+    }
+
+    return "PL";
+}
+
 // bezpiecznie parsuje string JSON, jesli string nie wyglada jak json to zwraca null
 function tryParseJsonString(jsonCandidateString) {
     if (typeof jsonCandidateString !== "string") {
@@ -1580,17 +1594,21 @@ function initSingleChatBox(boxElement) {
         }
 
         const currentTopicSlug = getTopicSlugFromChatRoot(chatRootElement);
+        const currentLanguageCode = getCurrentChatLanguageCode();
         const requestPayloadObject = { input: inputTextString };
 
         if (currentTopicSlug) {
             requestPayloadObject.topic = currentTopicSlug;
         }
+        requestPayloadObject.lang = currentLanguageCode;
         requestPayloadObject.turnstileToken = turnstileTokenString;
 
         logChatDebug("topic to:", currentTopicSlug || "-");
+        logChatDebug("lang to:", currentLanguageCode);
         logChatDebug("wysyłamy payload:", {
             input: inputTextString,
             topic: requestPayloadObject.topic || "",
+            lang: requestPayloadObject.lang || "",
             turnstileToken: "[ukryty]",
         });
 

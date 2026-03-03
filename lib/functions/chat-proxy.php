@@ -338,6 +338,19 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
 
     $topic = is_string($topic_raw) ? sanitize_title($topic_raw) : "";
 
+    $lang_raw = $request->get_param("lang");
+    if (!is_string($lang_raw)) {
+        $json = isset($json) && is_array($json) ? $json : $request->get_json_params();
+        if (is_array($json) && isset($json["lang"]) && is_string($json["lang"])) {
+            $lang_raw = $json["lang"];
+        }
+    }
+
+    $lang = is_string($lang_raw) ? strtoupper(sanitize_text_field($lang_raw)) : "";
+    if ($lang === "") {
+        $lang = "PL";
+    }
+
     $turnstile_token_raw = $request->get_param("turnstileToken");
     if (!is_string($turnstile_token_raw)) {
         $json = isset($json) && is_array($json) ? $json : $request->get_json_params();
@@ -417,6 +430,7 @@ function askee_chat_proxy_callback(WP_REST_Request $request) {
     $payload = [
         "Input" => $input,
         "topic" => $topic,
+        "lang" => $lang,
         "session" => $session_id,
     ];
 
