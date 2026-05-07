@@ -104,8 +104,10 @@
         }
     }
 
-    &__input,
-    &__textarea {
+    // selektory z prefixem input/textarea zeby podbic specyficznosc nad globalnym
+    // input[type=text], textarea { all: unset } z scss/components/_inputs.scss
+    input#{&}__input,
+    textarea#{&}__textarea {
         all: unset;
         display: block;
         box-sizing: border-box;
@@ -127,18 +129,22 @@
             font-size: 15px;
         }
 
+        &:hover {
+            border-color: $theme-color;
+        }
+
         &:focus {
             border-color: $theme-color;
             box-shadow: 0 0 0 3px $button-focus-ring;
         }
     }
 
-    &__textarea {
+    textarea#{&}__textarea {
         min-height: 110px;
         resize: vertical;
     }
 
-    &__checkbox {
+    input#{&}__checkbox {
         appearance: none;
         -webkit-appearance: none;
         flex-shrink: 0;
@@ -150,6 +156,7 @@
         cursor: pointer;
         position: relative;
         margin: 2px 0 0;
+        padding: 0;
         transition:
             background-color 0.15s ease,
             border-color 0.15s ease;
