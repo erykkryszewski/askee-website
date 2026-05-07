@@ -18,9 +18,6 @@ $askee_contact_honeypot_field_name = defined("ASKEE_CONTACT_HONEYPOT_FIELD_NAME"
                     <div class="askee-chat__box">
                         <form class="askee-contact-form" novalidate>
                             <div class="askee-contact-form__intro">
-                                <div class="askee-contact-form__intro-image">
-                                    <?php echo wp_get_attachment_image(5188, 'thumbnail', '', ['class' => 'askee-welcome-img', 'alt' => '']); ?>
-                                </div>
                                 <p class="askee-contact-form__intro-text">
                                     Jeśli masz ochotę się z nami skontaktować, jestem tu, by to ułatwić. Zostaw kilka informacji, a odezwiemy się najszybciej, jak to możliwe.
                                 </p>
