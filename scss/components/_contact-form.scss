@@ -7,9 +7,20 @@
     &__intro {
         display: flex;
         align-items: flex-start;
-        gap: 18px;
+        gap: 15px;
         padding: 0 0 18px;
         border-bottom: 1px solid $light-gray;
+
+        // ludzik z lewej, identyczny jak .askee-chat__welcome::before
+        &::before {
+            content: "";
+            display: block;
+            background: url("./images/askee-man-small.svg") center/contain no-repeat;
+            width: 21px;
+            height: 29px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
 
         @media (width <= 767px) {
             gap: 12px;
@@ -17,22 +28,10 @@
         }
     }
 
-    &__intro-image {
-        width: 36px;
-        flex-shrink: 0;
-
-        img,
-        svg {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-    }
-
     &__intro-text {
         margin: 0;
         font-size: 15px;
-        line-height: 1.6;
+        line-height: 28px;
         color: $text-color;
     }
 
