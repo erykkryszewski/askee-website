@@ -9,13 +9,14 @@ define("ASKEE_CONTACT_RATE_LIMIT_WINDOW_SECONDS", 1800);
 define("ASKEE_CONTACT_HONEYPOT_FIELD_NAME", "askee_website_url");
 define("ASKEE_CONTACT_MIN_SUBMIT_SECONDS", 2);
 
-// lista adresow odbiorcow maila kontaktowego, deduplikujemy zeby nie wyslac 2x do tego samego
+// lista adresow odbiorcow maila kontaktowego. dedup ma chronic na przyszlosc
+// gdyby ktos wkleil duplikat.
 function askee_contact_get_recipient_emails_array() {
     $recipient_emails_array = [
         "kontakt@askee.pl",
         "Piotr.Pszczolkowski@askee.app",
         "kontakt@askee.app",
-        "kontakt@askee.pl",
+        "kontakt@ercoding.pl",
     ];
 
     $normalized_emails_array = [];
