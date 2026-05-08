@@ -7,47 +7,66 @@ if (!defined("ABSPATH")) {
 /**
  * Konfiguracja SMTP dla Askee.
  *
- * Wartości można nadpisać z poziomu wp-config.php — zalecane na produkcji,
- * żeby hasło SMTP nie żyło w repozytorium. Hardcoded defaults są tu po to,
- * żeby motyw zadziałał od razu po deployu bez dodatkowej konfiguracji.
+ * WSZYSTKIE wartosci sa czytane wylacznie z wp-config.php (poza repo).
+ * Brak hardcoded defaults — jesli stalych nie ma, SMTP hook NIE podpina sie
+ * i wp_mail spadnie do domyslnego transportu PHPMailera (mail()/sendmail).
  *
- * Zalecany blok dla wp-config.php (poza repo):
+ * Wymagany blok w wp-config.php:
  *
  *     define("ASKEE_SMTP_HOST", "web6.aftermarket.hosting");
  *     define("ASKEE_SMTP_PORT", 587);
  *     define("ASKEE_SMTP_USERNAME", "noreply@askee.pl");
  *     define("ASKEE_SMTP_PASSWORD", "...");
- *     define("ASKEE_SMTP_ENCRYPTION", "tls"); // tls | ssl
+ *     define("ASKEE_SMTP_ENCRYPTION", "tls"); // tls | ssl | none
  *     define("ASKEE_SMTP_FROM_EMAIL", "noreply@askee.pl");
  *     define("ASKEE_SMTP_FROM_NAME", "Askee");
+ *
+ * Opcjonalne:
+ *
+ *     define("ASKEE_SMTP_DEBUG", true); // verbose log do error_log (tylko z WP_DEBUG)
  */
 
-if (!defined("ASKEE_SMTP_HOST")) {
-    define("ASKEE_SMTP_HOST", "web6.aftermarket.hosting");
+// sprawdza czy mamy minimum potrzebne do podpiecia SMTP. Brak jednej z tych
+// stalych = nie konfigurujemy phpmailera, wpis w error_log dla operatora.
+function askee_smtp_is_configured() {
+    return defined("ASKEE_SMTP_HOST") &&
+        defined("ASKEE_SMTP_PORT") &&
+        defined("ASKEE_SMTP_USERNAME") &&
+        defined("ASKEE_SMTP_PASSWORD");
 }
-if (!defined("ASKEE_SMTP_PORT")) {
-    define("ASKEE_SMTP_PORT", 587);
-}
-if (!defined("ASKEE_SMTP_USERNAME")) {
-    define("ASKEE_SMTP_USERNAME", "noreply@askee.pl");
-}
-if (!defined("ASKEE_SMTP_PASSWORD")) {
-    define("ASKEE_SMTP_PASSWORD", "Askeenoreply");
-}
-if (!defined("ASKEE_SMTP_ENCRYPTION")) {
-    define("ASKEE_SMTP_ENCRYPTION", "tls");
-}
-if (!defined("ASKEE_SMTP_FROM_EMAIL")) {
-    define("ASKEE_SMTP_FROM_EMAIL", "noreply@askee.pl");
-}
-if (!defined("ASKEE_SMTP_FROM_NAME")) {
-    define("ASKEE_SMTP_FROM_NAME", "Askee");
+
+// jednorazowy warning do logu jesli stalych brak
+add_action("init", "askee_smtp_warn_when_unconfigured");
+function askee_smtp_warn_when_unconfigured() {
+    if (askee_smtp_is_configured()) {
+        return;
+    }
+
+    if (!function_exists("error_log")) {
+        return;
+    }
+
+    static $already_warned_boolean = false;
+    if ($already_warned_boolean) {
+        return;
+    }
+    $already_warned_boolean = true;
+
+    error_log(
+        "[Askee SMTP] missing required wp-config.php constants: ASKEE_SMTP_HOST, " .
+            "ASKEE_SMTP_PORT, ASKEE_SMTP_USERNAME, ASKEE_SMTP_PASSWORD. " .
+            "wp_mail will fall back to default PHP transport (mail/sendmail).",
+    );
 }
 
 // konfiguruje PHPMailera zeby slal przez nasz SMTP zamiast lokalnego mail()
 add_action("phpmailer_init", "askee_configure_phpmailer_smtp");
 function askee_configure_phpmailer_smtp($phpmailer) {
     if (!is_object($phpmailer)) {
+        return;
+    }
+
+    if (!askee_smtp_is_configured()) {
         return;
     }
 
@@ -58,10 +77,13 @@ function askee_configure_phpmailer_smtp($phpmailer) {
     $phpmailer->Username = (string) ASKEE_SMTP_USERNAME;
     $phpmailer->Password = (string) ASKEE_SMTP_PASSWORD;
 
-    $encryption_lowercase_string = strtolower((string) ASKEE_SMTP_ENCRYPTION);
-    if ($encryption_lowercase_string === "ssl") {
+    $encryption_value_string = defined("ASKEE_SMTP_ENCRYPTION")
+        ? strtolower((string) ASKEE_SMTP_ENCRYPTION)
+        : "tls";
+
+    if ($encryption_value_string === "ssl") {
         $phpmailer->SMTPSecure = "ssl";
-    } elseif ($encryption_lowercase_string === "" || $encryption_lowercase_string === "none") {
+    } elseif ($encryption_value_string === "" || $encryption_value_string === "none") {
         $phpmailer->SMTPSecure = "";
         $phpmailer->SMTPAutoTLS = false;
     } else {
@@ -72,12 +94,17 @@ function askee_configure_phpmailer_smtp($phpmailer) {
     $phpmailer->Encoding = "8bit";
     $phpmailer->Timeout = 15;
 
-    // jesli nikt nie ustawil From, podstawiamy nasz noreply
+    // jesli nikt nie ustawil From, podstawiamy From z wp-config (jesli jest)
     $default_wordpress_from_string =
         "wordpress@" . wp_parse_url(home_url(), PHP_URL_HOST);
-    if (empty($phpmailer->From) || $phpmailer->From === $default_wordpress_from_string) {
+    $is_default_from_boolean =
+        empty($phpmailer->From) || $phpmailer->From === $default_wordpress_from_string;
+
+    if ($is_default_from_boolean && defined("ASKEE_SMTP_FROM_EMAIL")) {
         $phpmailer->From = (string) ASKEE_SMTP_FROM_EMAIL;
-        $phpmailer->FromName = (string) ASKEE_SMTP_FROM_NAME;
+        $phpmailer->FromName = defined("ASKEE_SMTP_FROM_NAME")
+            ? (string) ASKEE_SMTP_FROM_NAME
+            : "Askee";
     }
 
     // wlaczamy verbose debug tylko jak WP_DEBUG aktywne
@@ -87,9 +114,13 @@ function askee_configure_phpmailer_smtp($phpmailer) {
     }
 }
 
-// domyslny From - zeby wp_mail bez naglowkow szlo z noreply@askee.pl, nie z wordpress@host
+// domyslny From - zeby wp_mail bez naglowkow szlo z naszego konfiguracji
 add_filter("wp_mail_from", "askee_filter_default_wp_mail_from");
 function askee_filter_default_wp_mail_from($from_email_string) {
+    if (!defined("ASKEE_SMTP_FROM_EMAIL")) {
+        return $from_email_string;
+    }
+
     $default_wordpress_from_string =
         "wordpress@" . wp_parse_url(home_url(), PHP_URL_HOST);
 
@@ -98,7 +129,6 @@ function askee_filter_default_wp_mail_from($from_email_string) {
         $from_email_string !== "" &&
         $from_email_string !== $default_wordpress_from_string
     ) {
-        // ktos juz ustawil custom From, zostawiamy
         return $from_email_string;
     }
 
@@ -107,6 +137,10 @@ function askee_filter_default_wp_mail_from($from_email_string) {
 
 add_filter("wp_mail_from_name", "askee_filter_default_wp_mail_from_name");
 function askee_filter_default_wp_mail_from_name($from_name_string) {
+    if (!defined("ASKEE_SMTP_FROM_NAME")) {
+        return $from_name_string;
+    }
+
     if (
         is_string($from_name_string) &&
         $from_name_string !== "" &&
@@ -130,7 +164,21 @@ add_action("rest_api_init", function () {
 });
 
 function askee_smtp_test_callback() {
-    $recipient_email_string = (string) ASKEE_SMTP_FROM_EMAIL;
+    if (!askee_smtp_is_configured()) {
+        return new WP_REST_Response(
+            [
+                "ok" => false,
+                "error" => "smtp_not_configured",
+                "message" => "Brak stalych ASKEE_SMTP_* w wp-config.php.",
+            ],
+            500,
+        );
+    }
+
+    $recipient_email_string = defined("ASKEE_SMTP_FROM_EMAIL")
+        ? (string) ASKEE_SMTP_FROM_EMAIL
+        : (string) ASKEE_SMTP_USERNAME;
+
     $sent_successfully_boolean = wp_mail(
         $recipient_email_string,
         "[Askee] SMTP smoke test",
@@ -148,7 +196,9 @@ function askee_smtp_test_callback() {
             "to" => $recipient_email_string,
             "host" => (string) ASKEE_SMTP_HOST,
             "port" => (int) ASKEE_SMTP_PORT,
-            "encryption" => (string) ASKEE_SMTP_ENCRYPTION,
+            "encryption" => defined("ASKEE_SMTP_ENCRYPTION")
+                ? (string) ASKEE_SMTP_ENCRYPTION
+                : "tls",
         ],
         $sent_successfully_boolean ? 200 : 500,
     );
