@@ -513,14 +513,37 @@ function askee_contact_form_callback(WP_REST_Request $request) {
         sprintf("Reply-To: %s <%s>", $sanitized_name_string, $sanitized_email_string),
     ];
 
-    $mail_sent_successfully = wp_mail(
-        $recipient_emails_array,
-        $email_subject_string,
-        $email_body_string,
-        $email_headers_array,
-    );
+    // wysylamy do kazdego odbiorcy osobno - jak ktorys jest niedostepny / odbity przez
+    // serwer SMTP, PHPMailer rzuca RecipientsFailedException dla CALEJ paczki nawet
+    // gdy reszta odbiorcow juz dostala maila. Single-recipient send izoluje awarie
+    // poszczegolnych skrzynek od user-facing rezultatu.
+    $any_recipient_delivered_boolean = false;
+    $failed_recipients_array_for_log = [];
 
-    if (!$mail_sent_successfully) {
+    foreach ($recipient_emails_array as $individual_recipient_email_string) {
+        $individual_send_result_boolean = wp_mail(
+            $individual_recipient_email_string,
+            $email_subject_string,
+            $email_body_string,
+            $email_headers_array,
+        );
+        if ($individual_send_result_boolean) {
+            $any_recipient_delivered_boolean = true;
+        } else {
+            $failed_recipients_array_for_log[] = $individual_recipient_email_string;
+        }
+    }
+
+    // logujemy do ops jesli ktorys odbiorca padl - widoczne w error_log nawet
+    // gdy user-facing odpowiedz mowi "ok"
+    if (!empty($failed_recipients_array_for_log) && function_exists("error_log")) {
+        error_log(
+            "[Askee contact] partial delivery - failed recipients: " .
+                implode(", ", $failed_recipients_array_for_log),
+        );
+    }
+
+    if (!$any_recipient_delivered_boolean) {
         return new WP_REST_Response(
             [
                 "ok" => false,
