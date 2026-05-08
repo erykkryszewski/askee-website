@@ -255,6 +255,34 @@ function askee_smtp_render_admin_test_page() {
             };
             add_action("wp_mail_failed", $error_listener);
 
+            // przechwytujemy pelny dialog SMTP zeby pokazac co dokladnie serwer mowi
+            $smtp_dialog_lines_array = [];
+            $debug_capture_listener = function ($phpmailer_obj) use (&$smtp_dialog_lines_array) {
+                if (!is_object($phpmailer_obj)) {
+                    return;
+                }
+                $phpmailer_obj->SMTPDebug = 3;
+                $phpmailer_obj->Debugoutput = function ($message_string, $level) use (
+                    &$smtp_dialog_lines_array,
+                ) {
+                    // maskujemy haslo w base64 zeby nie wyciekło na ekran admina
+                    $sanitized_line = trim((string) $message_string);
+                    if (defined("ASKEE_SMTP_PASSWORD")) {
+                        $password_b64_string = base64_encode((string) ASKEE_SMTP_PASSWORD);
+                        if ($password_b64_string !== "") {
+                            $sanitized_line = str_replace(
+                                $password_b64_string,
+                                "[***password-base64-redacted***]",
+                                $sanitized_line,
+                            );
+                        }
+                    }
+                    $smtp_dialog_lines_array[] = $sanitized_line;
+                };
+            };
+            // priority 99 zeby uruchomilo sie PO naszym defaultowym phpmailer_init
+            add_action("phpmailer_init", $debug_capture_listener, 99);
+
             $sent_successfully_boolean = wp_mail(
                 $recipient_email_input_string,
                 "[Askee] SMTP smoke test",
@@ -266,7 +294,13 @@ function askee_smtp_render_admin_test_page() {
                 ["Content-Type: text/plain; charset=UTF-8"],
             );
 
+            remove_action("phpmailer_init", $debug_capture_listener, 99);
             remove_action("wp_mail_failed", $error_listener);
+
+            // wrzucamy dialog do details zeby pokazac obok bledow
+            if (!empty($smtp_dialog_lines_array)) {
+                $result_details_array["__smtp_dialog__"] = $smtp_dialog_lines_array;
+            }
 
             if ($sent_successfully_boolean) {
                 $result_status_string = "success";
@@ -317,8 +351,19 @@ function askee_smtp_render_admin_test_page() {
                 <p><strong><?php echo esc_html($result_message_string); ?></strong></p>
                 <?php if (!empty($result_details_array)) : ?>
                     <ul style="margin:0 0 0 20px;list-style:disc;">
-                        <?php foreach ($result_details_array as $detail_message_string) : ?>
-                            <li><code><?php echo esc_html($detail_message_string); ?></code></li>
+                        <?php foreach ($result_details_array as $detail_key => $detail_value) : ?>
+                            <?php if ($detail_key === "__smtp_dialog__" && is_array($detail_value)) : ?>
+                                <li>
+                                    <strong>Pełny dialog SMTP:</strong>
+                                    <pre style="background:#23282d;color:#dfe6f0;padding:12px;border-radius:6px;max-height:380px;overflow:auto;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-all;"><?php echo esc_html(
+                                        implode("\n", $detail_value),
+                                    ); ?></pre>
+                                </li>
+                            <?php else : ?>
+                                <li><code><?php echo esc_html(
+                                    is_string($detail_value) ? $detail_value : wp_json_encode($detail_value),
+                                ); ?></code></li>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
