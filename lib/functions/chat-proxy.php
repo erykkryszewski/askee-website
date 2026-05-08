@@ -218,6 +218,11 @@ function askee_chat_get_turnstile_secret_key() {
 function askee_chat_verify_turnstile_token($turnstile_token_string) {
     $secret_key = askee_chat_get_turnstile_secret_key();
     if ($secret_key === "") {
+        if (function_exists("error_log")) {
+            error_log(
+                "[Askee Turnstile] ASKEE_TURNSTILE_SECRET_KEY not defined in wp-config.php — chat will block ALL requests with turnstile_not_configured.",
+            );
+        }
         return [
             "is_valid" => false,
             "error_code" => "turnstile_not_configured",
@@ -269,9 +274,28 @@ function askee_chat_verify_turnstile_token($turnstile_token_string) {
 
     $verification_data = json_decode($verification_body_raw, true);
     if (!is_array($verification_data) || empty($verification_data["success"])) {
+        // logujemy szczegoly z odpowiedzi CF (error-codes typu invalid-input-response,
+        // timeout-or-duplicate, internal-error itd) zeby latwo diagnozowac na produkcji
+        $cloudflare_error_codes = [];
+        if (is_array($verification_data) && !empty($verification_data["error-codes"])) {
+            $cloudflare_error_codes = (array) $verification_data["error-codes"];
+        }
+
+        if (function_exists("error_log")) {
+            error_log(
+                "[Askee Turnstile] verify failed: " .
+                    wp_json_encode([
+                        "ip" => $request_ip_address,
+                        "cf_error_codes" => $cloudflare_error_codes,
+                        "cf_response_body_excerpt" => substr($verification_body_raw, 0, 400),
+                    ]),
+            );
+        }
+
         return [
             "is_valid" => false,
             "error_code" => "turnstile_failed",
+            "cf_error_codes" => $cloudflare_error_codes,
         ];
     }
 
@@ -286,9 +310,20 @@ function askee_chat_verify_turnstile_token($turnstile_token_string) {
         $response_host !== "" &&
         strtolower($expected_host) !== $response_host
     ) {
+        if (function_exists("error_log")) {
+            error_log(
+                sprintf(
+                    "[Askee Turnstile] hostname mismatch: expected=%s response=%s",
+                    $expected_host,
+                    $response_host,
+                ),
+            );
+        }
         return [
             "is_valid" => false,
             "error_code" => "turnstile_hostname_mismatch",
+            "expected_host" => $expected_host,
+            "response_host" => $response_host,
         ];
     }
 

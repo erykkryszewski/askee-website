@@ -289,7 +289,7 @@ assert_equal(
 echo "\nRecipient email list:\n";
 $recipients_array = askee_contact_get_recipient_emails_array();
 assert_test(is_array($recipients_array), "returns array");
-assert_test(count($recipients_array) === 3, "deduplicates duplicate kontakt@askee.pl");
+assert_test(count($recipients_array) === 4, "has 4 recipients");
 assert_test(
     in_array("kontakt@askee.pl", $recipients_array, true),
     "includes kontakt@askee.pl",
@@ -301,6 +301,10 @@ assert_test(
 assert_test(
     in_array("kontakt@askee.app", $recipients_array, true),
     "includes kontakt@askee.app",
+);
+assert_test(
+    in_array("kontakt@ercoding.pl", $recipients_array, true),
+    "includes kontakt@ercoding.pl",
 );
 assert_test(
     count(array_unique($recipients_array)) === count($recipients_array),

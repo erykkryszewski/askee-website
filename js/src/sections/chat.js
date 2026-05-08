@@ -1581,9 +1581,19 @@ function initSingleChatBox(boxElement) {
         try {
             turnstileTokenString = await requestTurnstileTokenForChatMessage();
         } catch (error) {
+            // jawny log do konsoli zeby ux user mogl nam pokazac DevTools przy zglaszaniu problemu
+            const turnstileErrorMessageString =
+                error && error.message ? error.message : "unknown turnstile error";
+            if (window.console && typeof window.console.warn === "function") {
+                window.console.warn(
+                    "[Askee chat] Turnstile token request failed:",
+                    turnstileErrorMessageString,
+                );
+            }
             return {
                 ok: false,
                 status: 403,
+                error_code: "turnstile_client_" + turnstileErrorMessageString.toLowerCase().replace(/\s+/g, "_"),
                 raw: "Przepraszamy, nie udało się zweryfikować zabezpieczenia. Spróbuj ponownie.",
                 json: [
                     {
