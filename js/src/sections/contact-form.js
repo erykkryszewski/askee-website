@@ -349,6 +349,17 @@ function initSingleAskeeContactForm(formElement) {
                 setFieldErrorMessage(fieldNameString, clientSideErrorsObject[fieldNameString]);
             }
             setFormStatusMessage("error", "Sprawdź zaznaczone pola i spróbuj ponownie.");
+
+            // skup focus na pierwszym polu z bledem - szybsze poprawienie
+            const firstErrorFieldName = clientSideErrorKeysArray[0];
+            const firstErrorFieldElement = fieldElementsByNameMap[firstErrorFieldName];
+            if (firstErrorFieldElement && typeof firstErrorFieldElement.focus === "function") {
+                try {
+                    firstErrorFieldElement.focus({ preventScroll: false });
+                } catch (focusError) {
+                    firstErrorFieldElement.focus();
+                }
+            }
             return;
         }
 
@@ -389,6 +400,17 @@ function initSingleAskeeContactForm(formElement) {
                     setFieldErrorMessage(fieldNameString, fieldsObject[fieldNameString]);
                 }
                 setFormStatusMessage("error", "Sprawdź zaznaczone pola i spróbuj ponownie.");
+
+                if (serverFieldKeysArray.length > 0) {
+                    const firstServerErrorFieldElement =
+                        fieldElementsByNameMap[serverFieldKeysArray[0]];
+                    if (
+                        firstServerErrorFieldElement &&
+                        typeof firstServerErrorFieldElement.focus === "function"
+                    ) {
+                        firstServerErrorFieldElement.focus();
+                    }
+                }
                 return;
             }
 

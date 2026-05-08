@@ -224,6 +224,65 @@ function askee_contact_check_and_update_rate_limit() {
     ];
 }
 
+// IP-based rate limit przez transient. Dziala bez sesji,
+// czyli odporny na przegladarki bez cookies / cache CF strippujacy Set-Cookie.
+function askee_contact_check_and_update_ip_rate_limit() {
+    $request_ip_address = askee_contact_get_request_ip_address();
+    if ($request_ip_address === "") {
+        // brak IP - zwracamy nieblokowane, sesyjny rate limit przejmie kontrole
+        return [
+            "is_blocked" => false,
+            "minutes_left" => 0,
+        ];
+    }
+
+    $ip_hash_string = hash("sha256", $request_ip_address . "|" . wp_salt("auth"));
+    $transient_key_string = "askee_contact_iprl_" . substr($ip_hash_string, 0, 32);
+
+    $current_timestamp = time();
+    $window_seconds = ASKEE_CONTACT_RATE_LIMIT_WINDOW_SECONDS;
+    $max_messages = ASKEE_CONTACT_RATE_LIMIT_MAX_MESSAGES;
+
+    $stored_state_array = get_transient($transient_key_string);
+    if (!is_array($stored_state_array)) {
+        $stored_state_array = [
+            "window_started_at_timestamp" => $current_timestamp,
+            "messages_sent_in_window_count" => 0,
+        ];
+    }
+
+    $window_started_at_timestamp = (int) ($stored_state_array["window_started_at_timestamp"] ?? 0);
+    $window_age_seconds = $current_timestamp - $window_started_at_timestamp;
+    if ($window_started_at_timestamp <= 0 || $window_age_seconds >= $window_seconds) {
+        $stored_state_array = [
+            "window_started_at_timestamp" => $current_timestamp,
+            "messages_sent_in_window_count" => 0,
+        ];
+        $window_started_at_timestamp = $current_timestamp;
+    }
+
+    $current_count_number =
+        (int) ($stored_state_array["messages_sent_in_window_count"] ?? 0) + 1;
+    $stored_state_array["messages_sent_in_window_count"] = $current_count_number;
+
+    set_transient($transient_key_string, $stored_state_array, $window_seconds);
+
+    if ($current_count_number > $max_messages) {
+        $window_ends_at_timestamp = $window_started_at_timestamp + $window_seconds;
+        $minutes_left = (int) ceil(($window_ends_at_timestamp - $current_timestamp) / 60);
+
+        return [
+            "is_blocked" => true,
+            "minutes_left" => max(1, $minutes_left),
+        ];
+    }
+
+    return [
+        "is_blocked" => false,
+        "minutes_left" => 0,
+    ];
+}
+
 // sciaga z requestu wartosc pola (z get_param i z json_params) jako string
 function askee_contact_get_request_field_string(WP_REST_Request $request, $field_name_string) {
     $raw_field_value = $request->get_param($field_name_string);
@@ -364,15 +423,10 @@ function askee_contact_form_callback(WP_REST_Request $request) {
         );
     }
 
-    // sesja musi byc aktywna zeby rate limit dzialal
-    askee_contact_get_or_start_session_id();
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        return new WP_REST_Response(["ok" => false, "error" => "session_unavailable"], 503);
-    }
-
-    $rate_limit_result = askee_contact_check_and_update_rate_limit();
-    if (!empty($rate_limit_result["is_blocked"])) {
-        $minutes_left = max(1, (int) ($rate_limit_result["minutes_left"] ?? 1));
+    // dwie warstwy rate limitu: IP (transient) zawsze + sesja jako bonus jak dziala
+    $ip_rate_limit_result = askee_contact_check_and_update_ip_rate_limit();
+    if (!empty($ip_rate_limit_result["is_blocked"])) {
+        $minutes_left = max(1, (int) ($ip_rate_limit_result["minutes_left"] ?? 1));
         return new WP_REST_Response(
             [
                 "ok" => false,
@@ -385,6 +439,26 @@ function askee_contact_form_callback(WP_REST_Request $request) {
             ],
             429,
         );
+    }
+
+    askee_contact_get_or_start_session_id();
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        $session_rate_limit_result = askee_contact_check_and_update_rate_limit();
+        if (!empty($session_rate_limit_result["is_blocked"])) {
+            $minutes_left = max(1, (int) ($session_rate_limit_result["minutes_left"] ?? 1));
+            return new WP_REST_Response(
+                [
+                    "ok" => false,
+                    "error" => "rate_limited",
+                    "message" => sprintf(
+                        "Przekroczono limit wiadomości. Spróbuj ponownie za %d min.",
+                        $minutes_left,
+                    ),
+                    "minutes_left" => $minutes_left,
+                ],
+                429,
+            );
+        }
     }
 
     $recipient_emails_array = askee_contact_get_recipient_emails_array();
@@ -403,20 +477,17 @@ function askee_contact_form_callback(WP_REST_Request $request) {
         : "";
     $submission_datetime_string = wp_date("Y-m-d H:i:s");
 
-    // domyslny from = noreply@<host>; podmieniamy na konfiguracje jesli jest
-    $from_email_string = "noreply@" . $site_host_string;
-    if (defined("ASKEE_CONTACT_FROM_EMAIL")) {
-        $configured_from_email = sanitize_email((string) ASKEE_CONTACT_FROM_EMAIL);
-        if ($configured_from_email !== "") {
-            $from_email_string = $configured_from_email;
-        }
-    }
-    $from_name_string =
-        $site_name_string !== "" ? $site_name_string : "Askee — formularz kontaktowy";
+    // From ustawiamy spojnie ze stalymi SMTP zeby SPF/DKIM dzialal i wiadomosc
+    // zostala zaakceptowana przez serwer SMTP (musi sie zgadzac z autoryzacja)
+    $from_email_string = defined("ASKEE_SMTP_FROM_EMAIL")
+        ? (string) ASKEE_SMTP_FROM_EMAIL
+        : "noreply@" . $site_host_string;
+    $from_name_string = defined("ASKEE_SMTP_FROM_NAME")
+        ? (string) ASKEE_SMTP_FROM_NAME
+        : ($site_name_string !== "" ? $site_name_string : "Askee");
 
     $email_subject_string = sprintf(
-        "[%s] Nowa wiadomość od %s",
-        $from_name_string,
+        "[Askee — formularz kontaktowy] Nowa wiadomość od %s",
         $sanitized_name_string,
     );
 
