@@ -232,6 +232,7 @@
         @extend .button;
         @extend .button--big;
         min-width: 160px;
+        padding: 10px 20px;
 
         &--busy {
             opacity: 0.7;
