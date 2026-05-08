@@ -297,11 +297,6 @@ function askee_smtp_render_admin_test_page() {
             remove_action("phpmailer_init", $debug_capture_listener, 99);
             remove_action("wp_mail_failed", $error_listener);
 
-            // wrzucamy dialog do details zeby pokazac obok bledow
-            if (!empty($smtp_dialog_lines_array)) {
-                $result_details_array["__smtp_dialog__"] = $smtp_dialog_lines_array;
-            }
-
             if ($sent_successfully_boolean) {
                 $result_status_string = "success";
                 $result_message_string = sprintf(
@@ -312,9 +307,16 @@ function askee_smtp_render_admin_test_page() {
                 $result_status_string = "error";
                 $result_message_string =
                     "Wysłanie testowego maila NIE powiodło się.";
-                if (!empty($captured_errors_array)) {
-                    $result_details_array = $captured_errors_array;
+                // bledy najpierw (numeryczne klucze), zeby na liscie byly nad dialogiem
+                foreach ($captured_errors_array as $captured_error_string) {
+                    $result_details_array[] = $captured_error_string;
                 }
+            }
+
+            // dialog SMTP zawsze - tez przy success, zeby mozna bylo zobaczyc co poszlo
+            // string key zeby nie kolidowal z numerycznymi bledami
+            if (!empty($smtp_dialog_lines_array)) {
+                $result_details_array["__smtp_dialog__"] = $smtp_dialog_lines_array;
             }
         }
     }
