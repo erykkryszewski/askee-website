@@ -24,6 +24,9 @@ if (!defined("ABSPATH")) {
  * Opcjonalne:
  *
  *     define("ASKEE_SMTP_DEBUG", true); // verbose log do error_log (tylko z WP_DEBUG)
+ *     define("ASKEE_SMTP_HELO", "web6.47.pl"); // nazwa hosta w EHLO (gdy gethostname()
+ *                                              // zwraca cos co serwer SMTP odrzuca jako
+ *                                              // "Bad HELO - Host impersonating")
  */
 
 // sprawdza czy mamy minimum potrzebne do podpiecia SMTP. Brak jednej z tych
@@ -76,6 +79,21 @@ function askee_configure_phpmailer_smtp($phpmailer) {
     $phpmailer->SMTPAuth = true;
     $phpmailer->Username = (string) ASKEE_SMTP_USERNAME;
     $phpmailer->Password = (string) ASKEE_SMTP_PASSWORD;
+
+    // HELO/EHLO - bez tego PHPMailer nadaje nazwe domeny WP (askee.app), a Exim
+    // na aftermarket.hosting odrzuca to jako "550 Bad HELO - Host impersonating
+    // domain name" (A-rekord askee.app nie pasuje do IP z ktorego sie laczymy).
+    // Override przez stala ASKEE_SMTP_HELO (najwyzszy priorytet), inaczej
+    // gethostname() = realna nazwa serwera (rDNS matchuje), na koncu fallback.
+    if (defined("ASKEE_SMTP_HELO") && (string) ASKEE_SMTP_HELO !== "") {
+        $phpmailer->Hostname = (string) ASKEE_SMTP_HELO;
+    } else {
+        $server_hostname_string = function_exists("gethostname") ? gethostname() : "";
+        if (!is_string($server_hostname_string) || $server_hostname_string === "") {
+            $server_hostname_string = "localhost.localdomain";
+        }
+        $phpmailer->Hostname = $server_hostname_string;
+    }
 
     $encryption_value_string = defined("ASKEE_SMTP_ENCRYPTION")
         ? strtolower((string) ASKEE_SMTP_ENCRYPTION)
