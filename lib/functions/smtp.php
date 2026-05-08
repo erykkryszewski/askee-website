@@ -204,6 +204,198 @@ function askee_smtp_test_callback() {
     );
 }
 
+// admin page Tools -> Askee SMTP test - przycisk wysylajacy testowego maila
+// uzywamy nonce z formularza, dziala bez wpisywania REST URL recznie
+add_action("admin_menu", "askee_smtp_register_admin_test_page");
+function askee_smtp_register_admin_test_page() {
+    add_management_page(
+        "Askee SMTP test",
+        "Askee SMTP test",
+        "manage_options",
+        "askee-smtp-test",
+        "askee_smtp_render_admin_test_page",
+    );
+}
+
+function askee_smtp_render_admin_test_page() {
+    if (!current_user_can("manage_options")) {
+        wp_die(__("You do not have sufficient permissions to access this page."));
+    }
+
+    $result_message_string = "";
+    $result_status_string = "";
+    $result_details_array = [];
+
+    // obsluga submitu testu
+    if (
+        isset($_POST["askee_smtp_run_test"]) &&
+        check_admin_referer("askee_smtp_test_action", "askee_smtp_test_nonce")
+    ) {
+        if (!askee_smtp_is_configured()) {
+            $result_status_string = "error";
+            $result_message_string =
+                "Brak wymaganych stałych ASKEE_SMTP_* w wp-config.php (HOST/PORT/USERNAME/PASSWORD).";
+        } else {
+            $recipient_email_input_string = isset($_POST["askee_smtp_test_recipient"])
+                ? sanitize_email((string) wp_unslash($_POST["askee_smtp_test_recipient"]))
+                : "";
+
+            if ($recipient_email_input_string === "") {
+                $recipient_email_input_string = defined("ASKEE_SMTP_FROM_EMAIL")
+                    ? (string) ASKEE_SMTP_FROM_EMAIL
+                    : (string) ASKEE_SMTP_USERNAME;
+            }
+
+            // przechwytujemy bledy zeby je pokazac na stronie
+            $captured_errors_array = [];
+            $error_listener = function ($wp_error_object) use (&$captured_errors_array) {
+                if (is_object($wp_error_object) && method_exists($wp_error_object, "get_error_message")) {
+                    $captured_errors_array[] = $wp_error_object->get_error_message();
+                }
+            };
+            add_action("wp_mail_failed", $error_listener);
+
+            $sent_successfully_boolean = wp_mail(
+                $recipient_email_input_string,
+                "[Askee] SMTP smoke test",
+                sprintf(
+                    "Test SMTP wykonany %s na %s.\nJesli widzisz tego maila, wp_mail+SMTP dziala.",
+                    wp_date("Y-m-d H:i:s"),
+                    home_url(),
+                ),
+                ["Content-Type: text/plain; charset=UTF-8"],
+            );
+
+            remove_action("wp_mail_failed", $error_listener);
+
+            if ($sent_successfully_boolean) {
+                $result_status_string = "success";
+                $result_message_string = sprintf(
+                    "Mail testowy został wysłany do: %s",
+                    $recipient_email_input_string,
+                );
+            } else {
+                $result_status_string = "error";
+                $result_message_string =
+                    "Wysłanie testowego maila NIE powiodło się.";
+                if (!empty($captured_errors_array)) {
+                    $result_details_array = $captured_errors_array;
+                }
+            }
+        }
+    }
+
+    $is_configured_boolean = askee_smtp_is_configured();
+    $current_host_string = $is_configured_boolean ? (string) ASKEE_SMTP_HOST : "(brak)";
+    $current_port_int = $is_configured_boolean ? (int) ASKEE_SMTP_PORT : 0;
+    $current_username_string = $is_configured_boolean
+        ? (string) ASKEE_SMTP_USERNAME
+        : "(brak)";
+    $current_encryption_string = defined("ASKEE_SMTP_ENCRYPTION")
+        ? (string) ASKEE_SMTP_ENCRYPTION
+        : "tls";
+    $current_from_email_string = defined("ASKEE_SMTP_FROM_EMAIL")
+        ? (string) ASKEE_SMTP_FROM_EMAIL
+        : "(brak — fallback do wordpress@host)";
+    $current_from_name_string = defined("ASKEE_SMTP_FROM_NAME")
+        ? (string) ASKEE_SMTP_FROM_NAME
+        : "(brak — fallback do WordPress)";
+
+    $default_recipient_string = $is_configured_boolean
+        ? (defined("ASKEE_SMTP_FROM_EMAIL")
+            ? (string) ASKEE_SMTP_FROM_EMAIL
+            : (string) ASKEE_SMTP_USERNAME)
+        : "";
+    ?>
+    <div class="wrap">
+        <h1>Askee — test SMTP</h1>
+
+        <?php if ($result_message_string !== "") : ?>
+            <div class="notice notice-<?php echo $result_status_string === "success"
+                ? "success"
+                : "error"; ?> is-dismissible">
+                <p><strong><?php echo esc_html($result_message_string); ?></strong></p>
+                <?php if (!empty($result_details_array)) : ?>
+                    <ul style="margin:0 0 0 20px;list-style:disc;">
+                        <?php foreach ($result_details_array as $detail_message_string) : ?>
+                            <li><code><?php echo esc_html($detail_message_string); ?></code></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <h2>Aktualna konfiguracja</h2>
+        <table class="widefat striped" style="max-width:720px;">
+            <tbody>
+                <tr><th scope="row">Host</th><td><code><?php echo esc_html(
+                    $current_host_string,
+                ); ?></code></td></tr>
+                <tr><th scope="row">Port</th><td><code><?php echo (int) $current_port_int; ?></code></td></tr>
+                <tr><th scope="row">Username</th><td><code><?php echo esc_html(
+                    $current_username_string,
+                ); ?></code></td></tr>
+                <tr><th scope="row">Encryption</th><td><code><?php echo esc_html(
+                    $current_encryption_string,
+                ); ?></code></td></tr>
+                <tr><th scope="row">From email</th><td><code><?php echo esc_html(
+                    $current_from_email_string,
+                ); ?></code></td></tr>
+                <tr><th scope="row">From name</th><td><code><?php echo esc_html(
+                    $current_from_name_string,
+                ); ?></code></td></tr>
+                <tr><th scope="row">Configured</th><td><strong style="color:<?php echo $is_configured_boolean
+                    ? "#0a7d28"
+                    : "#a00"; ?>">
+                    <?php echo $is_configured_boolean ? "TAK" : "NIE — uzupełnij wp-config.php"; ?>
+                </strong></td></tr>
+            </tbody>
+        </table>
+
+        <h2 style="margin-top:30px;">Wyślij testowego maila</h2>
+        <form method="post" action="">
+            <?php wp_nonce_field("askee_smtp_test_action", "askee_smtp_test_nonce"); ?>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">
+                        <label for="askee_smtp_test_recipient">Adres odbiorcy</label>
+                    </th>
+                    <td>
+                        <input
+                            type="email"
+                            id="askee_smtp_test_recipient"
+                            name="askee_smtp_test_recipient"
+                            class="regular-text"
+                            placeholder="<?php echo esc_attr($default_recipient_string); ?>"
+                            value="<?php echo esc_attr($default_recipient_string); ?>"
+                        />
+                        <p class="description">Mail leci tylko na ten adres (nie na listę kontaktową).</p>
+                    </td>
+                </tr>
+            </table>
+            <p class="submit">
+                <button
+                    type="submit"
+                    name="askee_smtp_run_test"
+                    value="1"
+                    class="button button-primary"
+                    <?php disabled(!$is_configured_boolean); ?>
+                >Wyślij test</button>
+            </p>
+        </form>
+
+        <h2 style="margin-top:30px;">Uwagi</h2>
+        <ul style="list-style:disc;margin-left:20px;">
+            <li>Jeśli test się uda, ale maile z formularza kontaktowego nie docierają — sprawdź SPAM
+                i rekord SPF na domenie <code>askee.pl</code> (musi autoryzować
+                <code><?php echo esc_html($current_host_string); ?></code>).</li>
+            <li>Logi SMTP (gdy <code>WP_DEBUG=true</code> i <code>ASKEE_SMTP_DEBUG=true</code>) lądują
+                w <code>wp-content/debug.log</code> albo <code>error_log</code> serwera.</li>
+        </ul>
+    </div>
+    <?php
+}
+
 // rzuca bledem do logu kiedy wp_mail zawiedzie - zeby latwo diagnozowac na produkcji
 add_action("wp_mail_failed", "askee_log_wp_mail_failed");
 function askee_log_wp_mail_failed($wp_error_object) {
