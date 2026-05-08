@@ -91,6 +91,9 @@
             line-height: 1.5;
             color: $text-color;
             flex: 1;
+            max-width: 680px;
+            position: relative;
+            bottom: -2px;
 
             a {
                 color: $theme-color;
@@ -145,7 +148,6 @@
 
     input#{&}__checkbox {
         appearance: none;
-        -webkit-appearance: none;
         flex-shrink: 0;
         width: 18px;
         height: 18px;
