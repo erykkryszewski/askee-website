@@ -13,9 +13,7 @@ define("ASKEE_CONTACT_MIN_SUBMIT_SECONDS", 2);
 // gdyby ktos wkleil duplikat.
 function askee_contact_get_recipient_emails_array() {
     $recipient_emails_array = [
-        "kontakt@askee.pl",
         "Piotr.Pszczolkowski@askee.app",
-        "kontakt@askee.app",
         "kontakt@ercoding.pl",
     ];
 
