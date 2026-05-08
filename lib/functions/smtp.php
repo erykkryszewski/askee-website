@@ -23,7 +23,7 @@ if (!defined("ABSPATH")) {
  *
  * Opcjonalne:
  *
- *     define("ASKEE_SMTP_DEBUG", true); // verbose log do error_log (tylko z WP_DEBUG)
+ *     define("ASKEE_SMTP_DEBUG", true); // verbose log do error_log (niezalezny od WP_DEBUG)
  *     define("ASKEE_SMTP_HELO", "web6.47.pl"); // nazwa hosta w EHLO (gdy gethostname()
  *                                              // zwraca cos co serwer SMTP odrzuca jako
  *                                              // "Bad HELO - Host impersonating")
@@ -125,8 +125,10 @@ function askee_configure_phpmailer_smtp($phpmailer) {
             : "Askee";
     }
 
-    // wlaczamy verbose debug tylko jak WP_DEBUG aktywne
-    if (defined("WP_DEBUG") && WP_DEBUG && defined("ASKEE_SMTP_DEBUG") && ASKEE_SMTP_DEBUG) {
+    // verbose debug do error_log gdy ASKEE_SMTP_DEBUG=true
+    // niezalezny od WP_DEBUG zeby na produkcji mozna bylo punktowo wlaczyc
+    // wire dialog SMTP bez wlaczania calego WP debug + display_errors
+    if (defined("ASKEE_SMTP_DEBUG") && ASKEE_SMTP_DEBUG) {
         $phpmailer->SMTPDebug = 2;
         $phpmailer->Debugoutput = "error_log";
     }
@@ -476,6 +478,14 @@ function askee_log_wp_mail_failed($wp_error_object) {
 
     $error_data = $wp_error_object->get_error_data();
     if (!empty($error_data)) {
+        // jawnie logujemy odbiorcow zeby od razu widzic ktory RCPT TO sie wysypal
+        if (isset($error_data["to"])) {
+            $recipients_value = $error_data["to"];
+            $recipients_string_for_log = is_array($recipients_value)
+                ? implode(", ", $recipients_value)
+                : (string) $recipients_value;
+            error_log("[Askee SMTP] failed recipients: " . $recipients_string_for_log);
+        }
         error_log("[Askee SMTP] error data: " . wp_json_encode($error_data));
     }
 }
