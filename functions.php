@@ -16,6 +16,7 @@ require_once PAGE_THEME_DIR . "lib/functions/image-optimization.php";
 require_once PAGE_THEME_DIR . "lib/functions/smtp.php";
 require_once PAGE_THEME_DIR . "lib/functions/chat-proxy.php";
 require_once PAGE_THEME_DIR . "lib/functions/contact-form.php";
+require_once PAGE_THEME_DIR . "lib/functions/ticket-system.php";
 
 // require_once(PAGE_THEME_DIR . 'lib/functions/required-plugins.php');
 

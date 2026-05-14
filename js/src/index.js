@@ -6,6 +6,7 @@ import { initAskeeParallax } from "./global/parallax";
 import { initAskeeHeader } from "./sections/header";
 import { initAskeeChatSection } from "./sections/chat";
 import { initAskeeContactFormSection } from "./sections/contact-form";
+import { initAskeeTicketFormSection } from "./sections/ticket-form";
 
 import { initAskeeHomePage } from "./pages/home";
 import { initAskeeAboutUsPage } from "./pages/about-us";
@@ -118,6 +119,7 @@ initAskeeParallax();
 registerAskeeBlock(initAskeeHomePage);
 registerAskeeBlock(initAskeeChatSection);
 registerAskeeBlock(initAskeeContactFormSection);
+registerAskeeBlock(initAskeeTicketFormSection);
 
 registerAskeeBlock(initAskeeAboutUsPage);
 registerAskeeBlock(initAskeeOurPhilosophyPage);

@@ -1,0 +1,326 @@
+.askee-ticket-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+
+    &__intro {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 0 0 18px;
+        border-bottom: 1px solid $light-gray;
+
+        // ludzik z lewej, identyczny jak w askee-contact-form
+        &::before {
+            content: "";
+            display: block;
+            background: url("./images/askee-man-small.svg") center/contain no-repeat;
+            width: 21px;
+            height: 29px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        @media (width <= 767px) {
+            gap: 12px;
+            padding: 0 0 12px;
+        }
+    }
+
+    &__intro-text {
+        margin: 0;
+        font-size: 15px;
+        line-height: 28px;
+        color: $text-color;
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 18px;
+
+        @media (width <= 767px) {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+    }
+
+    &__field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        position: relative;
+
+        &--full {
+            grid-column: 1 / -1;
+        }
+
+        &--checkbox {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        &--honeypot {
+            position: absolute !important;
+            left: -10000px !important;
+            top: auto !important;
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    }
+
+    &__label {
+        font-size: 12px;
+        line-height: 1.2;
+        font-weight: 500;
+        color: $text-color;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+
+        &--checkbox {
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+            font-size: 12px;
+            line-height: 1.5;
+            color: $text-color;
+            flex: 1;
+            max-width: 680px;
+            position: relative;
+            bottom: -2px;
+
+            a {
+                color: $theme-color;
+                text-decoration: underline;
+
+                &:hover {
+                    text-decoration: none;
+                }
+            }
+        }
+    }
+
+    // input/textarea/select z prefixem zeby podbic specyficznosc nad
+    // globalnym all:unset z scss/components/_inputs.scss
+    input#{&}__input,
+    textarea#{&}__textarea,
+    select#{&}__select {
+        all: unset;
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        padding: 12px 14px;
+        font-family: $font-primary;
+        font-size: 15px;
+        line-height: 1.4;
+        color: $input-color !important;
+        background: $white;
+        border: 1px solid $border-color;
+        border-radius: 12px;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+
+        &::placeholder {
+            color: $gray !important;
+            font-size: 15px;
+        }
+
+        &:hover {
+            border-color: $theme-color;
+        }
+
+        &:focus {
+            border-color: $theme-color;
+            box-shadow: 0 0 0 3px $button-focus-ring;
+        }
+    }
+
+    // strzalka dla custom selecta
+    select#{&}__select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23494a4c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 38px;
+        cursor: pointer;
+    }
+
+    textarea#{&}__textarea {
+        min-height: 140px;
+        resize: vertical;
+    }
+
+    // file input — custom-friendly UI
+    input#{&}__file-input {
+        display: block;
+        width: 100%;
+        padding: 10px 0 0;
+        font-family: $font-primary;
+        font-size: 13px;
+        color: $text-color;
+
+        &::file-selector-button {
+            font-family: $font-primary;
+            font-size: 13px;
+            font-weight: 500;
+            color: $white;
+            background: $theme-color;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+            margin-right: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+
+            &:hover {
+                background: darken($theme-color, 6%);
+            }
+        }
+    }
+
+    &__file-list {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+
+        &-item {
+            font-size: 12px;
+            line-height: 18px;
+            color: $text-color;
+            padding: 4px 0;
+            border-bottom: 1px dashed $light-gray;
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+    }
+
+    input#{&}__checkbox {
+        appearance: none;
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        border: 1px solid $border-color;
+        border-radius: 4px;
+        background: $white;
+        cursor: pointer;
+        position: relative;
+        margin: 2px 0 0;
+        padding: 0;
+        transition:
+            background-color 0.15s ease,
+            border-color 0.15s ease;
+
+        &:checked {
+            background: $theme-color;
+            border-color: $theme-color;
+
+            &::after {
+                content: "";
+                position: absolute;
+                left: 5px;
+                top: 1px;
+                width: 5px;
+                height: 10px;
+                border: solid $white;
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+            }
+        }
+
+        &:focus-visible {
+            box-shadow: 0 0 0 3px $button-focus-ring;
+        }
+    }
+
+    &__field--has-error {
+        .askee-ticket-form__input,
+        .askee-ticket-form__textarea,
+        .askee-ticket-form__select {
+            border-color: $error-color;
+
+            &:focus {
+                border-color: $error-color;
+                box-shadow: 0 0 0 3px rgba($error-color, 0.18);
+            }
+        }
+
+        .askee-ticket-form__checkbox {
+            border-color: $error-color;
+        }
+
+        .askee-ticket-form__error {
+            display: block;
+        }
+    }
+
+    &__error {
+        display: none;
+        font-size: 12px;
+        line-height: 1.4;
+        color: $error-color;
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 4px 0 0;
+
+        @media (width <= 767px) {
+            justify-content: stretch;
+
+            .askee-ticket-form__submit {
+                width: 100%;
+            }
+        }
+    }
+
+    &__submit {
+        @extend .button;
+        @extend .button--big;
+        min-width: 180px;
+        padding: 10px 20px;
+
+        &--busy {
+            opacity: 0.7;
+            cursor: progress;
+            pointer-events: none;
+        }
+    }
+
+    &__status {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+        min-height: 20px;
+
+        &:empty {
+            display: none;
+        }
+
+        &--info {
+            color: $text-color;
+        }
+
+        &--success {
+            color: $theme-color;
+            font-weight: 500;
+        }
+
+        &--error {
+            color: $error-color;
+            font-weight: 500;
+        }
+    }
+}
