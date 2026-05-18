@@ -1,4 +1,4 @@
-// inicjalizuje wszystkie formularze ticketowe na stronie i podpina ich logike
+
 export function initAskeeTicketFormSection(rootElement) {
     const safeRootElement = rootElement instanceof Element ? rootElement : document;
 
@@ -33,7 +33,6 @@ export function initAskeeTicketFormSection(rootElement) {
     };
 }
 
-// pojedyncza instancja formularza ticketowego
 function initSingleAskeeTicketForm(formElement) {
     if (!(formElement instanceof HTMLElement)) {
         return null;
@@ -79,7 +78,6 @@ function initSingleAskeeTicketForm(formElement) {
     let currentNonceString =
         typeof ticketConfigObject.nonce === "string" ? ticketConfigObject.nonce : "";
 
-    // wstawiamy timestamp zaladowania formularza (bot zwykle wyslie szybciej niz minimum)
     const formLoadedAtField = formElement.querySelector('[name="form_loaded_at_timestamp"]');
     if (formLoadedAtField) {
         formLoadedAtField.value = String(Math.floor(Date.now() / 1000));
@@ -191,14 +189,11 @@ function initSingleAskeeTicketForm(formElement) {
         submitButtonElement.classList.remove("askee-ticket-form__submit--busy");
     }
 
-    // usuwa pojedynczy plik z wyboru — przebudowujemy FileList przez DataTransfer
-    // (FileList jest read-only, nie da sie z niej usunac elementu inaczej)
     function removeSelectedFileAtIndex(indexToRemoveNumber) {
         if (!fileInputElement || !fileInputElement.files) {
             return;
         }
 
-        // starsze przegladarki bez DataTransfer — fallback: czyscimy caly wybor
         if (typeof DataTransfer === "undefined") {
             fileInputElement.value = "";
             refreshFileListDisplay();
@@ -220,7 +215,6 @@ function initSingleAskeeTicketForm(formElement) {
         setFieldErrorMessage("attachments", "");
     }
 
-    // odswiezenie listy plikow w UI po wyborze plikow (z przyciskiem usuwania)
     function refreshFileListDisplay() {
         if (!fileListElement) {
             return;
@@ -270,7 +264,6 @@ function initSingleAskeeTicketForm(formElement) {
         refreshFileListDisplay();
     }
 
-    // odswiezenie nonce z serwera (dla cachowanych stron, gdzie nonce moze byc nieaktualny)
     async function refreshNonceFromServerOnce() {
         if (!nonceRefreshUrlString) {
             return false;
@@ -321,7 +314,6 @@ function initSingleAskeeTicketForm(formElement) {
         return nonceRefreshPromiseInstance;
     }
 
-    // wlasciwa wysylka POST multipart (zalaczniki) z auto-retry przy nieaktualnym nonce
     async function postTicketFormPayload(formDataObject, optionsObject) {
         const safeOptionsObject =
             optionsObject && typeof optionsObject === "object" ? optionsObject : {};
@@ -334,7 +326,6 @@ function initSingleAskeeTicketForm(formElement) {
 
         abortControllerInstance = new AbortController();
 
-        // brak Content-Type - przegladarka sama ustawi multipart/form-data + boundary
         const requestHeadersObject = {};
         if (currentNonceString) {
             requestHeadersObject["X-WP-Nonce"] = currentNonceString;
@@ -379,7 +370,6 @@ function initSingleAskeeTicketForm(formElement) {
         };
     }
 
-    // pobiera wartosci pol z formularza i waliduje klientowo
     function validateClientSide() {
         const formDataObject = new FormData(formElement);
 
@@ -411,12 +401,10 @@ function initSingleAskeeTicketForm(formElement) {
             errorsObject.email = "Podaj poprawny adres e-mail.";
         }
 
-        // telefon opcjonalny — bledem tylko jak wpisane ale niepoprawne
         if (valuesObject.phone !== "" && valuesObject.phone.replace(/[^0-9]/g, "").length < 7) {
             errorsObject.phone = "Podaj poprawny numer telefonu lub zostaw pole puste.";
         }
 
-        // nazwa firmy i stanowisko — wymagane
         if (!valuesObject.company || valuesObject.company.length < 2) {
             errorsObject.company = "Podaj nazwę firmy (min. 2 znaki).";
         } else if (valuesObject.company.length > 160) {
@@ -446,7 +434,6 @@ function initSingleAskeeTicketForm(formElement) {
             errorsObject.message = "Treść jest za długa (max 6000 znaków).";
         }
 
-        // walidacja zalacznikow (liczba, rozmiar, rozszerzenie)
         const filesList = fileInputElement && fileInputElement.files ? fileInputElement.files : null;
         if (filesList && filesList.length > 0) {
             if (filesList.length > attachmentMaxCountNumber) {
@@ -509,7 +496,6 @@ function initSingleAskeeTicketForm(formElement) {
             }
             setFormStatusMessage("error", "Sprawdź zaznaczone pola i spróbuj ponownie.");
 
-            // skup focus na pierwszym polu z bledem
             const firstErrorFieldName = clientErrorKeysArray[0];
             const firstErrorFieldElement = fieldElementsByNameMap[firstErrorFieldName];
             if (firstErrorFieldElement && typeof firstErrorFieldElement.focus === "function") {
@@ -522,12 +508,8 @@ function initSingleAskeeTicketForm(formElement) {
             return;
         }
 
-        // wlasciwa wysylka — buduujemy FormData (zalaczniki) zamiast JSON
         const submissionFormData = new FormData(formElement);
 
-        // upewniamy sie ze honeypot i consent maja prawidlowe wartosci w FormData
-        // (FormData z <form> automatycznie zbiera, ale FormData NIE wysle checkboxa
-        // ktory nie ma value="1" lub nie jest zaznaczony — sprawdzmy)
         const consentElement = fieldElementsByNameMap.consent;
         if (consentElement && consentElement.checked) {
             submissionFormData.set("consent", "1");
@@ -566,7 +548,6 @@ function initSingleAskeeTicketForm(formElement) {
                 refreshFileListDisplay();
                 setFormStatusMessage("success", successMessageString);
 
-                // jak były bledy zalacznikow przy delivered_with_warnings, pokazujemy je usere
                 if (
                     Array.isArray(responsePayloadObject.attachment_errors) &&
                     responsePayloadObject.attachment_errors.length > 0

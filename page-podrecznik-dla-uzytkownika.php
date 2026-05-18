@@ -1,21 +1,5 @@
 <?php
 
-/**
- * Template strony "Podrecznik dla uzytkownika" — instrukcja krok po kroku w
- * ramach ticket-systemu.
- *
- * Content jest standardowa WP Page edytowalna w Gutenbergu. Klient ma w
- * wp-admin pod menu "Zgloszenia" submenu z linkami "FAQ" oraz "Podrecznik
- * uzytkownika", ktore deep-linkuja wprost do edycji odpowiedniej strony.
- *
- * Aby strona byla dostepna pod /podrecznik-dla-uzytkownika/:
- *  1. WP-admin -> Strony -> Dodaj nowa
- *  2. Tytul: "Podrecznik dla uzytkownika"
- *  3. Slug: podrecznik-dla-uzytkownika
- *  4. Template "Default" (WP rozpozna page-podrecznik-dla-uzytkownika.php po slugu)
- *  5. Opublikuj
- */
-
 get_header();
 the_post();
 
@@ -39,7 +23,7 @@ the_post();
 
                         <div class="askee-ticket-doc__content">
                             <?php
-                            // tresc strony jest edytowana w Gutenbergu — renderujemy 1:1
+
                             if (has_blocks(get_the_content()) || trim((string) get_the_content()) !== "") {
                                 the_content();
                             } else {

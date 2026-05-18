@@ -1,11 +1,7 @@
-// =============================================================================
-// Ticket system — wspolne reguly dla wszystkich podstron ticket-systemu
-// (page-zgloszenia.php, page-faq.php, page-podrecznik-dla-uzytkownika.php)
-// =============================================================================
-
-// na podstronach ticket-systemu chowamy ozdobne elementy chatu, ale zostawiamy
-// je w layoucie — uzytkownik ma czysto skupic sie na formularzu/dokumencie
-.askee-tickets {
+.askee-tickets,
+.page-id-5235,
+.page-id-5250,
+.page-id-5249 {
     .askee-chat__title-rotator,
     .askee-chat__column--right,
     .askee-chat__buttons,
@@ -15,20 +11,12 @@
     }
 }
 
-// =============================================================================
-// Render dokumentu pomocy (FAQ, Podrecznik) z the_content()
-// =============================================================================
-
 .askee-ticket-doc {
     &__content {
-        // resetujemy domyslny margines pierwszego paragrafu zeby przylegal
-        // do gornej krawedzi boxa po intro-secie
         > *:first-child {
             margin-top: 0;
         }
 
-        // standardowa typografia z _typography.scss obsluguje h1-h5, p, ul, ol
-        // tu tylko delikatnie domykamy spacing dla elementow w boxie
         h2,
         h3,
         h4 {
@@ -43,16 +31,23 @@
         ol {
             margin: 12px 0 0;
             padding: 0 0 0 22px;
+            font-size: 15px;
 
             li {
                 list-style: initial;
                 list-style-position: outside;
                 margin: 4px 0 0;
+                font-size: 15px;
             }
         }
 
         ol > li {
             list-style: decimal;
+            font-size: 15px;
+        }
+
+        p {
+            font-size: 15px;
         }
 
         a {
@@ -64,20 +59,17 @@
             }
         }
 
-        // obrazki w gutenbergu — zaokraglone rogi, niech sa max-width 100%
         img {
             border-radius: 12px;
             margin: 18px 0 0;
         }
 
-        // separator w gutenbergu
         hr {
             border: none;
             border-top: 1px solid $light-gray;
             margin: 28px 0;
         }
 
-        // domyslny gutenbergowy blok cytatu
         blockquote {
             border-left: 3px solid $theme-color;
             padding: 4px 0 4px 16px;
@@ -87,7 +79,6 @@
         }
     }
 
-    // gdy strona nie ma jeszcze contentu w wp-admin — pokazujemy zachete
     &__empty {
         padding: 24px 0;
         text-align: center;
@@ -96,12 +87,9 @@
         line-height: 1.6;
     }
 
-    // formatowanie list FAQ — kazdy <li>PYTANIE<br>ODPOWIEDZ</li> dostaje
-    // 2 spany od filtra askee_ticket_format_faq_list_items w ticket-system.php
     &__content {
         ol.wp-block-list li,
         ul.wp-block-list li {
-            // wylaczamy marker tylko gdy LI faktycznie zawiera nasze spany
             &:has(.askee-faq-question) {
                 list-style: none !important;
                 margin: 14px 0 0;

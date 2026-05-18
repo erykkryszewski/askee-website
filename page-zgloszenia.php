@@ -1,21 +1,5 @@
 <?php
 
-/**
- * Template strony "Zgloszenia" — formularz ticketowy.
- *
- * Dostep: strona jest celowo NIELINKOWANA nigdzie w obrebie askee.app i ma
- * noindex (patrz askee_ticket_noindex_submission_page w ticket-system.php).
- * Jedyna droga wejscia to przejscie z aplikacji my.askee.app — zwykly
- * odwiedzajacy strone wizytowke nie powinien tu trafic.
- *
- * Aby strona byla dostepna pod /zgloszenia/:
- *  1. WP-admin -> Strony -> Dodaj nowa
- *  2. Tytul: "Zgloszenia"
- *  3. Slug: zgloszenia
- *  4. Template "Default" (WP rozpozna page-zgloszenia.php po slugu)
- *  5. Opublikuj
- */
-
 get_header();
 the_post();
 
@@ -41,7 +25,6 @@ $askee_ticket_max_size_mb = defined("ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE"
     ? (int) (ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE / 1024 / 1024)
     : 5;
 
-// link do bazy wiedzy/instrukcji — pokazywany w intro formularza
 $askee_ticket_knowledge_base_url = defined("ASKEE_TICKET_KNOWLEDGE_BASE_URL")
     ? ASKEE_TICKET_KNOWLEDGE_BASE_URL
     : "/faq/";

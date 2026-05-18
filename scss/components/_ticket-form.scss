@@ -11,7 +11,6 @@
         padding: 0 0 18px;
         border-bottom: 1px solid $light-gray;
 
-        // ludzik z lewej, identyczny jak w askee-contact-form
         &::before {
             content: "";
             display: block;
@@ -106,8 +105,6 @@
         }
     }
 
-    // input/textarea/select z prefixem zeby podbic specyficznosc nad
-    // globalnym all:unset z scss/components/_inputs.scss
     input#{&}__input,
     textarea#{&}__textarea,
     select#{&}__select {
@@ -142,7 +139,6 @@
         }
     }
 
-    // strzalka dla custom selecta
     select#{&}__select {
         appearance: none;
         background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23494a4c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
@@ -157,7 +153,6 @@
         resize: vertical;
     }
 
-    // file input — custom-friendly UI
     input#{&}__file-input {
         display: block;
         width: 100%;
@@ -211,7 +206,6 @@
         }
     }
 
-    // przycisk usuwania pojedynczego zalacznika z listy wybranych plikow
     &__file-remove {
         all: unset;
         flex-shrink: 0;

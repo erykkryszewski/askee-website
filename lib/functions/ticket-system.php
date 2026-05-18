@@ -4,67 +4,34 @@ if (!defined("ABSPATH")) {
     exit();
 }
 
-/**
- * Askee — system ticketowy.
- *
- * Zawiera:
- *  - Custom Post Type `askee_ticket` + custom post statuses (otwarte/w trakcie/...)
- *  - REST endpoint POST /wp-json/askee/v1/ticket (przyjmuje multipart, zalacza pliki)
- *  - REST endpoint GET  /wp-json/askee/v1/ticket-nonce (refresh nonca dla SPA)
- *  - Mail do nas (per-recipient) + mail potwierdzajacy do usera
- *  - Panel admina: lista CPT z kolumnami, filtry, quick-edit statusu, notatki wewnetrzne
- *  - Export CSV pod menu CPT
- *  - Frontend config window.AskeeTicketConfig dla js/src/sections/ticket-form.js
- *
- * Konwencje stalych (wszystkie z prefixem ASKEE_TICKET_*):
- *  - kategorie, statusy, limity walidacji, limity uploadu, rate limit
- *
- * Plik celowo nie zalezy od lib/functions/contact-form.php — funkcje pomocnicze
- * (IP, session, rate limit, request field) sa zduplikowane z prefixem askee_ticket_*
- * zeby ticket-system byl w pelni izolowany. Jesli kiedys bedzie sens scalenia
- * do `lib/functions/form-helpers.php`, dwie kopie funkcji sa atomic do refaktoru.
- */
-
-// stale: numer ticketu, kategorie, statusy
 define("ASKEE_TICKET_CPT_SLUG", "askee_ticket");
 define("ASKEE_TICKET_NUMBER_PREFIX", "ASK");
 
-// limity walidacji wiadomosci (zsynchronizowane z contact-form gdzie to ma sens)
 define("ASKEE_TICKET_NAME_MIN_LENGTH", 2);
 define("ASKEE_TICKET_NAME_MAX_LENGTH", 120);
 define("ASKEE_TICKET_EMAIL_MAX_LENGTH", 190);
 define("ASKEE_TICKET_MESSAGE_MIN_LENGTH", 10);
 define("ASKEE_TICKET_MESSAGE_MAX_LENGTH", 6000);
 
-// dane firmowe zglaszajacego — wymagane (kazdy user systemu ticketowego ma firme i stanowisko)
 define("ASKEE_TICKET_COMPANY_MIN_LENGTH", 2);
 define("ASKEE_TICKET_COMPANY_MAX_LENGTH", 160);
 define("ASKEE_TICKET_POSITION_MIN_LENGTH", 2);
 define("ASKEE_TICKET_POSITION_MAX_LENGTH", 120);
 
-// link do bazy wiedzy/instrukcji — intro formularza + mail potwierdzajacy
 if (!defined("ASKEE_TICKET_KNOWLEDGE_BASE_URL")) {
     define("ASKEE_TICKET_KNOWLEDGE_BASE_URL", "/faq/");
 }
 
-// honeypot i timestamp trap — tak samo jak w contact-form
 define("ASKEE_TICKET_HONEYPOT_FIELD_NAME", "askee_website_url");
 define("ASKEE_TICKET_MIN_SUBMIT_SECONDS", 2);
 
-// rate limit (osobny od contact-form, mozemy luzniej traktowac tickety)
 define("ASKEE_TICKET_RATE_LIMIT_MAX_MESSAGES", 5);
 define("ASKEE_TICKET_RATE_LIMIT_WINDOW_SECONDS", 1800);
 
-// limity uploadu zalacznikow
 define("ASKEE_TICKET_ATTACHMENT_MAX_COUNT", 3);
-define("ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE", 10 * 1024 * 1024); // 10 MB
+define("ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE", 10 * 1024 * 1024);
 define("ASKEE_TICKET_ATTACHMENT_ALLOWED_EXTENSIONS_CSV", "jpg,jpeg,png,gif,pdf,doc,docx,txt");
 
-// =============================================================================
-// 1. KATEGORIE I STATUSY (single source of truth)
-// =============================================================================
-
-// dostepne kategorie zgloszen — dropdown frontend + walidacja serwerowa
 function askee_ticket_get_categories_map() {
     return [
         "bug_critical" => "Błąd krytyczny",
@@ -74,11 +41,6 @@ function askee_ticket_get_categories_map() {
     ];
 }
 
-// dostepne statusy ticketu — single source of truth dla:
-// - register_post_status()
-// - kolumny admin
-// - quick edit / sidebar dropdown
-// - filtr w toolbar
 function askee_ticket_get_statuses_map() {
     return [
         "ask_open" => "Otwarte",
@@ -89,16 +51,10 @@ function askee_ticket_get_statuses_map() {
     ];
 }
 
-// domyslny status — z tym kazdy nowy ticket startuje
 function askee_ticket_get_default_status_slug() {
     return "ask_open";
 }
 
-// =============================================================================
-// 2. HELPERY POMOCNICZE — IP, session, request field, sanityzacja, normalizacje
-// =============================================================================
-
-// pobiera albo uruchamia sesje i zwraca jej id (dla session-rate-limit)
 function askee_ticket_get_or_start_session_id() {
     if (!function_exists("session_status") || !function_exists("session_id")) {
         return "";
@@ -125,7 +81,6 @@ function askee_ticket_get_or_start_session_id() {
     return is_string($fallback_session_id) ? $fallback_session_id : "";
 }
 
-// pobiera ip usera z requestu (z naglowkami proxy/cloudflare)
 function askee_ticket_get_request_ip_address() {
     $server_keys = ["HTTP_CF_CONNECTING_IP", "HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"];
 
@@ -152,7 +107,6 @@ function askee_ticket_get_request_ip_address() {
     return "";
 }
 
-// sciaga wartosc pola z requestu jako string (z get_param albo z json/form body)
 function askee_ticket_get_request_field_string(WP_REST_Request $request, $field_name_string) {
     $raw_field_value = $request->get_param($field_name_string);
     if (is_string($raw_field_value)) {
@@ -170,8 +124,6 @@ function askee_ticket_get_request_field_string(WP_REST_Request $request, $field_
     return "";
 }
 
-// normalizuje numer telefonu — kopia logiki z contact-form, ale w ticket-system
-// telefon jest OPCJONALNY, wiec zwracamy "" jako akceptowalna wartosc
 function askee_ticket_normalize_phone_string($phone_input_string) {
     if (!is_string($phone_input_string)) {
         return "";
@@ -197,7 +149,6 @@ function askee_ticket_normalize_phone_string($phone_input_string) {
         return "";
     }
 
-    // za krotki lub za dlugi — traktujemy jako "brak" (pole opcjonalne)
     if (strlen($only_digits_phone_string) < 7 || strlen($only_digits_phone_string) > 18) {
         return "";
     }
@@ -205,23 +156,15 @@ function askee_ticket_normalize_phone_string($phone_input_string) {
     return $collapsed_phone_string;
 }
 
-// hash uzytkownika do laczenia zgloszen tego samego usera niezaleznie od kapitalizacji
-// i bialych znakow. Zapisywany jako meta `_askee_ticket_user_identifier`.
 function askee_ticket_build_user_identifier_hash($email_string, $name_string) {
     $email_normalized = strtolower(trim((string) $email_string));
     $name_normalized = strtolower(trim((string) $name_string));
 
-    // kolapsowanie spacji w imieniu — "Jan   Kowalski" == "jan kowalski"
     $name_normalized = (string) preg_replace('/\\s+/u', " ", $name_normalized);
 
     return hash("sha256", $email_normalized . "|" . $name_normalized);
 }
 
-// =============================================================================
-// 3. RATE LIMIT (sesja + IP transient — tak samo jak w contact-form)
-// =============================================================================
-
-// domyslny stan licznika sesji
 function askee_ticket_get_default_rate_limit_state() {
     return [
         "window_started_at_timestamp" => 0,
@@ -230,7 +173,6 @@ function askee_ticket_get_default_rate_limit_state() {
     ];
 }
 
-// odczyt stanu licznika z sesji
 function askee_ticket_get_rate_limit_state() {
     $default_state = askee_ticket_get_default_rate_limit_state();
 
@@ -251,7 +193,6 @@ function askee_ticket_get_rate_limit_state() {
     ];
 }
 
-// zapis stanu licznika do sesji
 function askee_ticket_set_rate_limit_state($state) {
     if (session_status() !== PHP_SESSION_ACTIVE) {
         return;
@@ -264,7 +205,6 @@ function askee_ticket_set_rate_limit_state($state) {
     ];
 }
 
-// sprawdza i aktualizuje licznik wysylek w sesji
 function askee_ticket_check_and_update_rate_limit() {
     $current_timestamp = time();
     $window_seconds = ASKEE_TICKET_RATE_LIMIT_WINDOW_SECONDS;
@@ -309,7 +249,6 @@ function askee_ticket_check_and_update_rate_limit() {
     ];
 }
 
-// IP-based rate limit przez transient (dziala bez sesji)
 function askee_ticket_check_and_update_ip_rate_limit() {
     $request_ip_address = askee_ticket_get_request_ip_address();
     if ($request_ip_address === "") {
@@ -356,16 +295,6 @@ function askee_ticket_check_and_update_ip_rate_limit() {
     return ["is_blocked" => false, "minutes_left" => 0];
 }
 
-// =============================================================================
-// 4. NUMERACJA TICKETOW (per-rok counter w wp_options)
-// =============================================================================
-
-// zwraca kolejny numer ticketu w formacie "ASK-YYYY-NNNN"
-// uzywa update_option z autoload=false zeby nie obciazac wp_load_alloptions().
-// Read-modify-write ma minimalne okno race condition; przy realistycznym
-// natezeniu zgloszen (kilka/dzien) szanse na duplikat sa nieistotne. Jesli
-// w przyszlosci kiedys nastapi prawdziwa konkurencja, dolozymy lock przez
-// `wp_cache_add()` z retry.
 function askee_ticket_generate_next_number() {
     $current_year_string = wp_date("Y");
     $option_key_string = "askee_ticket_counter_" . $current_year_string;
@@ -383,14 +312,9 @@ function askee_ticket_generate_next_number() {
     );
 }
 
-// regex do walidacji "kontynuujemy ticket #ASK-2026-0001" w polu opcjonalnym
 function askee_ticket_get_number_regex_pattern() {
     return '/^' . preg_quote(ASKEE_TICKET_NUMBER_PREFIX, '/') . '-\\d{4}-\\d{4,}$/i';
 }
-
-// =============================================================================
-// 5. REJESTRACJA CPT I CUSTOM POST STATUSES
-// =============================================================================
 
 add_action("init", "askee_ticket_register_post_type");
 function askee_ticket_register_post_type() {
@@ -422,7 +346,7 @@ function askee_ticket_register_post_type() {
         "rewrite" => false,
         "query_var" => false,
         "capability_type" => "post",
-        // mapujemy capabilities do "post" zeby admini z manage_options/edit_posts mogli zarzadzac
+
         "map_meta_cap" => true,
     ]);
 }
@@ -447,8 +371,6 @@ function askee_ticket_register_post_statuses() {
     }
 }
 
-// strona /zgloszenia/ jest dostepna tylko z aplikacji my.askee.app — nigdzie jej
-// nie linkujemy i nie chcemy zeby trafila do indeksu wyszukiwarek
 add_filter("wp_robots", "askee_ticket_noindex_submission_page");
 function askee_ticket_noindex_submission_page($robots_array) {
     if (function_exists("is_page") && is_page("zgloszenia") && function_exists("wp_robots_no_robots")) {
@@ -456,10 +378,6 @@ function askee_ticket_noindex_submission_page($robots_array) {
     }
     return $robots_array;
 }
-
-// =============================================================================
-// 6. REST ENDPOINTS
-// =============================================================================
 
 add_action("rest_api_init", function () {
     register_rest_route("askee/v1", "/ticket", [
@@ -475,7 +393,6 @@ add_action("rest_api_init", function () {
     ]);
 });
 
-// nonce refresh — wzorzec identyczny jak w contact-form, no-cache headers
 function askee_ticket_nonce_callback() {
     $response = new WP_REST_Response([
         "ok" => true,
@@ -489,11 +406,6 @@ function askee_ticket_nonce_callback() {
     return $response;
 }
 
-// =============================================================================
-// 7. UPLOAD ZALACZNIKOW
-// =============================================================================
-
-// zwraca whitelist rozszerzen (lowercase, bez kropek) z konfiguracyjnej stalej
 function askee_ticket_get_allowed_extensions_array() {
     $allowed_extensions_csv = (string) ASKEE_TICKET_ATTACHMENT_ALLOWED_EXTENSIONS_CSV;
     $extensions_array = array_filter(array_map(function ($raw_extension) {
@@ -503,7 +415,6 @@ function askee_ticket_get_allowed_extensions_array() {
     return array_values(array_unique($extensions_array));
 }
 
-// waliduje i przenosi upload — zwraca ["ok" => bool, "attachment_id" => int, "error" => string]
 function askee_ticket_handle_single_file_upload($files_entry_array, $ticket_post_id) {
     if (
         !is_array($files_entry_array) ||
@@ -545,7 +456,6 @@ function askee_ticket_handle_single_file_upload($files_entry_array, $ticket_post
         ];
     }
 
-    // wp_check_filetype waliduje rozszerzenie + MIME wedlug uploadowanych mime_types
     $filetype_check_array = wp_check_filetype($original_filename_string);
     if (empty($filetype_check_array["ext"]) || empty($filetype_check_array["type"])) {
         return [
@@ -563,7 +473,7 @@ function askee_ticket_handle_single_file_upload($files_entry_array, $ticket_post
 
     $upload_overrides_array = [
         "test_form" => false,
-        // dodatkowy whitelist MIME — wp_handle_upload odrzuci wszystko poza ta lista
+
         "mimes" => askee_ticket_get_allowed_mimes_map(),
     ];
 
@@ -595,14 +505,12 @@ function askee_ticket_handle_single_file_upload($files_entry_array, $ticket_post
         return ["ok" => false, "error" => "Nie udało się zapisać załącznika."];
     }
 
-    // generujemy metadane (rozmiar, miniatury dla obrazow itd)
     $attachment_metadata_array = wp_generate_attachment_metadata($attachment_id, $uploaded_file_path);
     wp_update_attachment_metadata($attachment_id, $attachment_metadata_array);
 
     return ["ok" => true, "attachment_id" => (int) $attachment_id];
 }
 
-// mapa MIME typow przekazywana do wp_handle_upload jako whitelist
 function askee_ticket_get_allowed_mimes_map() {
     return [
         "jpg|jpeg|jpe" => "image/jpeg",
@@ -615,18 +523,13 @@ function askee_ticket_get_allowed_mimes_map() {
     ];
 }
 
-// =============================================================================
-// 8. WLASCIWY ENDPOINT REST — wysylka, walidacja, mail, zapis CPT
-// =============================================================================
-
 function askee_ticket_form_callback(WP_REST_Request $request) {
-    // nonce zawsze pierwszy — bez tego nie ufamy nawet honeypotowi
+
     $nonce = $request->get_header("x-wp-nonce");
     if (!$nonce || !wp_verify_nonce($nonce, "wp_rest")) {
         return new WP_REST_Response(["ok" => false, "error" => "invalid_nonce"], 403);
     }
 
-    // honeypot — bot wypelnia ukryte pole, my udajemy sukces zeby go nie alertowac
     $honeypot_value_string = askee_ticket_get_request_field_string(
         $request,
         ASKEE_TICKET_HONEYPOT_FIELD_NAME
@@ -635,7 +538,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         return new WP_REST_Response(["ok" => true, "status" => "delivered"], 200);
     }
 
-    // timestamp trap — submission < 2s od zaladowania = prawie na pewno bot
     $form_loaded_at_timestamp = (int) askee_ticket_get_request_field_string(
         $request,
         "form_loaded_at_timestamp"
@@ -648,7 +550,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         return new WP_REST_Response(["ok" => true, "status" => "delivered"], 200);
     }
 
-    // odczyt + sanityzacja pol
     $name_input_string = askee_ticket_get_request_field_string($request, "name");
     $email_input_string = askee_ticket_get_request_field_string($request, "email");
     $phone_input_string = askee_ticket_get_request_field_string($request, "phone");
@@ -670,7 +571,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
 
     $field_errors_array = [];
 
-    // imie i nazwisko
     if ($sanitized_name_string === "" || mb_strlen($sanitized_name_string) < ASKEE_TICKET_NAME_MIN_LENGTH) {
         $field_errors_array["name"] = sprintf(
             "Podaj imię i nazwisko (min. %d znaki).",
@@ -683,20 +583,17 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         );
     }
 
-    // email
     if ($sanitized_email_string === "" || !is_email($sanitized_email_string)) {
         $field_errors_array["email"] = "Podaj poprawny adres e-mail.";
     } elseif (mb_strlen($sanitized_email_string) > ASKEE_TICKET_EMAIL_MAX_LENGTH) {
         $field_errors_array["email"] = "Adres e-mail jest za długi.";
     }
 
-    // telefon — opcjonalny: jesli user wpisal cokolwiek ale niepoprawnego, blad
     $phone_raw_trimmed = trim((string) $phone_input_string);
     if ($phone_raw_trimmed !== "" && $normalized_phone_string === "") {
         $field_errors_array["phone"] = "Podaj poprawny numer telefonu lub zostaw pole puste.";
     }
 
-    // nazwa firmy — wymagana
     if ($sanitized_company_string === "" || mb_strlen($sanitized_company_string) < ASKEE_TICKET_COMPANY_MIN_LENGTH) {
         $field_errors_array["company"] = sprintf(
             "Podaj nazwę firmy (min. %d znaki).",
@@ -709,7 +606,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         );
     }
 
-    // stanowisko — wymagane
     if ($sanitized_position_string === "" || mb_strlen($sanitized_position_string) < ASKEE_TICKET_POSITION_MIN_LENGTH) {
         $field_errors_array["position"] = sprintf(
             "Podaj stanowisko (min. %d znaki).",
@@ -722,20 +618,17 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         );
     }
 
-    // kategoria — musi byc ze stalego slownika
     $allowed_categories_map = askee_ticket_get_categories_map();
     if (!array_key_exists($sanitized_category_string, $allowed_categories_map)) {
         $field_errors_array["category"] = "Wybierz kategorię zgłoszenia.";
     }
 
-    // numer poprzedniego ticketu — pole opcjonalne, ale jak wpisane to musi pasowac
     if ($sanitized_previous_ticket_string !== "") {
         if (!preg_match(askee_ticket_get_number_regex_pattern(), $sanitized_previous_ticket_string)) {
             $field_errors_array["previous_ticket_number"] = "Numer poprzedniego zgłoszenia ma niepoprawny format (np. ASK-2026-0001).";
         }
     }
 
-    // tresc
     if ($sanitized_message_string === "" || mb_strlen($sanitized_message_string) < ASKEE_TICKET_MESSAGE_MIN_LENGTH) {
         $field_errors_array["message"] = sprintf(
             "Treść jest za krótka (min. %d znaków).",
@@ -748,15 +641,12 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         );
     }
 
-    // zgoda RODO
     $consent_normalized_string = strtolower(trim((string) $consent_input_value));
     $consent_accepted_boolean = in_array($consent_normalized_string, ["1", "true", "yes", "on"], true);
     if (!$consent_accepted_boolean) {
         $field_errors_array["consent"] = "Wymagana jest zgoda na przetwarzanie danych zgodnie z polityką prywatności.";
     }
 
-    // wstepna walidacja zalacznikow PRZED utworzeniem postu (zeby nie tworzyc smieci)
-    // dokladna walidacja MIME/wp_handle_upload dzieje sie pozniej w askee_ticket_handle_single_file_upload
     $attachment_files_array = askee_ticket_collect_uploaded_files();
     if (count($attachment_files_array) > ASKEE_TICKET_ATTACHMENT_MAX_COUNT) {
         $field_errors_array["attachments"] = sprintf(
@@ -772,7 +662,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         );
     }
 
-    // rate limit (IP najpierw, sesja jako bonus)
     $ip_rate_limit_result = askee_ticket_check_and_update_ip_rate_limit();
     if (!empty($ip_rate_limit_result["is_blocked"])) {
         $minutes_left = max(1, (int) ($ip_rate_limit_result["minutes_left"] ?? 1));
@@ -804,7 +693,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         }
     }
 
-    // generujemy numer ticketu i tworzymy CPT post
     $ticket_number_string = askee_ticket_generate_next_number();
     $user_identifier_hash = askee_ticket_build_user_identifier_hash(
         $sanitized_email_string,
@@ -830,7 +718,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         );
     }
 
-    // metadane ticketu — single source of truth dla widoku adminowego i CSV
     update_post_meta($ticket_post_id, "_askee_ticket_number", $ticket_number_string);
     update_post_meta($ticket_post_id, "_askee_ticket_name", $sanitized_name_string);
     update_post_meta($ticket_post_id, "_askee_ticket_email", $sanitized_email_string);
@@ -845,7 +732,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         ? sanitize_text_field((string) $_SERVER["HTTP_USER_AGENT"])
         : "");
 
-    // upload zalacznikow PO stworzeniu postu (potrzebne post_parent)
     $uploaded_attachment_ids_array = [];
     $attachment_errors_array = [];
     foreach ($attachment_files_array as $single_file_entry_array) {
@@ -857,13 +743,11 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         }
     }
 
-    // poprzednie zgloszenia tego usera — uzywane w mailu i meta box
     $previous_tickets_count = askee_ticket_count_previous_tickets_for_user(
         $user_identifier_hash,
         $ticket_post_id
     );
 
-    // wysylka maila do nas (per-recipient zeby pojedyncza awaria nie zabila reszty)
     $any_recipient_delivered_boolean = askee_ticket_send_internal_notification_email(
         $ticket_post_id,
         $ticket_number_string,
@@ -879,7 +763,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         $previous_tickets_count
     );
 
-    // wysylka maila potwierdzajacego do usera (z numerem ticketu)
     askee_ticket_send_user_confirmation_email(
         $sanitized_email_string,
         $sanitized_name_string,
@@ -887,8 +770,7 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
     );
 
     if (!$any_recipient_delivered_boolean) {
-        // post jest juz w bazie — usera informujemy o ostrzezeniu ale 200 (nie 500),
-        // zeby user nie wysylal trzy razy. Admin zobaczy ticket w panelu i tak.
+
         return new WP_REST_Response(
             [
                 "ok" => true,
@@ -919,8 +801,6 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
     );
 }
 
-// zbiera pliki z $_FILES["attachments"] (HTML multi-file input) do listy
-// pojedynczych entries jakich oczekuje wp_handle_upload
 function askee_ticket_collect_uploaded_files() {
     if (!isset($_FILES["attachments"]) || !is_array($_FILES["attachments"])) {
         return [];
@@ -938,7 +818,7 @@ function askee_ticket_collect_uploaded_files() {
     $collected_files_array = [];
 
     for ($index = 0; $index < $files_count; $index += 1) {
-        // pomijamy puste sloty (user dodal np 2 z 3 mozliwych)
+
         if (
             empty($multi_files_array["name"][$index]) ||
             (int) ($multi_files_array["error"][$index] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE
@@ -958,7 +838,6 @@ function askee_ticket_collect_uploaded_files() {
     return $collected_files_array;
 }
 
-// liczy ile poprzednich ticketow ma dany user (po hash), wykluczajac aktualny
 function askee_ticket_count_previous_tickets_for_user($user_identifier_hash_string, $current_ticket_post_id) {
     if (!is_string($user_identifier_hash_string) || $user_identifier_hash_string === "") {
         return 0;
@@ -986,12 +865,6 @@ function askee_ticket_count_previous_tickets_for_user($user_identifier_hash_stri
     return (int) $previous_query->post_count;
 }
 
-// =============================================================================
-// 9. MAILING (do nas + potwierdzenie do usera)
-// =============================================================================
-
-// wysylka maila wewnetrznego — uzywa tej samej listy odbiorcow co contact-form
-// (single source of truth: askee_contact_get_recipient_emails_array)
 function askee_ticket_send_internal_notification_email(
     $ticket_post_id,
     $ticket_number_string,
@@ -1007,7 +880,7 @@ function askee_ticket_send_internal_notification_email(
     $previous_tickets_count
 ) {
     if (!function_exists("askee_contact_get_recipient_emails_array")) {
-        // contact-form.php nie zaladowany — log i 0 odbiorcow
+
         if (function_exists("error_log")) {
             error_log(
                 "[Askee tickets] askee_contact_get_recipient_emails_array() not available — " .
@@ -1056,7 +929,6 @@ function askee_ticket_send_internal_notification_email(
         $category_label_string
     );
 
-    // tresc HTML — szablon wspolny (helpery w lib/functions/smtp.php)
     if (function_exists("askee_email_html_wrap")) {
         $email_inner_html_string =
             askee_email_html_paragraph("Nowe zgłoszenie z formularza ticketowego na stronie Askee.") .
@@ -1102,7 +974,7 @@ function askee_ticket_send_internal_notification_email(
         );
         $email_content_type_header_string = "Content-Type: text/html; charset=UTF-8";
     } else {
-        // fallback plain text gdyby smtp.php nie byl zaladowany
+
         $email_body_lines_array = [
             "Nowe zgłoszenie z formularza na " . home_url("/zgloszenia/"),
             "",
@@ -1142,7 +1014,6 @@ function askee_ticket_send_internal_notification_email(
         sprintf("Reply-To: %s <%s>", $name_string, $email_string),
     ];
 
-    // per-recipient — tak jak w contact-form, izoluje awarie pojedynczego SMTP recipient
     $any_recipient_delivered_boolean = false;
     $failed_recipients_array_for_log = [];
 
@@ -1170,8 +1041,6 @@ function askee_ticket_send_internal_notification_email(
     return $any_recipient_delivered_boolean;
 }
 
-// wysylka maila potwierdzajacego do usera (z numerem ticketu)
-// Reply-To = nasz wp_mail_from zeby odpowiedz usera nie szla w prozni
 function askee_ticket_send_user_confirmation_email(
     $email_string,
     $name_string,
@@ -1191,7 +1060,6 @@ function askee_ticket_send_user_confirmation_email(
 
     $email_subject_string = sprintf("Potwierdzenie zgłoszenia #%s", $ticket_number_string);
 
-    // baza wiedzy — absolutny URL (stala moze byc sciezka wzgledna typu "/faq/")
     $knowledge_base_raw_value = (string) ASKEE_TICKET_KNOWLEDGE_BASE_URL;
     $knowledge_base_url_string = preg_match('#^https?://#i', $knowledge_base_raw_value)
         ? $knowledge_base_raw_value
@@ -1201,7 +1069,6 @@ function askee_ticket_send_user_confirmation_email(
         $colors_array = askee_email_brand_colors();
         $font_stack_string = askee_email_font_stack();
 
-        // wyrozniony box z numerem zgloszenia
         $ticket_number_box_html =
             '<div style="margin:18px 0;background:' . $colors_array["theme_light"] .
             ';border-radius:10px;padding:18px 20px;text-align:center;font-family:' . $font_stack_string . ';">' .
@@ -1232,7 +1099,7 @@ function askee_ticket_send_user_confirmation_email(
         );
         $email_content_type_header_string = "Content-Type: text/html; charset=UTF-8";
     } else {
-        // fallback plain text gdyby smtp.php nie byl zaladowany
+
         $email_body_string = implode("\n", [
             sprintf("Dzień dobry %s,", $name_string),
             "",
@@ -1261,14 +1128,9 @@ function askee_ticket_send_user_confirmation_email(
     return wp_mail($email_string, $email_subject_string, $email_body_string, $email_headers_array);
 }
 
-// =============================================================================
-// 10. PANEL ADMINA — kolumny, filtry, quick edit, meta boxes, eksport CSV
-// =============================================================================
-
-// kolumny na liscie ticketow
 add_filter("manage_" . ASKEE_TICKET_CPT_SLUG . "_posts_columns", "askee_ticket_admin_columns");
 function askee_ticket_admin_columns($columns_array) {
-    // przebudowujemy w okreslonej kolejnosci (cb checkbox, numer, ...,date)
+
     $new_columns_array = [
         "cb" => $columns_array["cb"] ?? "",
         "askee_ticket_number" => "Numer",
@@ -1283,7 +1145,6 @@ function askee_ticket_admin_columns($columns_array) {
     return $new_columns_array;
 }
 
-// wartosci kolumn
 add_action("manage_" . ASKEE_TICKET_CPT_SLUG . "_posts_custom_column", "askee_ticket_admin_column_value", 10, 2);
 function askee_ticket_admin_column_value($column_name_string, $post_id) {
     switch ($column_name_string) {
@@ -1331,7 +1192,6 @@ function askee_ticket_admin_column_value($column_name_string, $post_id) {
     }
 }
 
-// styling badge'ow statusow na liscie + dropdown statusu (sidebar i quick edit)
 add_action("admin_enqueue_scripts", "askee_ticket_admin_assets");
 function askee_ticket_admin_assets($hook_suffix_string) {
     $screen = get_current_screen();
@@ -1339,7 +1199,6 @@ function askee_ticket_admin_assets($hook_suffix_string) {
         return;
     }
 
-    // inline CSS (krotkie, nie warto osobnego pliku)
     $badge_css_string = "
         .askee-ticket-status-badge { display: inline-block; padding: 3px 10px; border-radius: 999px;
             font-size: 11px; font-weight: 600; line-height: 1.4; text-transform: uppercase;
@@ -1357,7 +1216,6 @@ function askee_ticket_admin_assets($hook_suffix_string) {
     wp_enqueue_style("askee-ticket-admin");
     wp_add_inline_style("askee-ticket-admin", $badge_css_string);
 
-    // JS: 1) dropdown statusu w sidebar edytora (Classic), 2) preselect w quick edit
     $statuses_map = askee_ticket_get_statuses_map();
     $statuses_json = wp_json_encode($statuses_map);
 
@@ -1434,7 +1292,6 @@ JS;
     wp_add_inline_script("askee-ticket-admin", $admin_js_string);
 }
 
-// quick edit: dropdown statusu w panelu szybkiej edycji
 add_action("quick_edit_custom_box", "askee_ticket_quick_edit_status_box", 10, 2);
 function askee_ticket_quick_edit_status_box($column_name_string, $post_type_string) {
     if ($post_type_string !== ASKEE_TICKET_CPT_SLUG) {
@@ -1458,15 +1315,13 @@ function askee_ticket_quick_edit_status_box($column_name_string, $post_type_stri
     echo "</div></fieldset>";
 }
 
-// save_post: obsluga zmiany statusu z quick edit i z sidebar editora
 add_action("save_post_" . ASKEE_TICKET_CPT_SLUG, "askee_ticket_save_quick_edit_status", 10, 2);
 function askee_ticket_save_quick_edit_status($post_id, $post_object) {
-    // pomijamy autozapisy i rewizje
+
     if (defined("DOING_AUTOSAVE") && DOING_AUTOSAVE) return;
     if (wp_is_post_revision($post_id)) return;
     if (!current_user_can("edit_post", $post_id)) return;
 
-    // nonce z quick edit (jak jest, to przeszlo quick edit)
     if (
         isset($_POST["askee_ticket_quick_edit_nonce"]) &&
         wp_verify_nonce(sanitize_text_field((string) $_POST["askee_ticket_quick_edit_nonce"]), "askee_ticket_quick_edit_nonce")
@@ -1477,7 +1332,7 @@ function askee_ticket_save_quick_edit_status($post_id, $post_object) {
 
         $allowed_statuses_array = array_keys(askee_ticket_get_statuses_map());
         if (in_array($new_status_string, $allowed_statuses_array, true) && $new_status_string !== $post_object->post_status) {
-            // wp_update_post zeby przeszlo przez transition_post_status hooks
+
             wp_update_post([
                 "ID" => $post_id,
                 "post_status" => $new_status_string,
@@ -1486,14 +1341,12 @@ function askee_ticket_save_quick_edit_status($post_id, $post_object) {
     }
 }
 
-// filtr w toolbar listy ticketow: dropdown statusu i kategorii
 add_action("restrict_manage_posts", "askee_ticket_admin_list_filters");
 function askee_ticket_admin_list_filters($post_type_string) {
     if ($post_type_string !== ASKEE_TICKET_CPT_SLUG) {
         return;
     }
 
-    // status
     $statuses_map = askee_ticket_get_statuses_map();
     $current_status_filter = isset($_GET["askee_ticket_status_filter"])
         ? sanitize_text_field((string) $_GET["askee_ticket_status_filter"])
@@ -1506,7 +1359,6 @@ function askee_ticket_admin_list_filters($post_type_string) {
     }
     echo "</select>";
 
-    // kategoria
     $categories_map = askee_ticket_get_categories_map();
     $current_category_filter = isset($_GET["askee_ticket_category_filter"])
         ? sanitize_text_field((string) $_GET["askee_ticket_category_filter"])
@@ -1520,7 +1372,6 @@ function askee_ticket_admin_list_filters($post_type_string) {
     echo "</select>";
 }
 
-// stosuje filtry do glownego query w admin listy
 add_filter("parse_query", "askee_ticket_apply_admin_filters");
 function askee_ticket_apply_admin_filters($query) {
     global $pagenow;
@@ -1536,7 +1387,6 @@ function askee_ticket_apply_admin_filters($query) {
 
     $query_vars_reference = &$query->query_vars;
 
-    // status filtr
     $status_filter_value = isset($_GET["askee_ticket_status_filter"])
         ? sanitize_text_field((string) $_GET["askee_ticket_status_filter"])
         : "";
@@ -1544,7 +1394,6 @@ function askee_ticket_apply_admin_filters($query) {
         $query_vars_reference["post_status"] = $status_filter_value;
     }
 
-    // kategoria filtr (meta_query)
     $category_filter_value = isset($_GET["askee_ticket_category_filter"])
         ? sanitize_text_field((string) $_GET["askee_ticket_category_filter"])
         : "";
@@ -1563,7 +1412,6 @@ function askee_ticket_apply_admin_filters($query) {
     return $query;
 }
 
-// meta boxy w edycji ticketu
 add_action("add_meta_boxes_" . ASKEE_TICKET_CPT_SLUG, "askee_ticket_register_meta_boxes");
 function askee_ticket_register_meta_boxes() {
     add_meta_box(
@@ -1603,7 +1451,6 @@ function askee_ticket_register_meta_boxes() {
     );
 }
 
-// meta box: dane zgloszenia (readonly)
 function askee_ticket_render_details_meta_box($post_object) {
     $ticket_number = (string) get_post_meta($post_object->ID, "_askee_ticket_number", true);
     $name = (string) get_post_meta($post_object->ID, "_askee_ticket_name", true);
@@ -1648,7 +1495,6 @@ function askee_ticket_render_details_meta_box($post_object) {
         "</div>";
 }
 
-// meta box: historia ticketow tego usera (linki do innych)
 function askee_ticket_render_history_meta_box($post_object) {
     $user_identifier_hash = (string) get_post_meta($post_object->ID, "_askee_ticket_user_identifier", true);
 
@@ -1703,7 +1549,6 @@ function askee_ticket_render_history_meta_box($post_object) {
     wp_reset_postdata();
 }
 
-// meta box: zalaczniki (lista z linkami)
 function askee_ticket_render_attachments_meta_box($post_object) {
     $attachments_array = get_attached_media("", $post_object->ID);
 
@@ -1729,7 +1574,6 @@ function askee_ticket_render_attachments_meta_box($post_object) {
     echo "</ul>";
 }
 
-// meta box: notatki wewnetrzne (textarea, zapisywane przez save_post)
 function askee_ticket_render_internal_notes_meta_box($post_object) {
     $notes_value_string = (string) get_post_meta($post_object->ID, "_askee_ticket_internal_notes", true);
     wp_nonce_field("askee_ticket_internal_notes_nonce_action", "askee_ticket_internal_notes_nonce");
@@ -1739,7 +1583,6 @@ function askee_ticket_render_internal_notes_meta_box($post_object) {
     echo '<p class="description">Notatki widoczne tylko dla zespołu. Nie są wysyłane do zgłaszającego.</p>';
 }
 
-// zapis notatek wewnetrznych
 add_action("save_post_" . ASKEE_TICKET_CPT_SLUG, "askee_ticket_save_internal_notes", 11, 2);
 function askee_ticket_save_internal_notes($post_id, $post_object) {
     if (defined("DOING_AUTOSAVE") && DOING_AUTOSAVE) return;
@@ -1762,11 +1605,6 @@ function askee_ticket_save_internal_notes($post_id, $post_object) {
     update_post_meta($post_id, "_askee_ticket_internal_notes", $notes_clean);
 }
 
-// =============================================================================
-// 11. EKSPORT CSV
-// =============================================================================
-
-// submenu page pod CPT
 add_action("admin_menu", "askee_ticket_register_csv_export_page");
 function askee_ticket_register_csv_export_page() {
     add_submenu_page(
@@ -1779,7 +1617,6 @@ function askee_ticket_register_csv_export_page() {
     );
 }
 
-// formularz eksportu — filtry: zakres dat, status, kategoria
 function askee_ticket_render_csv_export_page() {
     if (!current_user_can("edit_posts")) {
         wp_die("Brak uprawnień.");
@@ -1827,7 +1664,6 @@ function askee_ticket_render_csv_export_page() {
     echo "</div>";
 }
 
-// handler eksportu — generuje plik CSV i wysyla jako download
 add_action("admin_post_askee_ticket_csv_export", "askee_ticket_handle_csv_export");
 function askee_ticket_handle_csv_export() {
     if (!current_user_can("edit_posts")) {
@@ -1890,7 +1726,6 @@ function askee_ticket_handle_csv_export() {
 
     $filename_string = "askee-zgloszenia-" . wp_date("Y-m-d-His") . ".csv";
 
-    // wyczyscic buffer zeby nic nie szlo przed CSV (admin-post.php nie powinno cokolwiek echo'ac, ale defensywnie)
     if (ob_get_level() > 0) {
         @ob_end_clean();
     }
@@ -1900,7 +1735,7 @@ function askee_ticket_handle_csv_export() {
     header('Content-Disposition: attachment; filename="' . $filename_string . '"');
 
     $output_stream = fopen("php://output", "w");
-    // BOM dla Excela (zeby UTF-8 sie prawidlowo otworzyl)
+
     fwrite($output_stream, "\xEF\xBB\xBF");
 
     fputcsv($output_stream, [
@@ -1948,10 +1783,6 @@ function askee_ticket_handle_csv_export() {
     exit();
 }
 
-// =============================================================================
-// 12. FRONTEND CONFIG (window.AskeeTicketConfig)
-// =============================================================================
-
 add_action("wp_enqueue_scripts", "askee_register_ticket_form_config", 23);
 function askee_register_ticket_form_config() {
     if (!wp_script_is("askeetheme-main", "enqueued")) {
@@ -1977,12 +1808,6 @@ function askee_register_ticket_form_config() {
     );
 }
 
-// =============================================================================
-// 12. ADMIN SUBMENU pod "Zgłoszenia" — szybki dostep do edycji stron FAQ
-//     i Podrecznika uzytkownika (zwykle WP Pages edytowane w Gutenbergu)
-// =============================================================================
-
-// mapa stron pomocniczych: slug WP Page -> etykieta w menu admina
 function askee_ticket_get_help_docs_map() {
     return [
         "faq" => "FAQ",
@@ -1990,14 +1815,12 @@ function askee_ticket_get_help_docs_map() {
     ];
 }
 
-// rejestrujemy z prioritetem 20 zeby leciec PO add_menu_page CPT (10)
 add_action("admin_menu", "askee_ticket_register_help_doc_submenus", 20);
 function askee_ticket_register_help_doc_submenus() {
     $help_docs_map = askee_ticket_get_help_docs_map();
 
     foreach ($help_docs_map as $help_page_slug => $help_menu_label_string) {
-        // szukamy istniejacej WP Page po slugu — jak jest, deep-link do edycji,
-        // jak nie ma, kierujemy do tworzenia nowej (klient sam wpisze tytul)
+
         $help_page_object = get_page_by_path($help_page_slug, OBJECT, "page");
 
         if ($help_page_object instanceof WP_Post) {
@@ -2020,8 +1843,6 @@ function askee_ticket_register_help_doc_submenus() {
     }
 }
 
-// jak strona z odpowiednim slugiem nie istnieje, pokazujemy w wp-admin notice
-// z instrukcja co zrobic (zeby klient nie szukal)
 add_action("admin_notices", "askee_ticket_render_missing_help_docs_notice");
 function askee_ticket_render_missing_help_docs_notice() {
     if (!current_user_can("edit_posts")) {
@@ -2060,12 +1881,6 @@ function askee_ticket_render_missing_help_docs_notice() {
     echo ".</p></div>";
 }
 
-// =============================================================================
-// 13. EMAIL — powiadomienie do klienta przy zmianie statusu ticketu
-// =============================================================================
-
-// hook na transition_post_status — leci za KAZDA zmiana statusu w bazie,
-// my filtrujemy wewnatrz funkcji (CPT, oba statusy z naszej mapy, faktyczna zmiana)
 add_action("transition_post_status", "askee_ticket_handle_status_transition", 20, 3);
 function askee_ticket_handle_status_transition($new_status_string, $old_status_string, $post_object) {
     if (!($post_object instanceof WP_Post)) {
@@ -2075,22 +1890,18 @@ function askee_ticket_handle_status_transition($new_status_string, $old_status_s
         return;
     }
 
-    // dedupe — transition_post_status moze fire 2x w jednym save, mail tylko raz
     static $already_emailed_post_ids_array = [];
     if (in_array((int) $post_object->ID, $already_emailed_post_ids_array, true)) {
         return;
     }
     $already_emailed_post_ids_array[] = (int) $post_object->ID;
 
-    // pomijamy autozapisy/rewizje
     if (wp_is_post_revision($post_object->ID)) {
         return;
     }
 
     $statuses_map = askee_ticket_get_statuses_map();
 
-    // pomijamy initial creation (old=new/auto-draft/draft) — confirmation mail
-    // wysyla osobno askee_ticket_send_user_confirmation_email
     if (!array_key_exists($old_status_string, $statuses_map)) {
         return;
     }
@@ -2118,7 +1929,6 @@ function askee_ticket_handle_status_transition($new_status_string, $old_status_s
     );
 }
 
-// mail do klienta informujacy ze status jego ticketu sie zmienil
 function askee_ticket_send_user_status_change_email(
     $email_string,
     $name_string,
@@ -2148,7 +1958,6 @@ function askee_ticket_send_user_status_change_email(
         $colors_array = askee_email_brand_colors();
         $font_stack_string = askee_email_font_stack();
 
-        // wyrozniony box z nowym statusem
         $status_change_box_html =
             '<div style="margin:18px 0;background:' . $colors_array["theme_light"] .
             ';border-radius:10px;padding:18px 20px;text-align:center;font-family:' . $font_stack_string . ';">' .
@@ -2179,7 +1988,7 @@ function askee_ticket_send_user_status_change_email(
         );
         $email_content_type_header_string = "Content-Type: text/html; charset=UTF-8";
     } else {
-        // fallback plain text
+
         $email_body_string = implode("\n", [
             sprintf("Dzień dobry %s,", $name_string),
             "",
@@ -2206,13 +2015,6 @@ function askee_ticket_send_user_status_change_email(
     return wp_mail($email_string, $email_subject_string, $email_body_string, $email_headers_array);
 }
 
-// =============================================================================
-// 14. ADMIN REPLY — meta box z polem "wyslij odpowiedz do klienta"
-//     Klient otrzymuje maila z tresc + numerem ticketu; odpowiedzi
-//     zachowujemy w post meta jako historia.
-// =============================================================================
-
-// rejestrujemy dodatkowy meta box w edycji ticketu (poza istniejacymi 4)
 add_action("add_meta_boxes_" . ASKEE_TICKET_CPT_SLUG, "askee_ticket_register_admin_reply_meta_box");
 function askee_ticket_register_admin_reply_meta_box() {
     add_meta_box(
@@ -2225,7 +2027,6 @@ function askee_ticket_register_admin_reply_meta_box() {
     );
 }
 
-// render meta boxa: lista poprzednich odpowiedzi + textarea + submit "wyslij"
 function askee_ticket_render_admin_reply_meta_box($post_object) {
     wp_nonce_field("askee_ticket_admin_reply_nonce", "askee_ticket_admin_reply_nonce_field");
 
@@ -2240,7 +2041,7 @@ function askee_ticket_render_admin_reply_meta_box($post_object) {
         echo '<div style="margin:0 0 14px;padding:0 0 14px;border-bottom:1px solid #e0e0e0;">';
         echo '<p style="margin:0 0 8px;font-weight:600;">Wysłane odpowiedzi:</p>';
         echo '<ul style="margin:0;padding:0;list-style:none;">';
-        // nowsze na gorze
+
         foreach (array_reverse($admin_replies_array) as $single_reply_array) {
             $reply_timestamp_int = (int) ($single_reply_array["timestamp"] ?? 0);
             $reply_author_string = (string) ($single_reply_array["author"] ?? "—");
@@ -2278,11 +2079,9 @@ function askee_ticket_render_admin_reply_meta_box($post_object) {
     echo "</p>";
 }
 
-// save handler — leci tylko gdy klikniety zostal przycisk "Wyslij odpowiedz"
-// (zwykly "Zaktualizuj" w sidebarze nic nie zrobi z polem)
 add_action("save_post_" . ASKEE_TICKET_CPT_SLUG, "askee_ticket_handle_admin_reply_submission", 12, 2);
 function askee_ticket_handle_admin_reply_submission($post_id, $post_object) {
-    // dedupe — save_post moze odpalic 2x w jednym requescie, mail tylko raz
+
     static $already_processed_post_ids_array = [];
     if (in_array((int) $post_id, $already_processed_post_ids_array, true)) {
         return;
@@ -2292,12 +2091,10 @@ function askee_ticket_handle_admin_reply_submission($post_id, $post_object) {
     if (wp_is_post_revision($post_id)) return;
     if (!current_user_can("edit_post", $post_id)) return;
 
-    // sprawdzamy czy klikniety byl przycisk wyslania (nie zwykly update)
     if (!isset($_POST["askee_ticket_admin_send_reply"]) || $_POST["askee_ticket_admin_send_reply"] !== "1") {
         return;
     }
 
-    // nonce
     if (
         !isset($_POST["askee_ticket_admin_reply_nonce_field"]) ||
         !wp_verify_nonce(
@@ -2334,7 +2131,6 @@ function askee_ticket_handle_admin_reply_submission($post_id, $post_object) {
         $sanitized_reply_message_string
     );
 
-    // log do post meta — historia odpowiedzi widoczna w meta boxie
     $current_user_object = wp_get_current_user();
     $author_label_string = $current_user_object instanceof WP_User && $current_user_object->ID > 0
         ? (string) $current_user_object->display_name
@@ -2353,7 +2149,6 @@ function askee_ticket_handle_admin_reply_submission($post_id, $post_object) {
     update_post_meta($post_id, "_askee_ticket_admin_replies", $admin_replies_array);
 }
 
-// mail do klienta z tresc odpowiedzi admina + numerem ticketu
 function askee_ticket_send_user_admin_reply_email(
     $email_string,
     $name_string,
@@ -2374,14 +2169,12 @@ function askee_ticket_send_user_admin_reply_email(
 
     $email_subject_string = sprintf("Odpowiedź do zgłoszenia #%s", $ticket_number_string);
 
-    // konwersja nowych linii na <br> dla HTML wersji
     $reply_message_html_string = nl2br(esc_html($reply_message_string));
 
     if (function_exists("askee_email_html_wrap")) {
         $colors_array = askee_email_brand_colors();
         $font_stack_string = askee_email_font_stack();
 
-        // box z trescia odpowiedzi
         $reply_block_html =
             '<div style="margin:18px 0;background:' . $colors_array["theme_light"] .
             ';border-radius:10px;padding:18px 20px;font-family:' . $font_stack_string . ';">' .
@@ -2410,7 +2203,7 @@ function askee_ticket_send_user_admin_reply_email(
         );
         $email_content_type_header_string = "Content-Type: text/html; charset=UTF-8";
     } else {
-        // fallback plain text
+
         $email_body_string = implode("\n", [
             sprintf("Dzień dobry %s,", $name_string),
             "",
@@ -2438,31 +2231,18 @@ function askee_ticket_send_user_admin_reply_email(
     return wp_mail($email_string, $email_subject_string, $email_body_string, $email_headers_array);
 }
 
-// =============================================================================
-// FAQ / PODRECZNIK — formatowanie list item pytanie/odpowiedz (Q<br>A)
-//
-// Tekst po <br> w <li> nie da sie ostylowac selektorem CSS (text node).
-// Dlatego na stronach /faq/ i /podrecznik-dla-uzytkownika/ konwertujemy
-// "<li>PYTANIE<br>ODPOWIEDZ</li>" na
-// "<li><span class='askee-faq-question'>PYTANIE</span>
-//       <span class='askee-faq-answer'>ODPOWIEDZ</span></li>"
-// zeby SCSS mogl pytanie pogrubic i ukryc marker listy, a odpowiedz zmniejszyc
-// =============================================================================
-
 add_filter("the_content", "askee_ticket_format_faq_list_items", 20);
 function askee_ticket_format_faq_list_items($content_html_string) {
     if (!is_page(["faq", "podrecznik-dla-uzytkownika"])) {
         return $content_html_string;
     }
 
-    // matchujemy kazdy <li>...</li> i jak ma <br> w srodku — dzielimy
     return (string) preg_replace_callback(
         "#<li(\\s[^>]*)?>(.*?)</li>#is",
         function ($li_match_array) {
             $li_attrs_string = (string) ($li_match_array[1] ?? "");
             $li_inner_html_string = (string) $li_match_array[2];
 
-            // pierwszy <br> jako separator pytanie/odpowiedz
             if (!preg_match("#^(.*?)<br\\s*/?>(.*)$#is", $li_inner_html_string, $split_parts_array)) {
                 return $li_match_array[0];
             }
@@ -2483,13 +2263,6 @@ function askee_ticket_format_faq_list_items($content_html_string) {
     );
 }
 
-// =============================================================================
-// 15. ADMIN FIXES — lista "Wszystkie" zgloszen, warningi o PHP upload limit
-// =============================================================================
-
-// gdy klikamy "Wszystkie" w panelu Zgloszen, WP defaultuje post_status='publish'
-// (zaden nasz ticket nie ma 'publish'), wiec lista byla pusta. Wymuszamy nasze
-// custom statusy gdy zaden filtr nie jest aktywny
 add_action("pre_get_posts", "askee_ticket_show_all_statuses_in_admin_list");
 function askee_ticket_show_all_statuses_in_admin_list($query) {
     if (!is_admin()) {
@@ -2509,21 +2282,15 @@ function askee_ticket_show_all_statuses_in_admin_list($query) {
         return;
     }
 
-    // jezeli post_status zostal juz ustawiony (przez URL post_status= albo przez
-    // nasz parse_query filter dla askee_ticket_status_filter), nie nadpisujemy.
-    // pre_get_posts odpala sie PO parse_query, wiec to widzimy poprawnie
     $current_post_status_value = $query->get("post_status");
     if (!empty($current_post_status_value) && $current_post_status_value !== "all") {
         return;
     }
 
-    // brak filtra -> pokazujemy wszystkie nasze custom statusy
     $statuses_map = askee_ticket_get_statuses_map();
     $query->set("post_status", array_keys($statuses_map));
 }
 
-// admin notice gdy PHP upload_max_filesize / post_max_size < ticket-system limit.
-// Pokazujemy adminom na ekranach CPT, zeby nie zaskoczylo "5MB OK, 8MB fail"
 add_action("admin_notices", "askee_ticket_warn_if_php_upload_limit_too_low");
 function askee_ticket_warn_if_php_upload_limit_too_low() {
     if (!current_user_can("manage_options")) {

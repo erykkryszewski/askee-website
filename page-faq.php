@@ -1,20 +1,5 @@
 <?php
 
-/**
- * Template strony "FAQ" — baza wiedzy w ramach ticket-systemu.
- *
- * Content jest standardowa WP Page edytowalna w Gutenbergu. Klient ma w
- * wp-admin pod menu "Zgloszenia" submenu z linkami "FAQ" oraz "Podrecznik
- * uzytkownika", ktore deep-linkuja wprost do edycji odpowiedniej strony.
- *
- * Aby strona byla dostepna pod /faq/:
- *  1. WP-admin -> Strony -> Dodaj nowa
- *  2. Tytul: "FAQ"
- *  3. Slug: faq
- *  4. Template "Default" (WP rozpozna page-faq.php po slugu)
- *  5. Opublikuj
- */
-
 get_header();
 the_post();
 
@@ -38,7 +23,7 @@ the_post();
 
                         <div class="askee-ticket-doc__content">
                             <?php
-                            // tresc strony jest edytowana w Gutenbergu — renderujemy 1:1
+
                             if (has_blocks(get_the_content()) || trim((string) get_the_content()) !== "") {
                                 the_content();
                             } else {

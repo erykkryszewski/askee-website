@@ -1,29 +1,9 @@
 <?php
-/**
- * Standalone unit tests dla helperow w lib/functions/ticket-system.php.
- *
- * Uruchomienie:
- *
- *   php tests/ticket-system-tests.php
- *
- * Testy nie wymagaja srodowiska WordPressa — definiujemy minimalne stuby
- * dla funkcji WP, ktorych uzywaja czyste helpery (sanitize_*, get_option, etc).
- *
- * Co pokrywaja:
- *  - normalizacja telefonu (opcjonalna w ticket, edge cases)
- *  - hash user_identifier (case insensitive, whitespace, kolejnosc nie ma znaczenia)
- *  - regex numeru ticketu (format ASK-YYYY-NNNN)
- *  - generowanie kolejnego numeru ticketu (counter increment)
- *  - whitelist rozszerzen plikow (parsing CSV)
- *  - walidacja kategorii (whitelist z get_categories_map)
- *  - walidacja statusu (whitelist z get_statuses_map)
- */
 
 if (php_sapi_name() !== "cli") {
     die("Run via CLI: php tests/ticket-system-tests.php\n");
 }
 
-// minimalne stuby WP — tylko to co ticket-system.php require'uje przy parsowaniu
 if (!defined("ABSPATH")) {
     define("ABSPATH", __DIR__ . "/");
 }
@@ -108,7 +88,6 @@ if (!function_exists("wp_salt")) {
     }
 }
 
-// in-memory stub options dla testow numeru ticketu
 $GLOBALS["test_options_storage"] = [];
 if (!function_exists("get_option")) {
     function get_option($key, $default = false) {
@@ -127,7 +106,7 @@ if (!function_exists("wp_date")) {
     }
 }
 if (!function_exists("time")) {
-    // czas systemowy — tu nie stub'ujemy
+
 }
 if (!function_exists("wp_json_encode")) {
     function wp_json_encode($data) {
@@ -147,7 +126,6 @@ if (!function_exists("set_transient")) {
 }
 $GLOBALS["test_transients_storage"] = [];
 
-// klasy WP_REST_* — uzywane tylko jako typed args, nie wykonujemy faktycznych callback'ow
 if (!class_exists("WP_REST_Request")) {
     class WP_REST_Request {
         private $params = [];
@@ -192,10 +170,6 @@ if (!class_exists("WP_REST_Response")) {
 
 require_once __DIR__ . "/../lib/functions/ticket-system.php";
 
-// =============================================================================
-// Test runner — proste asserty
-// =============================================================================
-
 $tests_passed_count = 0;
 $tests_failed_count = 0;
 $failures_log = [];
@@ -221,10 +195,6 @@ function assert_equal($description, $expected, $actual) {
     assert_test($description, $is_equal);
 }
 
-// =============================================================================
-// Test: askee_ticket_normalize_phone_string — opcjonalny
-// =============================================================================
-
 echo "\n=== askee_ticket_normalize_phone_string ===\n";
 
 assert_equal("pusty string zwraca pusty", "", askee_ticket_normalize_phone_string(""));
@@ -234,10 +204,6 @@ assert_equal("z plusem i myslnikami OK", "+48 500-025-365", askee_ticket_normali
 assert_equal("za krotki zwraca pusty (3 cyfry)", "", askee_ticket_normalize_phone_string("123"));
 assert_equal("za dlugi zwraca pusty (20 cyfr)", "", askee_ticket_normalize_phone_string("12345678901234567890"));
 assert_equal("odrzuca litery", "500025365", askee_ticket_normalize_phone_string("500abc025xyz365"));
-
-// =============================================================================
-// Test: askee_ticket_build_user_identifier_hash
-// =============================================================================
 
 echo "\n=== askee_ticket_build_user_identifier_hash ===\n";
 
@@ -250,10 +216,6 @@ assert_test("ten sam user dla roznej kapitalizacji email", $hash_a === $hash_b);
 assert_test("ten sam user dla rozspacjowanego imienia", $hash_a === $hash_c);
 assert_test("rozne usery dla roznych emaili", $hash_a !== $hash_d);
 assert_test("hash to sha256 (64 hex chars)", strlen($hash_a) === 64 && ctype_xdigit($hash_a));
-
-// =============================================================================
-// Test: regex numeru ticketu
-// =============================================================================
 
 echo "\n=== askee_ticket_get_number_regex_pattern ===\n";
 
@@ -268,13 +230,8 @@ assert_test("ASK-26-0001 NIE matchuje (2-cyfrowy rok)", !preg_match($regex_patte
 assert_test("ASK_2026_0001 NIE matchuje (zle separatory)", !preg_match($regex_pattern, "ASK_2026_0001"));
 assert_test("pusty NIE matchuje", !preg_match($regex_pattern, ""));
 
-// =============================================================================
-// Test: generowanie kolejnego numeru ticketu
-// =============================================================================
-
 echo "\n=== askee_ticket_generate_next_number ===\n";
 
-// resetujemy storage in-memory zeby test byl izolowany
 $GLOBALS["test_options_storage"] = [];
 
 $first_number_string = askee_ticket_generate_next_number();
@@ -287,17 +244,12 @@ $second_number_string = askee_ticket_generate_next_number();
 $expected_second = "ASK-" . $current_year_string . "-0002";
 assert_equal("drugi numer to ASK-{YYYY}-0002", $expected_second, $second_number_string);
 
-// kolejnych 10 — counter rosnie liniowo
 for ($index = 3; $index <= 12; $index += 1) {
     askee_ticket_generate_next_number();
 }
 $thirteenth_number_string = askee_ticket_generate_next_number();
 $expected_thirteenth = "ASK-" . $current_year_string . "-0013";
 assert_equal("13-ty numer to ASK-{YYYY}-0013", $expected_thirteenth, $thirteenth_number_string);
-
-// =============================================================================
-// Test: whitelist rozszerzen
-// =============================================================================
 
 echo "\n=== askee_ticket_get_allowed_extensions_array ===\n";
 
@@ -310,7 +262,6 @@ assert_test("exe NIE jest dozwolony", !in_array("exe", $allowed_extensions_array
 assert_test("php NIE jest dozwolony", !in_array("php", $allowed_extensions_array, true));
 assert_test("js NIE jest dozwolony", !in_array("js", $allowed_extensions_array, true));
 
-// rozszerzenia sa lowercase
 $all_lowercase_boolean = true;
 foreach ($allowed_extensions_array as $extension_string) {
     if ($extension_string !== strtolower($extension_string)) {
@@ -319,10 +270,6 @@ foreach ($allowed_extensions_array as $extension_string) {
     }
 }
 assert_test("wszystkie rozszerzenia sa lowercase", $all_lowercase_boolean);
-
-// =============================================================================
-// Test: kategorie i statusy (single source of truth)
-// =============================================================================
 
 echo "\n=== askee_ticket_get_categories_map ===\n";
 
@@ -342,7 +289,6 @@ assert_test("status 'ask_waiting' istnieje", array_key_exists("ask_waiting", $st
 assert_test("status 'ask_resolved' istnieje", array_key_exists("ask_resolved", $statuses_map));
 assert_test("status 'ask_closed' istnieje", array_key_exists("ask_closed", $statuses_map));
 
-// limit 20 znakow dla post_status (WP MySQL column constraint)
 $all_statuses_within_limit_boolean = true;
 foreach (array_keys($statuses_map) as $status_slug_string) {
     if (strlen($status_slug_string) > 20) {
@@ -358,18 +304,13 @@ assert_equal(
     askee_ticket_get_default_status_slug()
 );
 
-// =============================================================================
-// Test: IP-based rate limit
-// =============================================================================
-
 echo "\n=== askee_ticket_check_and_update_ip_rate_limit ===\n";
 
-// reset transients
 $GLOBALS["test_transients_storage"] = [];
 $_SERVER["REMOTE_ADDR"] = "192.168.1.100";
 
 $any_blocked_in_loop_boolean = false;
-// 5 zgloszen — wszystkie powinny przejsc
+
 for ($index = 1; $index <= 5; $index += 1) {
     $rate_limit_result_array = askee_ticket_check_and_update_ip_rate_limit();
     if (!empty($rate_limit_result_array["is_blocked"])) {
@@ -379,20 +320,14 @@ for ($index = 1; $index <= 5; $index += 1) {
 }
 assert_test("pierwsze 5 zgloszen w oknie przechodzi", !$any_blocked_in_loop_boolean);
 
-// 6-te — powinno byc zablokowane
 $sixth_attempt_result_array = askee_ticket_check_and_update_ip_rate_limit();
 assert_test("6-te zgloszenie z tego samego IP jest zablokowane", !empty($sixth_attempt_result_array["is_blocked"]));
 assert_test("minutes_left > 0 przy blokadzie", (int) ($sixth_attempt_result_array["minutes_left"] ?? 0) > 0);
 
-// reset i sprawdzenie ze inny IP ma osobny licznik
 $GLOBALS["test_transients_storage"] = [];
 $_SERVER["REMOTE_ADDR"] = "10.0.0.1";
 $other_ip_result_array = askee_ticket_check_and_update_ip_rate_limit();
 assert_test("inny IP ma osobny licznik (1-sze zgloszenie nie blokuje)", empty($other_ip_result_array["is_blocked"]));
-
-// =============================================================================
-// Wyniki
-// =============================================================================
 
 echo "\n========================================\n";
 echo "Wyniki:\n";
