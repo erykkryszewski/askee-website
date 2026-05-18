@@ -463,6 +463,155 @@ function askee_smtp_render_admin_test_page() {
     <?php
 }
 
+// =============================================================================
+// Szablon HTML dla maili (formularz kontaktowy + system ticketowy)
+// =============================================================================
+//
+// Style sa inline — klienci pocztowi (Gmail/Outlook) wycinaja <style> z <head>.
+// Layout oparty na tabelach dla kompatybilnosci. Kolory i typografia
+// zsynchronizowane z motywem (scss/global/_variables.scss, _typography.scss).
+
+// kolory motywu — single source of truth dla maili
+function askee_email_brand_colors() {
+    return [
+        "theme" => "#007d88",
+        "theme_light" => "#d9eced",
+        "text" => "#494a4c",
+        "gray" => "#a1a1a1",
+        "light_gray" => "#eeeeee",
+        "bg" => "#f3f3f3",
+        "white" => "#ffffff",
+    ];
+}
+
+// stos fontow — Inter jak w motywie, z fallbackami bezpiecznymi dla klientow poczty
+function askee_email_font_stack() {
+    return "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
+}
+
+// opakowuje tresc maila w spojny, responsywny szablon HTML (header / body / footer)
+function askee_email_html_wrap($title_string, $inner_html_string) {
+    $c = askee_email_brand_colors();
+    $font = askee_email_font_stack();
+    $safe_title = esc_html((string) $title_string);
+
+    return '<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8">' .
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' .
+        "<title>" . $safe_title . "</title></head>" .
+        '<body style="margin:0;padding:0;background:' . $c["bg"] . ';">' .
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:' .
+        $c["bg"] . ';padding:24px 12px;">' .
+        '<tr><td align="center">' .
+        '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:' .
+        $c["white"] . ';border-radius:14px;overflow:hidden;font-family:' . $font . ';">' .
+        '<tr><td style="background:' . $c["theme"] . ';padding:26px 32px;">' .
+        '<div style="font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.7);font-family:' .
+        $font . ';">Askee</div>' .
+        '<div style="font-size:21px;font-weight:600;color:' . $c["white"] .
+        ';margin-top:4px;font-family:' . $font . ';">' . $safe_title . "</div>" .
+        "</td></tr>" .
+        '<tr><td style="padding:28px 32px;color:' . $c["text"] .
+        ';font-size:15px;line-height:1.65;font-family:' . $font . ';">' .
+        $inner_html_string .
+        "</td></tr>" .
+        '<tr><td style="background:' . $c["bg"] . ';padding:18px 32px;color:' . $c["gray"] .
+        ';font-size:12px;line-height:1.6;font-family:' . $font . ';">' .
+        "Wiadomość wygenerowana automatycznie — Askee." .
+        "</td></tr>" .
+        "</table></td></tr></table></body></html>";
+}
+
+// akapit tekstu w mailu — $inner_html moze zawierac juz zescapowany HTML (np. <strong>)
+function askee_email_html_paragraph($inner_html_string) {
+    return '<p style="margin:0 0 14px;font-size:15px;line-height:1.65;">' .
+        (string) $inner_html_string .
+        "</p>";
+}
+
+// tabela "etykieta : wartosc" — $rows_array to lista par [label, value] (plain text, escapowane tutaj)
+function askee_email_html_data_table($rows_array) {
+    if (!is_array($rows_array) || empty($rows_array)) {
+        return "";
+    }
+
+    $c = askee_email_brand_colors();
+    $font = askee_email_font_stack();
+
+    $html = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:6px 0 4px;">';
+    foreach ($rows_array as $row_pair) {
+        $label_string = esc_html((string) ($row_pair[0] ?? ""));
+        $value_string = (string) ($row_pair[1] ?? "");
+        $value_html =
+            $value_string !== ""
+                ? esc_html($value_string)
+                : '<span style="color:' . $c["gray"] . ';">—</span>';
+
+        $html .=
+            "<tr>" .
+            '<td style="padding:9px 14px 9px 0;border-bottom:1px solid ' . $c["light_gray"] .
+            ';font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:' . $c["gray"] .
+            ";font-family:" . $font . ';white-space:nowrap;vertical-align:top;width:40%;">' .
+            $label_string . "</td>" .
+            '<td style="padding:9px 0;border-bottom:1px solid ' . $c["light_gray"] .
+            ';font-size:14px;color:' . $c["text"] . ";font-family:" . $font .
+            ';vertical-align:top;">' . $value_html . "</td>" .
+            "</tr>";
+    }
+    $html .= "</table>";
+
+    return $html;
+}
+
+// blok z trescia wiadomosci — naglowek + ramka z akcentem motywu
+function askee_email_html_message_block($heading_string, $text_string) {
+    $c = askee_email_brand_colors();
+    $font = askee_email_font_stack();
+    $heading_html = esc_html((string) $heading_string);
+    $text_html = nl2br(esc_html((string) $text_string));
+
+    return '<div style="margin:20px 0;">' .
+        '<div style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:' .
+        $c["gray"] . ';margin-bottom:7px;font-family:' . $font . ';">' . $heading_html . "</div>" .
+        '<div style="background:' . $c["bg"] . ";border-left:3px solid " . $c["theme"] .
+        ';border-radius:6px;padding:14px 16px;font-size:14px;line-height:1.65;color:' .
+        $c["text"] . ";font-family:" . $font . ';">' . $text_html . "</div>" .
+        "</div>";
+}
+
+// przycisk CTA (np. "Zarzadzaj w wp-admin", "Otworz baze wiedzy")
+function askee_email_html_button($label_string, $url_string) {
+    $c = askee_email_brand_colors();
+    $font = askee_email_font_stack();
+
+    return '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0;"><tr>' .
+        '<td style="border-radius:10px;background:' . $c["theme"] . ';">' .
+        '<a href="' . esc_url((string) $url_string) .
+        '" style="display:inline-block;padding:12px 26px;font-size:14px;font-weight:600;color:' .
+        $c["white"] . ";text-decoration:none;border-radius:10px;font-family:" . $font . ';">' .
+        esc_html((string) $label_string) . "</a>" .
+        "</td></tr></table>";
+}
+
+// stopka techniczna (data / IP / user-agent) — male, wyszarzone, oddzielone linia
+function askee_email_html_meta($meta_lines_array) {
+    if (!is_array($meta_lines_array) || empty($meta_lines_array)) {
+        return "";
+    }
+
+    $c = askee_email_brand_colors();
+    $font = askee_email_font_stack();
+
+    $escaped_lines_array = [];
+    foreach ($meta_lines_array as $meta_line) {
+        $escaped_lines_array[] = esc_html((string) $meta_line);
+    }
+
+    return '<div style="margin-top:24px;padding-top:16px;border-top:1px solid ' . $c["light_gray"] .
+        ';font-size:12px;line-height:1.7;color:' . $c["gray"] . ";font-family:" . $font . ';">' .
+        implode("<br>", $escaped_lines_array) .
+        "</div>";
+}
+
 // rzuca bledem do logu kiedy wp_mail zawiedzie - zeby latwo diagnozowac na produkcji
 add_action("wp_mail_failed", "askee_log_wp_mail_failed");
 function askee_log_wp_mail_failed($wp_error_object) {

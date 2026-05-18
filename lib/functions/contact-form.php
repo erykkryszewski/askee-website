@@ -490,25 +490,51 @@ function askee_contact_form_callback(WP_REST_Request $request) {
         $sanitized_name_string,
     );
 
-    $email_body_lines_array = [
-        "Nowa wiadomość z formularza kontaktowego na " . home_url("/kontakt/"),
-        "",
-        "Imię i nazwisko: " . $sanitized_name_string,
-        "E-mail: " . $sanitized_email_string,
-        "Telefon: " . $normalized_phone_string,
-        "",
-        "Treść wiadomości:",
-        $sanitized_message_string,
-        "",
-        "—",
-        "Data: " . $submission_datetime_string,
-        "IP: " . ($request_ip_string !== "" ? $request_ip_string : "n/d"),
-        "User-Agent: " . ($user_agent_string !== "" ? $user_agent_string : "n/d"),
-    ];
-    $email_body_string = implode("\n", $email_body_lines_array);
+    // tresc HTML — szablon wspolny z systemem ticketowym (helpery w lib/functions/smtp.php)
+    if (function_exists("askee_email_html_wrap")) {
+        $email_inner_html_string =
+            askee_email_html_paragraph(
+                "Nowa wiadomość z formularza kontaktowego na stronie Askee.",
+            ) .
+            askee_email_html_data_table([
+                ["Imię i nazwisko", $sanitized_name_string],
+                ["E-mail", $sanitized_email_string],
+                ["Telefon", $normalized_phone_string],
+            ]) .
+            askee_email_html_message_block("Treść wiadomości", $sanitized_message_string) .
+            askee_email_html_meta([
+                "Data: " . $submission_datetime_string,
+                "IP: " . ($request_ip_string !== "" ? $request_ip_string : "n/d"),
+                "User-Agent: " . ($user_agent_string !== "" ? $user_agent_string : "n/d"),
+            ]);
+
+        $email_body_string = askee_email_html_wrap(
+            "Nowa wiadomość — formularz kontaktowy",
+            $email_inner_html_string,
+        );
+        $email_content_type_header_string = "Content-Type: text/html; charset=UTF-8";
+    } else {
+        // fallback: gdyby smtp.php nie byl zaladowany — prosty plain text
+        $email_body_string = implode("\n", [
+            "Nowa wiadomość z formularza kontaktowego na " . home_url("/kontakt/"),
+            "",
+            "Imię i nazwisko: " . $sanitized_name_string,
+            "E-mail: " . $sanitized_email_string,
+            "Telefon: " . $normalized_phone_string,
+            "",
+            "Treść wiadomości:",
+            $sanitized_message_string,
+            "",
+            "—",
+            "Data: " . $submission_datetime_string,
+            "IP: " . ($request_ip_string !== "" ? $request_ip_string : "n/d"),
+            "User-Agent: " . ($user_agent_string !== "" ? $user_agent_string : "n/d"),
+        ]);
+        $email_content_type_header_string = "Content-Type: text/plain; charset=UTF-8";
+    }
 
     $email_headers_array = [
-        "Content-Type: text/plain; charset=UTF-8",
+        $email_content_type_header_string,
         sprintf("From: %s <%s>", $from_name_string, $from_email_string),
         sprintf("Reply-To: %s <%s>", $sanitized_name_string, $sanitized_email_string),
     ];

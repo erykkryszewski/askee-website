@@ -94,6 +94,8 @@ function initSingleAskeeTicketForm(formElement) {
         name: formElement.querySelector('[name="name"]'),
         email: formElement.querySelector('[name="email"]'),
         phone: formElement.querySelector('[name="phone"]'),
+        company: formElement.querySelector('[name="company"]'),
+        position: formElement.querySelector('[name="position"]'),
         category: formElement.querySelector('[name="category"]'),
         previous_ticket_number: formElement.querySelector('[name="previous_ticket_number"]'),
         message: formElement.querySelector('[name="message"]'),
@@ -189,7 +191,36 @@ function initSingleAskeeTicketForm(formElement) {
         submitButtonElement.classList.remove("askee-ticket-form__submit--busy");
     }
 
-    // odswiezenie listy plikow w UI po wyborze plikow (informacja dla usera)
+    // usuwa pojedynczy plik z wyboru — przebudowujemy FileList przez DataTransfer
+    // (FileList jest read-only, nie da sie z niej usunac elementu inaczej)
+    function removeSelectedFileAtIndex(indexToRemoveNumber) {
+        if (!fileInputElement || !fileInputElement.files) {
+            return;
+        }
+
+        // starsze przegladarki bez DataTransfer — fallback: czyscimy caly wybor
+        if (typeof DataTransfer === "undefined") {
+            fileInputElement.value = "";
+            refreshFileListDisplay();
+            setFieldErrorMessage("attachments", "");
+            return;
+        }
+
+        const currentFilesList = fileInputElement.files;
+        const dataTransferInstance = new DataTransfer();
+        for (let fileIndex = 0; fileIndex < currentFilesList.length; fileIndex += 1) {
+            if (fileIndex === indexToRemoveNumber) {
+                continue;
+            }
+            dataTransferInstance.items.add(currentFilesList[fileIndex]);
+        }
+
+        fileInputElement.files = dataTransferInstance.files;
+        refreshFileListDisplay();
+        setFieldErrorMessage("attachments", "");
+    }
+
+    // odswiezenie listy plikow w UI po wyborze plikow (z przyciskiem usuwania)
     function refreshFileListDisplay() {
         if (!fileListElement) {
             return;
@@ -210,7 +241,27 @@ function initSingleAskeeTicketForm(formElement) {
             liElement.className = "askee-ticket-form__file-list-item";
 
             const sizeKB = Math.max(1, Math.round(fileEntry.size / 1024));
-            liElement.textContent = fileEntry.name + " (" + sizeKB + " KB)";
+
+            const nameSpanElement = document.createElement("span");
+            nameSpanElement.className = "askee-ticket-form__file-list-name";
+            nameSpanElement.textContent = fileEntry.name + " (" + sizeKB + " KB)";
+
+            const removeButtonElement = document.createElement("button");
+            removeButtonElement.type = "button";
+            removeButtonElement.className = "askee-ticket-form__file-remove";
+            removeButtonElement.textContent = "Usuń";
+            removeButtonElement.setAttribute(
+                "aria-label",
+                'Usuń plik "' + fileEntry.name + '"'
+            );
+
+            const fileIndexNumber = index;
+            removeButtonElement.addEventListener("click", function () {
+                removeSelectedFileAtIndex(fileIndexNumber);
+            });
+
+            liElement.appendChild(nameSpanElement);
+            liElement.appendChild(removeButtonElement);
             fileListElement.appendChild(liElement);
         }
     }
@@ -336,6 +387,8 @@ function initSingleAskeeTicketForm(formElement) {
             name: String(formDataObject.get("name") || "").trim(),
             email: String(formDataObject.get("email") || "").trim(),
             phone: String(formDataObject.get("phone") || "").trim(),
+            company: String(formDataObject.get("company") || "").trim(),
+            position: String(formDataObject.get("position") || "").trim(),
             category: String(formDataObject.get("category") || "").trim(),
             previous_ticket_number: String(
                 formDataObject.get("previous_ticket_number") || ""
@@ -361,6 +414,19 @@ function initSingleAskeeTicketForm(formElement) {
         // telefon opcjonalny — bledem tylko jak wpisane ale niepoprawne
         if (valuesObject.phone !== "" && valuesObject.phone.replace(/[^0-9]/g, "").length < 7) {
             errorsObject.phone = "Podaj poprawny numer telefonu lub zostaw pole puste.";
+        }
+
+        // nazwa firmy i stanowisko — wymagane
+        if (!valuesObject.company || valuesObject.company.length < 2) {
+            errorsObject.company = "Podaj nazwę firmy (min. 2 znaki).";
+        } else if (valuesObject.company.length > 160) {
+            errorsObject.company = "Nazwa firmy jest za długa (max 160 znaków).";
+        }
+
+        if (!valuesObject.position || valuesObject.position.length < 2) {
+            errorsObject.position = "Podaj stanowisko (min. 2 znaki).";
+        } else if (valuesObject.position.length > 120) {
+            errorsObject.position = "Stanowisko jest za długie (max 120 znaków).";
         }
 
         if (!valuesObject.category || !Object.prototype.hasOwnProperty.call(categoriesMapObject, valuesObject.category)) {

@@ -36,6 +36,17 @@ define("ASKEE_TICKET_EMAIL_MAX_LENGTH", 190);
 define("ASKEE_TICKET_MESSAGE_MIN_LENGTH", 10);
 define("ASKEE_TICKET_MESSAGE_MAX_LENGTH", 6000);
 
+// dane firmowe zglaszajacego — wymagane (kazdy user systemu ticketowego ma firme i stanowisko)
+define("ASKEE_TICKET_COMPANY_MIN_LENGTH", 2);
+define("ASKEE_TICKET_COMPANY_MAX_LENGTH", 160);
+define("ASKEE_TICKET_POSITION_MIN_LENGTH", 2);
+define("ASKEE_TICKET_POSITION_MAX_LENGTH", 120);
+
+// link do bazy wiedzy/instrukcji — intro formularza + mail potwierdzajacy
+if (!defined("ASKEE_TICKET_KNOWLEDGE_BASE_URL")) {
+    define("ASKEE_TICKET_KNOWLEDGE_BASE_URL", "/faq/");
+}
+
 // honeypot i timestamp trap — tak samo jak w contact-form
 define("ASKEE_TICKET_HONEYPOT_FIELD_NAME", "askee_website_url");
 define("ASKEE_TICKET_MIN_SUBMIT_SECONDS", 2);
@@ -436,6 +447,16 @@ function askee_ticket_register_post_statuses() {
     }
 }
 
+// strona /zgloszenia/ jest dostepna tylko z aplikacji my.askee.app — nigdzie jej
+// nie linkujemy i nie chcemy zeby trafila do indeksu wyszukiwarek
+add_filter("wp_robots", "askee_ticket_noindex_submission_page");
+function askee_ticket_noindex_submission_page($robots_array) {
+    if (function_exists("is_page") && is_page("zgloszenia") && function_exists("wp_robots_no_robots")) {
+        return wp_robots_no_robots($robots_array);
+    }
+    return $robots_array;
+}
+
 // =============================================================================
 // 6. REST ENDPOINTS
 // =============================================================================
@@ -631,6 +652,8 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
     $name_input_string = askee_ticket_get_request_field_string($request, "name");
     $email_input_string = askee_ticket_get_request_field_string($request, "email");
     $phone_input_string = askee_ticket_get_request_field_string($request, "phone");
+    $company_input_string = askee_ticket_get_request_field_string($request, "company");
+    $position_input_string = askee_ticket_get_request_field_string($request, "position");
     $category_input_string = askee_ticket_get_request_field_string($request, "category");
     $previous_ticket_input_string = askee_ticket_get_request_field_string($request, "previous_ticket_number");
     $message_input_string = askee_ticket_get_request_field_string($request, "message");
@@ -639,6 +662,8 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
     $sanitized_name_string = sanitize_text_field($name_input_string);
     $sanitized_email_string = sanitize_email($email_input_string);
     $normalized_phone_string = askee_ticket_normalize_phone_string($phone_input_string);
+    $sanitized_company_string = sanitize_text_field($company_input_string);
+    $sanitized_position_string = sanitize_text_field($position_input_string);
     $sanitized_category_string = sanitize_text_field($category_input_string);
     $sanitized_previous_ticket_string = strtoupper(trim(sanitize_text_field($previous_ticket_input_string)));
     $sanitized_message_string = sanitize_textarea_field($message_input_string);
@@ -669,6 +694,32 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
     $phone_raw_trimmed = trim((string) $phone_input_string);
     if ($phone_raw_trimmed !== "" && $normalized_phone_string === "") {
         $field_errors_array["phone"] = "Podaj poprawny numer telefonu lub zostaw pole puste.";
+    }
+
+    // nazwa firmy — wymagana
+    if ($sanitized_company_string === "" || mb_strlen($sanitized_company_string) < ASKEE_TICKET_COMPANY_MIN_LENGTH) {
+        $field_errors_array["company"] = sprintf(
+            "Podaj nazwę firmy (min. %d znaki).",
+            (int) ASKEE_TICKET_COMPANY_MIN_LENGTH
+        );
+    } elseif (mb_strlen($sanitized_company_string) > ASKEE_TICKET_COMPANY_MAX_LENGTH) {
+        $field_errors_array["company"] = sprintf(
+            "Nazwa firmy jest za długa (max %d znaków).",
+            (int) ASKEE_TICKET_COMPANY_MAX_LENGTH
+        );
+    }
+
+    // stanowisko — wymagane
+    if ($sanitized_position_string === "" || mb_strlen($sanitized_position_string) < ASKEE_TICKET_POSITION_MIN_LENGTH) {
+        $field_errors_array["position"] = sprintf(
+            "Podaj stanowisko (min. %d znaki).",
+            (int) ASKEE_TICKET_POSITION_MIN_LENGTH
+        );
+    } elseif (mb_strlen($sanitized_position_string) > ASKEE_TICKET_POSITION_MAX_LENGTH) {
+        $field_errors_array["position"] = sprintf(
+            "Stanowisko jest za długie (max %d znaków).",
+            (int) ASKEE_TICKET_POSITION_MAX_LENGTH
+        );
     }
 
     // kategoria — musi byc ze stalego slownika
@@ -784,6 +835,8 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
     update_post_meta($ticket_post_id, "_askee_ticket_name", $sanitized_name_string);
     update_post_meta($ticket_post_id, "_askee_ticket_email", $sanitized_email_string);
     update_post_meta($ticket_post_id, "_askee_ticket_phone", $normalized_phone_string);
+    update_post_meta($ticket_post_id, "_askee_ticket_company", $sanitized_company_string);
+    update_post_meta($ticket_post_id, "_askee_ticket_position", $sanitized_position_string);
     update_post_meta($ticket_post_id, "_askee_ticket_category", $sanitized_category_string);
     update_post_meta($ticket_post_id, "_askee_ticket_previous_number", $sanitized_previous_ticket_string);
     update_post_meta($ticket_post_id, "_askee_ticket_user_identifier", $user_identifier_hash);
@@ -817,6 +870,8 @@ function askee_ticket_form_callback(WP_REST_Request $request) {
         $sanitized_name_string,
         $sanitized_email_string,
         $normalized_phone_string,
+        $sanitized_company_string,
+        $sanitized_position_string,
         $sanitized_category_string,
         $sanitized_previous_ticket_string,
         $sanitized_message_string,
@@ -943,6 +998,8 @@ function askee_ticket_send_internal_notification_email(
     $name_string,
     $email_string,
     $phone_string,
+    $company_string,
+    $position_string,
     $category_slug_string,
     $previous_ticket_number_string,
     $message_string,
@@ -999,40 +1056,88 @@ function askee_ticket_send_internal_notification_email(
         $category_label_string
     );
 
-    $email_body_lines_array = [
-        "Nowe zgłoszenie z formularza na " . home_url("/zgloszenia/"),
-        "",
-        "Numer: " . $ticket_number_string,
-        "Kategoria: " . $category_label_string,
-        "Imię i nazwisko: " . $name_string,
-        "E-mail: " . $email_string,
-        "Telefon: " . ($phone_string !== "" ? $phone_string : "(nie podano)"),
-        "Nawiązuje do zgłoszenia: " . ($previous_ticket_number_string !== "" ? $previous_ticket_number_string : "(brak)"),
-        "Wcześniejszych zgłoszeń tego użytkownika: " . (int) $previous_tickets_count,
-        "",
-        "Treść:",
-        $message_string,
-        "",
-    ];
+    // tresc HTML — szablon wspolny (helpery w lib/functions/smtp.php)
+    if (function_exists("askee_email_html_wrap")) {
+        $email_inner_html_string =
+            askee_email_html_paragraph("Nowe zgłoszenie z formularza ticketowego na stronie Askee.") .
+            askee_email_html_data_table([
+                ["Numer", $ticket_number_string],
+                ["Kategoria", $category_label_string],
+                ["Imię i nazwisko", $name_string],
+                ["E-mail", $email_string],
+                ["Telefon", $phone_string],
+                ["Firma", $company_string],
+                ["Stanowisko", $position_string],
+                ["Nawiązuje do", $previous_ticket_number_string],
+                ["Wcześniejszych zgłoszeń", (string) (int) $previous_tickets_count],
+            ]) .
+            askee_email_html_message_block("Treść zgłoszenia", $message_string);
 
-    if (!empty($attachment_urls_array)) {
-        $email_body_lines_array[] = "Załączniki:";
-        foreach ($attachment_urls_array as $single_attachment_url) {
-            $email_body_lines_array[] = " - " . $single_attachment_url;
+        if (!empty($attachment_urls_array)) {
+            $colors_array = askee_email_brand_colors();
+            $font_stack_string = askee_email_font_stack();
+            $attachments_html_string =
+                '<div style="margin:20px 0;"><div style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:' .
+                $colors_array["gray"] . ";margin-bottom:7px;font-family:" . $font_stack_string . ';">Załączniki</div>';
+            foreach ($attachment_urls_array as $single_attachment_url) {
+                $attachments_html_string .=
+                    '<div style="margin:4px 0;font-size:14px;font-family:' . $font_stack_string . ';">' .
+                    '<a href="' . esc_url($single_attachment_url) . '" style="color:' . $colors_array["theme"] .
+                    ';word-break:break-all;">' . esc_html($single_attachment_url) . "</a></div>";
+            }
+            $attachments_html_string .= "</div>";
+            $email_inner_html_string .= $attachments_html_string;
         }
-        $email_body_lines_array[] = "";
+
+        $email_inner_html_string .= askee_email_html_button("Zarządzaj w wp-admin", $edit_url_string);
+        $email_inner_html_string .= askee_email_html_meta([
+            "Data: " . wp_date("Y-m-d H:i:s"),
+            "IP: " . ($request_ip_string !== "" ? $request_ip_string : "n/d"),
+            "User-Agent: " . ($user_agent_string !== "" ? $user_agent_string : "n/d"),
+        ]);
+
+        $email_body_string = askee_email_html_wrap(
+            sprintf("Nowe zgłoszenie #%s", $ticket_number_string),
+            $email_inner_html_string
+        );
+        $email_content_type_header_string = "Content-Type: text/html; charset=UTF-8";
+    } else {
+        // fallback plain text gdyby smtp.php nie byl zaladowany
+        $email_body_lines_array = [
+            "Nowe zgłoszenie z formularza na " . home_url("/zgloszenia/"),
+            "",
+            "Numer: " . $ticket_number_string,
+            "Kategoria: " . $category_label_string,
+            "Imię i nazwisko: " . $name_string,
+            "E-mail: " . $email_string,
+            "Telefon: " . ($phone_string !== "" ? $phone_string : "(nie podano)"),
+            "Firma: " . ($company_string !== "" ? $company_string : "(nie podano)"),
+            "Stanowisko: " . ($position_string !== "" ? $position_string : "(nie podano)"),
+            "Nawiązuje do zgłoszenia: " . ($previous_ticket_number_string !== "" ? $previous_ticket_number_string : "(brak)"),
+            "Wcześniejszych zgłoszeń tego użytkownika: " . (int) $previous_tickets_count,
+            "",
+            "Treść:",
+            $message_string,
+            "",
+        ];
+        if (!empty($attachment_urls_array)) {
+            $email_body_lines_array[] = "Załączniki:";
+            foreach ($attachment_urls_array as $single_attachment_url) {
+                $email_body_lines_array[] = " - " . $single_attachment_url;
+            }
+            $email_body_lines_array[] = "";
+        }
+        $email_body_lines_array[] = "—";
+        $email_body_lines_array[] = "Zarządzaj w wp-admin: " . $edit_url_string;
+        $email_body_lines_array[] = "Data: " . wp_date("Y-m-d H:i:s");
+        $email_body_lines_array[] = "IP: " . ($request_ip_string !== "" ? $request_ip_string : "n/d");
+        $email_body_lines_array[] = "User-Agent: " . ($user_agent_string !== "" ? $user_agent_string : "n/d");
+        $email_body_string = implode("\n", $email_body_lines_array);
+        $email_content_type_header_string = "Content-Type: text/plain; charset=UTF-8";
     }
 
-    $email_body_lines_array[] = "—";
-    $email_body_lines_array[] = "Zarządzaj w wp-admin: " . $edit_url_string;
-    $email_body_lines_array[] = "Data: " . wp_date("Y-m-d H:i:s");
-    $email_body_lines_array[] = "IP: " . ($request_ip_string !== "" ? $request_ip_string : "n/d");
-    $email_body_lines_array[] = "User-Agent: " . ($user_agent_string !== "" ? $user_agent_string : "n/d");
-
-    $email_body_string = implode("\n", $email_body_lines_array);
-
     $email_headers_array = [
-        "Content-Type: text/plain; charset=UTF-8",
+        $email_content_type_header_string,
         sprintf("From: %s <%s>", $from_name_string, $from_email_string),
         sprintf("Reply-To: %s <%s>", $name_string, $email_string),
     ];
@@ -1086,25 +1191,69 @@ function askee_ticket_send_user_confirmation_email(
 
     $email_subject_string = sprintf("Potwierdzenie zgłoszenia #%s", $ticket_number_string);
 
-    $email_body_lines_array = [
-        sprintf("Dzień dobry %s,", $name_string),
-        "",
-        sprintf(
-            "dziękujemy za przesłanie zgłoszenia. Twój numer zgłoszenia to: %s.",
-            $ticket_number_string
-        ),
-        "Zachowaj ten numer — jeśli będziesz chciał kontynuować sprawę, podaj go w polu \"numer poprzedniego zgłoszenia\" przy kolejnym kontakcie.",
-        "",
-        "Odezwiemy się najszybciej, jak to możliwe.",
-        "",
-        "Pozdrawiamy,",
-        "Zespół Askee",
-    ];
+    // baza wiedzy — absolutny URL (stala moze byc sciezka wzgledna typu "/faq/")
+    $knowledge_base_raw_value = (string) ASKEE_TICKET_KNOWLEDGE_BASE_URL;
+    $knowledge_base_url_string = preg_match('#^https?://#i', $knowledge_base_raw_value)
+        ? $knowledge_base_raw_value
+        : home_url($knowledge_base_raw_value);
 
-    $email_body_string = implode("\n", $email_body_lines_array);
+    if (function_exists("askee_email_html_wrap")) {
+        $colors_array = askee_email_brand_colors();
+        $font_stack_string = askee_email_font_stack();
+
+        // wyrozniony box z numerem zgloszenia
+        $ticket_number_box_html =
+            '<div style="margin:18px 0;background:' . $colors_array["theme_light"] .
+            ';border-radius:10px;padding:18px 20px;text-align:center;font-family:' . $font_stack_string . ';">' .
+            '<div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:' .
+            $colors_array["theme"] . ';">Numer Twojego zgłoszenia</div>' .
+            '<div style="font-size:26px;font-weight:700;color:' . $colors_array["theme"] .
+            ';margin-top:4px;letter-spacing:0.02em;">' . esc_html($ticket_number_string) . "</div>" .
+            "</div>";
+
+        $email_inner_html_string =
+            askee_email_html_paragraph("Dzień dobry <strong>" . esc_html($name_string) . "</strong>,") .
+            askee_email_html_paragraph("dziękujemy za przesłanie zgłoszenia. Przyjęliśmy je do obsługi.") .
+            $ticket_number_box_html .
+            askee_email_html_paragraph(
+                "Zachowaj ten numer — jeśli będziesz chciał kontynuować sprawę, podaj go w polu " .
+                    "<strong>„numer poprzedniego zgłoszenia”</strong> przy kolejnym kontakcie."
+            ) .
+            askee_email_html_paragraph("Odezwiemy się najszybciej, jak to możliwe.") .
+            askee_email_html_paragraph(
+                "W międzyczasie zajrzyj do bazy wiedzy i instrukcji — być może rozwiązanie jest już opisane:"
+            ) .
+            askee_email_html_button("Otwórz bazę wiedzy", $knowledge_base_url_string) .
+            askee_email_html_paragraph("Pozdrawiamy,<br>Zespół Askee");
+
+        $email_body_string = askee_email_html_wrap(
+            sprintf("Potwierdzenie zgłoszenia #%s", $ticket_number_string),
+            $email_inner_html_string
+        );
+        $email_content_type_header_string = "Content-Type: text/html; charset=UTF-8";
+    } else {
+        // fallback plain text gdyby smtp.php nie byl zaladowany
+        $email_body_string = implode("\n", [
+            sprintf("Dzień dobry %s,", $name_string),
+            "",
+            sprintf(
+                "dziękujemy za przesłanie zgłoszenia. Twój numer zgłoszenia to: %s.",
+                $ticket_number_string
+            ),
+            "Zachowaj ten numer — jeśli będziesz chciał kontynuować sprawę, podaj go w polu \"numer poprzedniego zgłoszenia\" przy kolejnym kontakcie.",
+            "",
+            "Odezwiemy się najszybciej, jak to możliwe.",
+            "W międzyczasie zajrzyj do bazy wiedzy i instrukcji — być może rozwiązanie jest już opisane:",
+            $knowledge_base_url_string,
+            "",
+            "Pozdrawiamy,",
+            "Zespół Askee",
+        ]);
+        $email_content_type_header_string = "Content-Type: text/plain; charset=UTF-8";
+    }
 
     $email_headers_array = [
-        "Content-Type: text/plain; charset=UTF-8",
+        $email_content_type_header_string,
         sprintf("From: %s <%s>", $from_name_string, $from_email_string),
         sprintf("Reply-To: %s <%s>", $from_name_string, $from_email_string),
     ];
@@ -1460,6 +1609,8 @@ function askee_ticket_render_details_meta_box($post_object) {
     $name = (string) get_post_meta($post_object->ID, "_askee_ticket_name", true);
     $email = (string) get_post_meta($post_object->ID, "_askee_ticket_email", true);
     $phone = (string) get_post_meta($post_object->ID, "_askee_ticket_phone", true);
+    $company = (string) get_post_meta($post_object->ID, "_askee_ticket_company", true);
+    $position = (string) get_post_meta($post_object->ID, "_askee_ticket_position", true);
     $category_slug = (string) get_post_meta($post_object->ID, "_askee_ticket_category", true);
     $previous_number = (string) get_post_meta($post_object->ID, "_askee_ticket_previous_number", true);
     $submission_ip = (string) get_post_meta($post_object->ID, "_askee_ticket_submission_ip", true);
@@ -1481,6 +1632,8 @@ function askee_ticket_render_details_meta_box($post_object) {
     }
     echo "</td></tr>";
     echo "<tr><th>Telefon:</th><td>" . ($phone !== "" ? esc_html($phone) : "—") . "</td></tr>";
+    echo "<tr><th>Firma:</th><td>" . ($company !== "" ? esc_html($company) : "—") . "</td></tr>";
+    echo "<tr><th>Stanowisko:</th><td>" . ($position !== "" ? esc_html($position) : "—") . "</td></tr>";
     echo "<tr><th>Kategoria:</th><td>" . esc_html($category_label) . "</td></tr>";
     echo "<tr><th>Nawiązuje do:</th><td>" . ($previous_number !== "" ? esc_html($previous_number) : "—") . "</td></tr>";
     echo '<tr><th>Adres IP nadawcy:</th><td><small style="color:#666;">(anti-spam, automatyczne)</small> ' .
@@ -1758,6 +1911,8 @@ function askee_ticket_handle_csv_export() {
         "Imię i nazwisko",
         "E-mail",
         "Telefon",
+        "Firma",
+        "Stanowisko",
         "Nawiązuje do",
         "Treść",
         "Notatki wewnętrzne",
@@ -1777,6 +1932,8 @@ function askee_ticket_handle_csv_export() {
             (string) get_post_meta($post_id_value, "_askee_ticket_name", true),
             (string) get_post_meta($post_id_value, "_askee_ticket_email", true),
             (string) get_post_meta($post_id_value, "_askee_ticket_phone", true),
+            (string) get_post_meta($post_id_value, "_askee_ticket_company", true),
+            (string) get_post_meta($post_id_value, "_askee_ticket_position", true),
             (string) get_post_meta($post_id_value, "_askee_ticket_previous_number", true),
             (string) get_post_field("post_content", $post_id_value),
             (string) get_post_meta($post_id_value, "_askee_ticket_internal_notes", true),

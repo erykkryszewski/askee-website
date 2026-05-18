@@ -3,6 +3,11 @@
 /**
  * Template strony "Zgloszenia" — formularz ticketowy.
  *
+ * Dostep: strona jest celowo NIELINKOWANA nigdzie w obrebie askee.app i ma
+ * noindex (patrz askee_ticket_noindex_submission_page w ticket-system.php).
+ * Jedyna droga wejscia to przejscie z aplikacji my.askee.app — zwykly
+ * odwiedzajacy strone wizytowke nie powinien tu trafic.
+ *
  * Aby strona byla dostepna pod /zgloszenia/:
  *  1. WP-admin -> Strony -> Dodaj nowa
  *  2. Tytul: "Zgloszenia"
@@ -36,6 +41,11 @@ $askee_ticket_max_size_mb = defined("ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE"
     ? (int) (ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE / 1024 / 1024)
     : 5;
 
+// link do bazy wiedzy/instrukcji — pokazywany w intro formularza
+$askee_ticket_knowledge_base_url = defined("ASKEE_TICKET_KNOWLEDGE_BASE_URL")
+    ? ASKEE_TICKET_KNOWLEDGE_BASE_URL
+    : "/faq/";
+
 ?>
 
 <div class="askee-chat askee-contact askee-tickets">
@@ -49,8 +59,9 @@ $askee_ticket_max_size_mb = defined("ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE"
                         <form class="askee-ticket-form" novalidate enctype="multipart/form-data">
                             <div class="askee-ticket-form__intro">
                                 <p class="askee-ticket-form__intro-text">
-                                    Wypełnij formularz, aby zgłosić sprawę. Po wysłaniu otrzymasz numer zgłoszenia
-                                    — zachowaj go, jeśli będziesz chciał kontynuować temat w przyszłości.
+                                    Wypełnij formularz, aby zgłosić sprawę. Po wysłaniu otrzymasz numer zgłoszenia — zachowaj go, jeśli będziesz chciał kontynuować temat w przyszłości. Zanim zgłosisz problem, sprawdź
+                                    <a href="<?php echo esc_url($askee_ticket_knowledge_base_url); ?>" style="font-size: 15px">bazę wiedzy i instrukcje</a>
+                                    — być może rozwiązanie jest już opisane.
                                 </p>
                             </div>
 
@@ -71,21 +82,27 @@ $askee_ticket_max_size_mb = defined("ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE"
                                 </div>
 
                                 <div class="askee-ticket-form__field">
+                                    <label for="askee-ticket-company" class="askee-ticket-form__label">Nazwa firmy</label>
+                                    <input type="text" id="askee-ticket-company" name="company" class="askee-ticket-form__input" autocomplete="organization" maxlength="160" required />
+                                </div>
+
+                                <div class="askee-ticket-form__field">
+                                    <label for="askee-ticket-position" class="askee-ticket-form__label">Stanowisko</label>
+                                    <input type="text" id="askee-ticket-position" name="position" class="askee-ticket-form__input" autocomplete="organization-title" maxlength="120" required />
+                                </div>
+
+                                <div class="askee-ticket-form__field">
                                     <label for="askee-ticket-category" class="askee-ticket-form__label">Kategoria</label>
                                     <select id="askee-ticket-category" name="category" class="askee-ticket-form__select" required>
                                         <option value="">— wybierz —</option>
                                         <?php foreach ($askee_ticket_categories_map as $askee_category_slug => $askee_category_label): ?>
-                                            <option value="<?php echo esc_attr($askee_category_slug); ?>">
-                                                <?php echo esc_html($askee_category_label); ?>
-                                            </option>
+                                            <option value="<?php echo esc_attr($askee_category_slug); ?>"><?php echo esc_html($askee_category_label); ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
 
                                 <div class="askee-ticket-form__field askee-ticket-form__field--full">
-                                    <label for="askee-ticket-previous-number" class="askee-ticket-form__label">
-                                        Numer poprzedniego zgłoszenia (opcjonalnie)
-                                    </label>
+                                    <label for="askee-ticket-previous-number" class="askee-ticket-form__label">Numer poprzedniego zgłoszenia (opcjonalnie)</label>
                                     <input type="text" id="askee-ticket-previous-number" name="previous_ticket_number" class="askee-ticket-form__input" placeholder="np. ASK-2026-0001" maxlength="32" />
                                 </div>
 
@@ -95,9 +112,7 @@ $askee_ticket_max_size_mb = defined("ASKEE_TICKET_ATTACHMENT_MAX_BYTES_PER_FILE"
                                 </div>
 
                                 <div class="askee-ticket-form__field askee-ticket-form__field--full">
-                                    <label for="askee-ticket-attachments" class="askee-ticket-form__label">
-                                        Załączniki (opcjonalnie, max <?php echo (int) $askee_ticket_max_count; ?> plików, do <?php echo (int) $askee_ticket_max_size_mb; ?> MB każdy)
-                                    </label>
+                                    <label for="askee-ticket-attachments" class="askee-ticket-form__label">Załączniki (opcjonalnie, max <?php echo (int) $askee_ticket_max_count; ?> plików, do <?php echo (int) $askee_ticket_max_size_mb; ?> MB każdy)</label>
                                     <input type="file" id="askee-ticket-attachments" name="attachments[]" class="askee-ticket-form__file-input" multiple accept="<?php echo esc_attr($askee_ticket_accept_attribute); ?>" />
                                     <ul class="askee-ticket-form__file-list" aria-live="polite"></ul>
                                 </div>
