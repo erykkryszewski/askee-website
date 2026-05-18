@@ -327,10 +327,10 @@ assert_test("wszystkie rozszerzenia sa lowercase", $all_lowercase_boolean);
 echo "\n=== askee_ticket_get_categories_map ===\n";
 
 $categories_map = askee_ticket_get_categories_map();
-assert_test("kategoria 'general' istnieje", array_key_exists("general", $categories_map));
-assert_test("kategoria 'technical' istnieje", array_key_exists("technical", $categories_map));
-assert_test("kategoria 'callback' istnieje", array_key_exists("callback", $categories_map));
-assert_test("kategoria 'other' istnieje", array_key_exists("other", $categories_map));
+assert_test("kategoria 'bug_critical' istnieje", array_key_exists("bug_critical", $categories_map));
+assert_test("kategoria 'bug_normal' istnieje", array_key_exists("bug_normal", $categories_map));
+assert_test("kategoria 'question' istnieje", array_key_exists("question", $categories_map));
+assert_test("kategoria 'suggestion' istnieje", array_key_exists("suggestion", $categories_map));
 assert_test("kategoria 'xxx_nieistniejaca' NIE istnieje", !array_key_exists("xxx_nieistniejaca", $categories_map));
 
 echo "\n=== askee_ticket_get_statuses_map ===\n";

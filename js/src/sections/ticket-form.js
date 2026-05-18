@@ -62,7 +62,7 @@ function initSingleAskeeTicketForm(formElement) {
             ? ticketConfigObject.categoriesMap
             : {};
     const attachmentMaxCountNumber = Number(ticketConfigObject.attachmentMaxCount) || 3;
-    const attachmentMaxBytesPerFileNumber = Number(ticketConfigObject.attachmentMaxBytesPerFile) || 5242880;
+    const attachmentMaxBytesPerFileNumber = Number(ticketConfigObject.attachmentMaxBytesPerFile) || 10485760;
     const attachmentAllowedExtensionsArray =
         Array.isArray(ticketConfigObject.attachmentAllowedExtensions) &&
         ticketConfigObject.attachmentAllowedExtensions.length > 0
